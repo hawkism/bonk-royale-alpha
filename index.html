@@ -1254,7 +1254,6 @@ const BACKS=[{id:'none',name:'No back bling',lvl:1},{id:'backpack',name:'Adventu
 OUTFITS.push(
   {id:'tophat',name:'Top Hat Tim',lvl:1,shop:200,rar:1,top:'#2b2f3a',top2:'#ffffff',pants:'#2b2f3a',shoe:'#1b1b1b',glove:'#ffffff',hair:'#5a3a1e',hairStyle:'short',hat:'tophat',hatCol:'#1b1b1b',back:'none',skin:'#f1c27d'},
   {id:'cat',name:'Cool Cat',lvl:1,shop:250,rar:2,top:'#ff8fc8',top2:'#ffffff',pants:'#7a4fd6',shoe:'#ffffff',glove:'#ff8fc8',hair:'#ff8fc8',hairStyle:'short',hat:'cat',hatCol:'#ff8fc8',back:'guitar',skin:'#ffdbac'},
-  {id:'wizard',name:'Wizard Wiz',lvl:1,shop:350,rar:3,top:'#5b3cc4',top2:'#ffcb1f',pants:'#3d2a8a',shoe:'#2b2f3a',glove:null,hair:'#f4f6fa',hairStyle:'long',hat:'wizard',hatCol:'#5b3cc4',back:'cape',capeCol:'#3d2a8a',skin:'#f1c27d'},
   {id:'robo',name:'Robo Bonker',lvl:1,shop:400,rar:3,top:'#b8c4d4',top2:'#43c6ff',pants:'#7d8796',shoe:'#43c6ff',glove:'#43c6ff',hair:'#1b1b1b',hairStyle:'bald',hat:'robot',hatCol:'#b8c4d4',back:'drone',skin:'#b8c4d4'},
   {id:'hero',name:'Super Bonk',lvl:1,shop:500,rar:4,top:'#1f6fd6',top2:'#ffcb1f',pants:'#e2312b',shoe:'#e2312b',glove:'#e2312b',hair:'#1b1b1b',hairStyle:'spiky',hat:'mask',hatCol:'#e2312b',back:'cape',capeCol:'#e2312b',skin:'#e0ac69'},
   {id:'banana',name:'Banana Buddy',lvl:1,shop:600,rar:4,top:'#ffe14d',top2:'#fff7b0',pants:'#ffe14d',shoe:'#6b4a1e',glove:'#ffe14d',hair:'#1b1b1b',hairStyle:'bald',hat:'banana',hatCol:'#ffe14d',back:'none',skin:'#ffe14d'});
@@ -1322,7 +1321,6 @@ function buildPerson(c,body,add){
     else{add(body,'sphC','#e2312b',0,48.5,0,3,4.4,6);add(body,'cone','#ff8a00',0,43.5,9,3,6,3).rotation.x=Math.PI/2;}}
   else if(H==='tophat'){add(body,'cylC',HC,0,45.6,0,20,1.6,20);add(body,'cylC',HC,0,51.5,0,12,11,12);add(body,'cylC','#e2312b',0,47.6,0,12.4,2.4,12.4);}
   else if(H==='cat'){add(body,'hemi',HC,0,41.6,-0.8,15.4,13,15.4);for(const s of[-1,1]){const e=add(body,'cone',HC,s*4.6,46,0,5,7,3.4);e.rotation.z=-s*0.35;const e2=add(body,'cone','#ffffff',s*4.5,46.4,1.2,2.6,4.4,1);e2.rotation.z=-s*0.35;}}
-  else if(H==='wizard'){add(body,'cylC',HC,0,45.2,0,24,1.4,24);const w=add(body,'cone',HC,0,46,-1,13,20,13);w.rotation.x=-0.18;for(const[x,y,z]of[[-3,51,4.2],[2.5,55,2.6],[0,59,0.8]])add(body,'sphC','#ffcb1f',x,y,z,2,2,1);}
   else if(H==='robot'){add(body,'boxC',HC,0,40,0,15.6,15.4,15);add(body,'boxC','#1b2235',0,40.6,7.3,12,5,1);add(body,'boxC','#43c6ff',-3,40.6,7.9,3.2,2,0.6);add(body,'boxC','#43c6ff',3,40.6,7.9,3.2,2,0.6);
     add(body,'cylC','#7d8796',0,49.5,0,1,5,1);add(body,'sphC','#ff3b3b',0,52.6,0,3,3,3);for(const s of[-1,1])add(body,'cylC','#7d8796',s*8,40,0,3,4,3).rotation.z=Math.PI/2;}
   else if(H==='mask'){add(body,'cylC',HC,0,40.6,0.4,14.8,4.2,14.8);for(const s of[-1,1]){add(body,'sphC','#ffffff',s*2.7,40.6,7.5,3.2,2.6,1);add(body,'sphC','#1b1b1b',s*2.7,40.5,7.9,1.4,1.4,0.6);}add(body,'boxC',HC,2.5,40,-8.4,2,1.2,7).rotation.x=0.7;}
@@ -1357,6 +1355,8 @@ function pickModel(id){const P=PICKS.find(x=>x.id===id)||PICKS[0],[a,b]=P.c;cons
 // See also: screens (end of match), ticket-shop
 /* ================= XP, levels and challenges ================= */
 let PROG=store.get('bonk-prog')||{xp:0,wins:0,chal:null,locker:{outfit:'recruit',back:'outfit',glider:'classic',pick:'classic'}};if(PROG.tickets==null)PROG.tickets=200;PROG.owned=PROG.owned||[];PROG.locker.wrap=PROG.locker.wrap||'none';let shopPreview=null;
+// the Wizard Wiz outfit was removed (2026-10-15): give back its 350 tickets once, and switch anyone wearing it to the default
+if(PROG.owned.includes('outfit:wizard')){PROG.owned=PROG.owned.filter(k=>k!=='outfit:wizard');PROG.tickets+=350;if(PROG.locker.outfit==='wizard'){PROG.locker.outfit='recruit';PROG.locker.back='outfit';}store.set('bonk-prog',PROG);}
 const LVL_XP=600,levelOf=xp=>1+Math.floor(xp/LVL_XP);
 const CHAL_DEFS=[{id:'kos',text:'Knock out 8 enemies',n:8},{id:'chests',text:'Open 6 chests',n:6},{id:'build',text:'Build 30 pieces',n:30},{id:'drive',text:'Drive 4,000 units in a car',n:4000},
   {id:'heal',text:'Use 4 healing or shield items',n:4},{id:'llama',text:'Open a Loot Llama',n:1},{id:'vend',text:'Buy from a vending machine',n:1},{id:'win',text:'Win any match',n:1},
