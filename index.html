@@ -404,6 +404,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
           <input type="radio" name="mode" id="modeFloorlava" value="floorlava"><label for="modeFloorlava"><i>🌋</i>Floor is Lava</label>
           <input type="radio" name="mode" id="modeCrown" value="crown"><label for="modeCrown"><i>👑</i>Capture the Crown</label>
           <input type="radio" name="mode" id="modeCtf" value="ctf"><label for="modeCtf"><i>🚩</i>Capture the Flag</label>
+          <input type="radio" name="mode" id="modeSiege" value="siege"><label for="modeSiege"><i>🏰</i>Fort Siege</label>
           <input type="radio" name="mode" id="modeKoth" value="koth"><label for="modeKoth"><i>⛰️</i>King of the Hill</label>
           <input type="radio" name="mode" id="modeBuildbattle" value="buildbattle"><label for="modeBuildbattle"><i>🏗️</i>Build Battle</label>
           <input type="radio" name="mode" id="modeTraining" value="training"><label for="modeTraining"><i>🎯</i>Training Room</label><input type="radio" name="mode" id="modeRobot" value="robot"><label for="modeRobot"><i>🤖</i>Mega Robot</label><input type="radio" name="mode" id="modeShow" value="show"><label for="modeShow"><i>🎤</i>Mr. Bonk's Show</label>
@@ -624,7 +625,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
       <p>Nobody really gets hurt: when you get bonked, a friendly rescue drone carries you away and drops you back in.</p>
       <h3>What's inside</h3>
       <ul>
-        <li>🎮 13 game modes: Battle Royale, Team Battle, Zombie Survival, Car Race, Plane Race, Floor is Lava, Capture the Crown, Capture the Flag, King of the Hill, Build Battle, the Training Room, Mr. Bonk's Challenge Show and the Mega Robot</li>
+        <li>🎮 14 game modes: Battle Royale, Team Battle, Zombie Survival, Car Race, Plane Race, Floor is Lava, Capture the Crown, Capture the Flag, Fort Siege, King of the Hill, Build Battle, the Training Room, Mr. Bonk's Challenge Show and the Mega Robot</li>
         <li>🗺️ 10 maps, from Candy Land and a low-gravity Space Station to slippery Frozen Peaks and the Big City</li>
         <li>🔫 20+ weapons with Common to Legendary rarities, plus your very own Mythic Laser Blaster</li>
         <li>🔨 Building and editing, cars, loot llamas, vending machines and squads</li>
@@ -835,16 +836,17 @@ const WEAPONS={
   sniper:{name:'Foam Sniper',kind:'shot',dmg:55,speed:2600,life:0.9,cd:1.3,ammo:8,spread:0.002,rar:3,snd:'snipe',zoom:true,proj:'snipe'},
   minigun:{name:'Mini Blaster',kind:'shot',dmg:6,speed:1000,life:0.7,cd:0.05,ammo:200,spread:0.09,rar:3,snd:'pew2',spinup:0.5},
   rocket:{name:'Party Rocket',kind:'rocket',dmg:60,cd:1.4,ammo:4,rar:3,snd:'rocket'},
+  foamcannon:{name:'Foam Cannon',kind:'rocket',dmg:22,cd:1.2,ammo:30,rar:2,snd:'rocket',pdmg:90,prad:60}, // Fort Siege only: smashes built walls
   freeze:{name:'Freeze Ray',kind:'shot',dmg:10,speed:900,life:0.9,cd:0.9,ammo:10,spread:0.01,rar:2,snd:'freeze',proj:'ice'},
   bubble:{name:'Bubble Gun',kind:'shot',dmg:12,speed:420,life:1.6,cd:0.8,ammo:12,spread:0.02,rar:2,snd:'blub',proj:'bubble'},
   ultra:{name:'ULTRA RIFLE',kind:'ultra',dmg:100,cd:0.7,ammo:8,rar:4,snd:'ultra'},
   laser:{name:'MYTHIC LASER BLASTER',kind:'laser',dmg:100,cd:0.1,rar:5,snd:'laser',zoom:true}
 };
-const RATING={laser:12,fists:1,bat:3,nunchucks:3,sword:4,hammer:5,pistol:3.5,rapid:5,shotgun:4.5,chicken:4,banana:2,grenade:4,burst:5,sniper:6,minigun:6,rocket:6,freeze:4.5,bubble:4.5,ultra:10,bandage:2,medkit:3,smallshield:3,bigshield:4};
+const RATING={laser:12,fists:1,bat:3,nunchucks:3,sword:4,hammer:5,pistol:3.5,rapid:5,shotgun:4.5,chicken:4,banana:2,grenade:4,burst:5,sniper:6,minigun:6,rocket:6,foamcannon:5,freeze:4.5,bubble:4.5,ultra:10,bandage:2,medkit:3,smallshield:3,bigshield:4};
 const RAR_COL=['#9aa3ad','#5cc04a','#3a8ee6','#a057e0','#ffb300','#ff3df5'];
 const FLOOR_LOOT=['bat','bat','nunchucks','nunchucks','pistol','pistol','pistol','sword','rapid','rapid','chicken','chicken','shotgun','hammer','grenade','banana','burst','burst','sniper','freeze','freeze','bubble','bubble','minigun','rocket','bandage','bandage','bandage','smallshield','smallshield','smallshield','bigshield','medkit'];
 const CHEST_LOOT=['sword','sword','rapid','rapid','chicken','chicken','shotgun','shotgun','hammer','grenade','grenade','banana','bat','nunchucks','burst','burst','sniper','sniper','minigun','minigun','rocket','rocket','freeze','bubble','smallshield','smallshield','bigshield','bigshield','medkit','bandage'];
-const VERB={laser:'LASERED',fists:'pickaxed',bat:'bonked',nunchucks:'whapped',sword:'swished',hammer:'boinged',pistol:'foamed',rapid:'blasted',shotgun:'splatted',chicken:'chickened',banana:'banana-slipped',grenade:'confetti-popped',ultra:'ULTRA-zapped',zombie:'chomped',car:'car-bonked',burst:'burst-blasted',sniper:'sniped',minigun:'mini-blasted',rocket:'party-rocketed',freeze:'froze',bubble:'bubbled',balloon:'water-ballooned',foam:'foam-blasted'};
+const VERB={foamcannon:'foam-blasted',laser:'LASERED',fists:'pickaxed',bat:'bonked',nunchucks:'whapped',sword:'swished',hammer:'boinged',pistol:'foamed',rapid:'blasted',shotgun:'splatted',chicken:'chickened',banana:'banana-slipped',grenade:'confetti-popped',ultra:'ULTRA-zapped',zombie:'chomped',car:'car-bonked',burst:'burst-blasted',sniper:'sniped',minigun:'mini-blasted',rocket:'party-rocketed',freeze:'froze',bubble:'bubbled',balloon:'water-ballooned',foam:'foam-blasted'};
 function drawWeapon(g,id,t=0){ // 2D icon art for the HUD
   switch(id){
     case 'fists':g.fillStyle='#8a5a2b';g.fillRect(0,-1.6,26,3.2);g.fillStyle='#9b6bff';g.fillRect(4,-2,5,4);g.fillStyle='#b8c0cc';g.beginPath();g.moveTo(22,-12);g.quadraticCurveTo(30,0,22,12);g.lineTo(26,12);g.quadraticCurveTo(34,0,26,-12);g.closePath();g.fill();break;
@@ -865,6 +867,7 @@ function drawWeapon(g,id,t=0){ // 2D icon art for the HUD
     case 'sniper':g.fillStyle='#2e8b57';rr(g,-4,-3.5,48,7,2);g.fill();g.fillStyle='#2b2f3a';g.fillRect(44,-1.5,10,3);g.fillRect(10,-10,16,5);g.fillStyle='#43f6ff';g.fillRect(24,-9,2,3);g.fillStyle='#ff8a00';g.fillRect(-8,-2,6,7);break;
     case 'minigun':g.fillStyle='#8f98a3';for(const y of[-4,0,4])g.fillRect(18,y-1.2,22,2.4);g.fillStyle='#e2312b';rr(g,-2,-6,22,12,3);g.fill();g.fillStyle='#ffcb1f';g.fillRect(4,4,8,7);break;
     case 'rocket':g.fillStyle='#3aa845';rr(g,-4,-5,40,10,4);g.fill();g.fillStyle='#ff4fa3';g.beginPath();g.moveTo(36,-5);g.lineTo(46,0);g.lineTo(36,5);g.fill();g.fillStyle='#2b2f3a';g.fillRect(8,4,5,7);g.fillStyle='#ffcb1f';g.fillRect(20,-7,6,2);break;
+    case 'foamcannon':g.fillStyle='#ff7b1c';rr(g,-4,-7,36,14,6);g.fill();g.fillStyle='#ffcb1f';g.beginPath();g.arc(34,0,8,0,TAU);g.fill();g.fillStyle='#2b2f3a';g.fillRect(8,6,5,7);break;
     case 'freeze':g.fillStyle='#bfe8ff';rr(g,-2,-4,26,8,3);g.fill();g.fillStyle='#43c6ff';g.beginPath();g.arc(28,0,6,0,TAU);g.fill();g.fillStyle='#ffffff';g.fillRect(25,-1,6,2);g.fillStyle='#1f6fd6';g.fillRect(4,3,5,7);break;
     case 'bubble':g.fillStyle='#ff9ad5';rr(g,-2,-4,22,8,3);g.fill();g.strokeStyle='#43c6ff';g.lineWidth=2;g.beginPath();g.arc(30,-2,7,0,TAU);g.stroke();g.beginPath();g.arc(38,-9,3.5,0,TAU);g.stroke();g.fillStyle='#ffcb1f';g.fillRect(4,3,5,7);break;
     case 'bandage':g.fillStyle='#ffffff';rr(g,6,-8,18,16,4);g.fill();g.strokeStyle='#c5ccd6';g.lineWidth=1;g.stroke();g.fillStyle='#e2312b';g.fillRect(13,-6,4,12);g.fillRect(9,-2,12,4);break;
@@ -1451,6 +1454,7 @@ function weaponModel(id){
     case 'burst':B('#9b6bff',0,2,10,6,8,30);B('#2b2f3a',0,3,28,3,3,8);B('#2b2f3a',0,-4,8,4,9,5);B('#ffcb1f',0,7,6,3,2.5,10);break;
     case 'sniper':B('#2e8b57',0,2,16,5,6,48);B('#2b2f3a',0,2.5,44,2.5,2.5,12);B('#2b2f3a',0,8,16,5,5,16);B('#43f6ff',0,8,24.5,3,3,1,1);B('#ff8a00',0,0,-6,4,8,8);break;
     case 'minigun':{B('#e2312b',0,2,6,10,11,22);B('#ffcb1f',0,-5,4,5,7,7);const bar=new THREE.Group();bar.position.set(0,2,22);for(let k=0;k<6;k++){const a=k*TAU/6;const m=new THREE.Mesh(GEO.boxC,mat('#8f98a3'));m.scale.set(2,2,24);m.position.set(Math.cos(a)*3.2,Math.sin(a)*3.2,10);bar.add(m);}g.add(bar);g.userData.spin=bar;break;}
+    case 'foamcannon':{const t=new THREE.Mesh(GEO.cylC,mat('#ff7b1c'));t.scale.set(13,36,13);t.rotation.x=Math.PI/2;t.position.set(0,6,10);g.add(t);Sp('#ffcb1f',0,6,29,12,12,6);B('#2b2f3a',0,-4,4,4,9,5);break;}
     case 'rocket':{const t=new THREE.Mesh(GEO.cylC,mat('#3aa845'));t.scale.set(10,40,10);t.rotation.x=Math.PI/2;t.position.set(0,6,10);g.add(t);const n=new THREE.Mesh(GEO.cone,mat('#ff4fa3'));n.scale.set(9,10,9);n.rotation.x=Math.PI/2;n.position.set(0,6,30);g.add(n);B('#2b2f3a',0,-3,4,4,9,5);B('#ffcb1f',0,12,8,3,3,8);break;}
     case 'freeze':B('#bfe8ff',0,2,8,6,7,24);Sp('#43c6ff',0,2,22,10,10,10);B('#ffffff',0,2,27,2,2,4,1);B('#1f6fd6',0,-4,4,4,9,5);break;
     case 'bubble':B('#ff9ad5',0,2,8,6,7,20);{const s=new THREE.Mesh(GEO.sphC,new THREE.MeshLambertMaterial({color:0xbfe8ff,transparent:true,opacity:0.55}));s.scale.set(11,11,11);s.position.set(0,4,22);g.add(s);}B('#ffcb1f',0,-4,4,4,9,5);break;
@@ -2100,7 +2104,7 @@ function newGame(){
   const names=BOT_NAMES.slice().sort(()=>Math.random()-.5);
   if(mode==='royale'){for(let k=0;k<opts.bots;k++)G.chars.push(makeChar(names[k],TORSO[k%TORSO.length],false));
     if(G.squad>1)G.chars.forEach((c,i)=>{c.team='sq'+Math.floor(i/G.squad);c.offX=rand(-70,70);c.offY=rand(-70,70);});}
-  else if(mode==='team'||mode==='ctf'){p.team='red';const total=opts.bots+1,redN=Math.ceil(total/2);
+  else if(mode==='team'||mode==='ctf'||mode==='siege'){p.team='red';const total=opts.bots+1,redN=Math.ceil(total/2);
     for(let k=0;k<opts.bots;k++){const red=k<redN-1;const c=makeChar(names[k],red?RED_T[k%8]:BLUE_T[k%8],false);c.team=red?'red':'blue';G.chars.push(c);}
     const placed=[];for(const c of G.chars){const b=BASES[c.team];const s=freeSpot(b.x,b.y,380,70,placed);c.x=s.x;c.y=s.y;placed.push(c);c.face=Math.atan2(WORLD/2-c.y,WORLD/2-c.x);}}
   else if(mode==='zombie'){p.team='hero';const s=freeSpot(WORLD/2,WORLD/2,300,0,null);p.x=s.x;p.y=s.y;}
@@ -2203,7 +2207,7 @@ function fireInner(c,dir){
   switch(w.kind){
     case 'melee':c.swingT=0.25;sfx(w.snd,c);meleeHit(c,w,s.id,yaw,mul);break;
     case 'shot':shoot(c,w,s.id,dir,mul);s.ammo--;sfx(w.snd,c);c.swingT=0.08;if(w.burst){c.burstQ=w.burst-1;c.burstT=0.08;c.burstDir=dir;c.burstW=s.id;}break;
-    case 'rocket':G.projs.push({t:'rocket',x:h.x,y:h.y,z:h.z,vx:dir.x*680,vy:dir.y*680,vz:dir.z*680,life:2.2,dmg:w.dmg*mul,owner:c,wid:'rocket'});s.ammo--;sfx('rocket',c);c.swingT=0.08;break;
+    case 'rocket':G.projs.push({t:'rocket',x:h.x,y:h.y,z:h.z,vx:dir.x*680,vy:dir.y*680,vz:dir.z*680,life:2.2,dmg:w.dmg*mul,owner:c,wid:w.pdmg?s.id:'rocket',pdmg:w.pdmg,prad:w.prad});s.ammo--;sfx('rocket',c);c.swingT=0.08;break;
     case 'chicken':G.projs.push({t:'chicken',x:h.x,y:h.y,z:h.z,vx:dir.x*560,vy:dir.y*560,vz:dir.z*560,life:1.4,dmg:w.dmg*mul,owner:c,wid:'chicken',bounces:2,hit:new Set()});s.ammo--;sfx('squawk',c);break;
     case 'trap':if(!NETC())G.traps.push({x:c.x-Math.cos(yaw)*20,y:c.y-Math.sin(yaw)*20,z:c.z,owner:c,life:45,arm:0.4});s.ammo--;sfx('drop',c);break;
     case 'grenade':G.projs.push({t:'grenade',x:h.x,y:h.y,z:h.z,vx:dir.x*470,vy:dir.y*470,vz:dir.z*470+180,t0:0,fuse:1.6,dmg:w.dmg*mul,owner:c,wid:'grenade'});s.ammo--;sfx('toss',c);break;
@@ -2257,9 +2261,9 @@ function addBeam(x0,y0,z0,x1,y1,z1,c1='#ffc21a',c2='#e9feff',w=14,life=0.35){if(
   g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize());scene.add(g);G.beams.push({mesh:g,life,max:life,m1,m2});}
 function explode(p){
   const wb=p.t==='balloon'; // a water balloon from a plane: a blue SPLASH instead of a confetti POP
-  burst(p.x,p.y,p.z+10,wb?50:90,'confetti',wb?'#43c6ff':null,300);burst(p.x,p.y,p.z+10,12,'puff','#ffffff',100);addText(p.x,p.y,p.z+50,wb?'SPLASH!':'POP!',wb?'#43c6ff':'#ff4fa3',24);sfx(wb?'blub':'boom',p);
+  burst(p.x,p.y,p.z+10,wb?50:90,'confetti',wb?'#43c6ff':null,300);burst(p.x,p.y,p.z+10,12,'puff','#ffffff',100);addText(p.x,p.y,p.z+50,wb?'SPLASH!':p.t==='boulder'?'SPLAT!':'POP!',wb?'#43c6ff':p.t==='boulder'?'#ff7b1c':'#ff4fa3',p.t==='boulder'?30:24);sfx(wb?'blub':'boom',p);
   for(const o of G.chars){if(!isEnemy(p.owner,o)||o.state!=='alive')continue;const dx=o.x-p.x,dy=o.y-p.y,dz=o.z+20-p.z,d=Math.hypot(dx,dy,dz)||1;if(d<130)damage(o,p.dmg*(1-d/260),p.owner,p.wid||'grenade',dx/d*380,dy/d*380);}
-  for(const q of G.pieces.slice()){if(Math.hypot(q.cx-p.x,q.cy-p.y,q.ob.z0+40-p.z)<130)damagePiece(q,70);}
+  for(const q of G.pieces.slice()){if(Math.hypot(q.cx-p.x,q.cy-p.y,q.ob.z0+40-p.z)<(p.prad||130))damagePiece(q,p.pdmg||70);} // (Fort Siege's foam cannon and catapult boulders smash walls harder)
   for(const car of G.cars){if(!car.dead&&car.driver!==p.owner&&Math.hypot(car.x-p.x,car.y-p.y,car.z+(car.h||28)/2-p.z)<116+(car.r||24))damageCar(car,90,p.owner);}
   if(Math.hypot(p.x-G.player.x,p.y-G.player.y)<500)G.shake=Math.max(G.shake,6);
 }
@@ -2707,7 +2711,7 @@ function touchActNow(p){if(!G||G.ended||!p)return null;
   if(p.vehicle){if(G.mode==='race'||G.mode==='airrace')return p.raceCar&&G.time>G.goAt?{k:'reset',l:G.mode==='race'?'RESET CAR':'RESET PLANE',i:'🔄'}:null;return p.vehicle.boss?null:{k:'exit',l:'GET OUT',i:'🚪'};}
   if(p.state!=='alive')return null;const rv=reviveTarget(p);if(rv)return{k:'revive',l:'REVIVE',i:'➕',hold:1};
   const ni=nearInteract(p);if(ni)return ni.type==='llama'?{k:'llama',l:'OPEN',i:'🦙'}:{k:'vend',l:'BUY · '+ni.o.cost.n+' '+ni.o.cost.mat,i:'🛒'};
-  if(G.mode!=='race'&&nearestCar(p))return nearestCar(p).kind==='mech'?{k:'drive',l:'MECH',i:'🤖'}:nearestCar(p).kind==='board'?{k:'drive',l:'RIDE',i:'🛹'}:{k:'drive',l:'DRIVE',i:'🚗'};if(G.swap)return{k:'swap',l:'SWAP',i:'🔁'};return null;}
+  if(G.mode!=='race'&&nearestCar(p))return nearestCar(p).kind==='mech'?{k:'drive',l:'MECH',i:'🤖'}:nearestCar(p).kind==='board'?{k:'drive',l:'RIDE',i:'🛹'}:nearestCar(p).kind==='catapult'?{k:'drive',l:'CATAPULT',i:'🏰'}:{k:'drive',l:'DRIVE',i:'🚗'};if(G.swap)return{k:'swap',l:'SWAP',i:'🔁'};return null;}
 function setBuildUI(on){TOUCH.buildUI=on;if(!G)return;if(on){if(!G.buildMode)G.buildMode=TOUCH.lastPiece||'wall';sfx('pickup',G.player);}else{G.buildMode=null;buildHeld=false;}}
 function tAct(a,down){const p=G&&G.player;if(a==='pause'){if(down&&G&&!G.ended)setPaused(true);return;}if(a==='sound'){if(down){audioInit();setMuted(!AU.muted);}return;}
   if(a==='jump')TOUCH.jumpHeld=!!down;if(!G||G.ended||G.paused)return;if(a==='hook'||a==='speed'){if(down)gadgetKey(a==='hook'?'h':'u');return;}if(a==='score'){if(down){SB_OPEN=!SB_OPEN;renderScoreboard();}return;}if(a==='jump'&&G.net&&G.player.eliminated){if(down)specNext();return;}if(a==='auto'&&NETC()){if(down)netJoinerAuto();return;}if(NETC()&&netTouch(a,down))return;const A=TACT[a];if(a==='auto'){if(down)setAutopilot(!G.auto);return;}
@@ -3012,7 +3016,7 @@ function updateCars(dt){
     if(car.dead){if(G.time>=car.respawnAt&&!G.chars.some(c=>Math.hypot(c.x-car.home.x,c.y-car.home.y)<70)){
         Object.assign(car,{dead:false,hp:car.maxHp||400,x:car.home.x,y:car.home.y,z:groundAt(car.home.x,car.home.y,10),ang:car.home.ang,speed:0,vx:0,vy:0,vz:0,onGround:true});car.m.visible=true;burst(car.x,car.y,car.z+10,16,'puff','#ffffff',100);}continue;}
     const d=car.driver;let thr=0,str=0;const me=d&&(d.isPlayer||d.remote)&&!G.victory&&!G.paused,K=k=>d.remote?d.rkeys.has(k):keys.has(k);
-    if(car.kind==='mech')mechDrive(car,d,me,K,dt);else if(car.kind==='plane')planeDrive(car,d,me,K,dt);else if(car.kind==='boat')boatDrive(car,d,me,K,dt);else if(car.kind==='board')boardDrive(car,d,me,K,dt);else{
+    if(car.kind==='mech')mechDrive(car,d,me,K,dt);else if(car.kind==='plane')planeDrive(car,d,me,K,dt);else if(car.kind==='boat')boatDrive(car,d,me,K,dt);else if(car.kind==='board')boardDrive(car,d,me,K,dt);else if(car.kind==='catapult')catapultDrive(car,d,me,K,dt);else{
     if(me&&autoOn(d)){const r=XM[G.mode]&&XM[G.mode].drive?XM[G.mode].drive(car,dt):carAuto(car,dt);thr=r.thr;str=r.str;}
     else if(me){if(K('w')||K('arrowup'))thr=1;if(K('s')||K('arrowdown'))thr=-1;if(K('a')||K('arrowleft'))str=-1;if(K('d')||K('arrowright'))str=1;}
     else if(d&&!d.isPlayer&&!d.remote&&XM[G.mode]&&XM[G.mode].drive){const r=XM[G.mode].drive(car,dt);thr=r.thr;str=r.str;}
@@ -3076,8 +3080,8 @@ function mechModel(col,boss,scale){const g=new THREE.Group(),dark=shadeHex(col,0
   if(boss){const cr=piv(torso,0,52,-14);for(let k=0;k<5;k++){const a=(k-2)*0.32;B(cr,'#ffcb1f',Math.sin(a)*16,4,0,4,10,4,0.4,'cone');}B(cr,'#ffcb1f',0,-1,0,30,4,6,0.3);g.scale.setScalar(scale||BOSS.scale);}
   g.userData={legs,shins,arms,torso};scene.add(g);return g;}
 // the parts that make a vehicle a car, a mech or a boss mech (kind: 'car' | 'mech' | 'boss')
-function vehBits(kind,col){const mega=kind==='mega',mech=kind==='mech'||kind==='boss'||mega,boss=kind==='boss'||mega,s=mega?MEGA.scale:boss?BOSS.scale:1,plane=kind==='plane',boat=kind==='boat',board=kind==='board',hp=mega?MEGA.hp:boss?BOSS.hp:mech?MECH.hp:plane?300:board?250:400;
-  return{kind:mech?'mech':plane||boat||board?kind:'car',boss,mega,r:mech?MECH.r*s:plane?36:boat?32:board?16:24,h:mech?MECH.h*s:plane?30:boat?24:board?14:28,seat:mech?MECH.seat*s:5,hp,maxHp:hp,m:mech?mechModel(col,boss,s):plane?planeModel(col):boat?boatModel(col):board?boardModel(col):carModel(col)};}
+function vehBits(kind,col){const mega=kind==='mega',mech=kind==='mech'||kind==='boss'||mega,boss=kind==='boss'||mega,s=mega?MEGA.scale:boss?BOSS.scale:1,plane=kind==='plane',boat=kind==='boat',board=kind==='board',cat=kind==='catapult',hp=mega?MEGA.hp:boss?BOSS.hp:mech?MECH.hp:plane?300:board?250:400;
+  return{kind:mech?'mech':plane||boat||board||cat?kind:'car',boss,mega,r:mech?MECH.r*s:plane?36:boat?32:board?16:cat?26:24,h:mech?MECH.h*s:plane?30:boat?24:board?14:cat?40:28,seat:mech?MECH.seat*s:cat?16:5,hp,maxHp:hp,m:mech?mechModel(col,boss,s):plane?planeModel(col):boat?boatModel(col):board?boardModel(col):cat?catapultModel(col):carModel(col)};}
 function newVehicle(x,y,ang,col,kind){return{x,y,z:groundAt(x,y,10),vz:0,ang,speed:0,vx:0,vy:0,steer:0,driver:null,col,home:{x,y,ang},dead:false,respawnAt:0,onGround:true,padCd:0,wheelRot:0,walkT:0,cd:0,...vehBits(kind,col)};}
 const MECH_COLS=['#7d8796','#ff7b1c','#1f6fd6','#3aa845'];
 function spawnMechs(){const want=Math.round(2*K);
@@ -3964,6 +3968,156 @@ XM.airrace={name:'Plane Race',laps:3,
   cleanup(){if(G.cpM)for(const g of G.cpM)scene.remove(g);if(G.airArrow){scene.remove(G.airArrow);G.airArrow=null;}},
   end(p,b){const car=p.raceCar||{};return endFFA(p,b,'Plane Race: '+this.laps+' laps.',e=>e.c.raceCar&&e.c.raceCar.finished?'finished':'lap '+Math.min(this.laps,(e.c.raceCar?e.c.raceCar.lap:0)+1),
     me=>[['#'+me.place,'Finish'],[car.finishT?fmt(car.finishT):'—','Race time'],[Math.min(this.laps,car.lap||0)+' / '+this.laps,'Laps done']]);}};
+// @module src/js/29d-siege.js: Fort Siege: one team builds a fort around its treasure chest, the other team attacks with foam cannons and catapults to steal it; then the teams switch. Includes the catapult vehicle, the fort blueprint the bots build, and the bots' plans.
+// Main: XM.siege, SIEGE, SIEGE_NET, siegeSite, siegeBlueprint, catapultModel, catapultDrive, catapultFire, treasureModel
+// See also: modes-extra (XM, MODEFLAGS, BASES), building (placePiece, damagePiece), cars (updateCars drives the catapults), combat (explode: the foam boulders), net-mode-state (XMNET.siege)
+/* ================= Fort Siege =================
+   Two halves. In each half one team defends and the other attacks:
+   - Build (45 s): the defenders build a fort around their treasure chest (building is free, and what they build is three times as tough). The bots build the fort's plan:
+     a stone box with a roof right around the treasure, inside a ring of wooden walls. The attackers wait at their camp.
+   - Siege (2 minutes): the attackers break in with Foam Cannons (they smash walls) and two catapults that lob big foam
+     boulders, grab the treasure and carry it back to their camp. A steal scores 100 points plus the seconds left.
+   Then the teams switch. The most points after both halves wins (no steals at all: a tie, both forts held).
+   The host runs everything; joiners get the state through SIEGE_NET and a 'tp' message when they are moved. */
+MODEFLAGS.siege={noLoot:1,noCars:1};
+MODES.siege={desc:'Two teams take turns. One team builds a fort around its treasure chest, then the other team attacks with foam cannons and catapults to steal it and carry it home. Then you switch! The fastest steal wins.'};
+const SIEGE={build:45,siege:120,swap:6};
+// ---- the fort: a 3 x 3 block of tiles on open ground, between the defenders' base and the middle of the island
+function siegeSite(team){const b=BASES[team],gx=lerp(b.x,WORLD/2,0.55),gy=lerp(b.y,WORLD/2,0.55),c0=Math.floor(gx/T),r0=Math.floor(gy/T);
+  const ok=(ci,cj)=>{for(let j=cj-2;j<=cj+2;j++)for(let i=ci-2;i<=ci+2;i++){if(i<1||j<1||i>=N-1||j>=N-1)return false;const k=TILE[i+j*N],x=(i+0.5)*T,y=(j+0.5)*T;
+      if(!(k===0||k===1||k===5)||pointBlocked(x,y,30)||PADS.some(p=>Math.hypot(p.x-x,p.y-y)<70))return false;}return true;};
+  for(let r=0;r<12;r++)for(let dj=-r;dj<=r;dj++)for(let di=-r;di<=r;di++){if(Math.max(Math.abs(di),Math.abs(dj))!==r)continue;if(ok(c0+di,r0+dj))return{ci:c0+di,cj:r0+dj,x:(c0+di+0.5)*T,y:(r0+dj+0.5)*T};}
+  return{ci:c0,cj:r0,x:(c0+0.5)*T,y:(r0+0.5)*T};}
+// the plan the bots build: stone walls two high and a roof right around the treasure, and a ring of wooden walls around that
+function siegeBlueprint(s){const L=[],wall=(x,y,alongY,lv,m)=>L.push({ob:alongY?{t:'box',x:x-5,y,w:10,d:T,z0:lv*80,h:80}:{t:'box',x,y:y-5,w:T,d:10,z0:lv*80,h:80},m}),ci=s.ci,cj=s.cj;
+  for(const lv of[0,1]){wall(ci*T,cj*T,true,lv,'stone');wall((ci+1)*T,cj*T,true,lv,'stone');wall(ci*T,cj*T,false,lv,'stone');wall(ci*T,(cj+1)*T,false,lv,'stone');}
+  L.push({ob:{t:'box',x:ci*T,y:cj*T,w:T,d:T,z0:154,h:6},m:'stone'});
+  for(let k=-1;k<=1;k++){wall((ci-1)*T,(cj+k)*T,true,0,'wood');wall((ci+2)*T,(cj+k)*T,true,0,'wood');wall((ci+k)*T,(cj-1)*T,false,0,'wood');wall((ci+k)*T,(cj+2)*T,false,0,'wood');}
+  for(const p of L)Object.assign(p.ob,{kind:p.ob.h===6?'floor':'wall'});return L;}
+// the treasure chest: a golden chest with a tall beam of light so everyone can find it
+function treasureModel(){const g=new THREE.Group(),B=(c,x,y,z,w,h,d,glow)=>{const m=new THREE.Mesh(GEO.boxC,glow?basic(c):mat(c));m.position.set(x,y,z);m.scale.set(w,h,d);g.add(m);return m;};
+  B('#a0632e',0,9,0,30,18,20);B('#ffcb1f',0,20,0,32,6,22);B('#ffcb1f',0,9,10.5,6,8,1);for(const x of[-8,0,8])B('#fff3a0',x,24,0,6,4,6,true);
+  const beam=new THREE.Mesh(GEO.cylC,basic('#ffcb1f',{transparent:true,opacity:0.25,depthWrite:false}));beam.scale.set(10,600,10);beam.position.y=300;g.add(beam);g.userData.beam=beam;scene.add(g);return g;}
+function siegeCampModel(team){const g=new THREE.Group(),ring=new THREE.Mesh(new THREE.TorusGeometry(80,4,6,40).rotateX(Math.PI/2),basic(team==='red'?'#e2312b':'#1f6fd6'));ring.position.y=2;g.add(ring);
+  const f=flagModel(team);g.add(f);f.position.set(0,0,0);scene.add(g);return g;}
+// ---- the catapult: drive it slowly, and click to lob a big foam boulder at where you aim (it breaks walls)
+function catapultModel(col){const g=new THREE.Group(),B=(c,x,y,z,w,h,d,geo)=>{const m=new THREE.Mesh(GEO[geo||'boxC'],mat(c));m.position.set(x,y,z);m.scale.set(w,h,d);m.castShadow=true;g.add(m);return m;};
+  B('#8a5a2b',0,10,0,34,6,56);B('#8a5a2b',-14,22,-6,4,26,4);B('#8a5a2b',14,22,-6,4,26,4);B('#6b4a2b',0,34,-6,34,4,4);B(col,0,14,-22,30,6,6);
+  const wheels=[];for(const[x,z]of[[-19,-18],[19,-18],[-19,18],[19,18]]){const w=B('#2b2f3a',x,9,z,4,18,18,'cylC');w.rotation.z=Math.PI/2;wheels.push(w);}
+  const arm=new THREE.Group();arm.position.set(0,34,-6);const a=new THREE.Mesh(GEO.boxC,mat('#a0632e'));a.scale.set(4,4,46);a.position.z=20;arm.add(a);const cup=new THREE.Mesh(GEO.sphC,mat(col));cup.scale.set(14,7,14);cup.position.set(0,3,42);arm.add(cup);
+  arm.rotation.x=0.5;g.add(arm);g.userData.arm=arm;g.userData.wheels=wheels;scene.add(g);return g;}
+function catapultFire(car,d,tx,ty){const dx=tx-car.x,dy=ty-car.y,R=clamp(Math.hypot(dx,dy),150,1300),a=Math.atan2(dy,dx),s=Math.sqrt(R*700)*Math.SQRT1_2;car.ang=a;car.cd=3;car.armT=0.6;
+  G.projs.push({t:'boulder',x:car.x+Math.cos(a)*24,y:car.y+Math.sin(a)*24,z:car.z+40,vx:Math.cos(a)*s,vy:Math.sin(a)*s,vz:s,t0:0,fuse:2*s/700+0.6,dmg:30,pdmg:160,prad:110,owner:d,wid:'foamcannon'});sfx('toss',car);}
+function catapultDrive(car,d,me,K,dt){car.cd=Math.max(0,(car.cd||0)-dt);car.armT=Math.max(0,(car.armT||0)-dt);let thr=0,str=0;
+  if(me&&!autoOn(d)){thr=(K('w')||K('arrowup')?1:0)-(K('s')||K('arrowdown')?1:0);str=(K('d')||K('arrowright')?1:0)-(K('a')||K('arrowleft')?1:0);
+    if(craftFiring(car,d,me)){if(d.remote){const yaw=d.rin.yaw||car.ang,R=clamp(250+Math.max(0,(d.rin.pitch||0)+0.35)*1500,200,1300);catapultFire(car,d,car.x+Math.cos(yaw)*R,car.y+Math.sin(yaw)*R);}else{const P=aimPoint();catapultFire(car,d,P.x,P.y);}}}
+  else if(d&&G.sg&&G.sg.phase==='siege'){const s=G.sg.site,dist0=Math.hypot(s.x-car.x,s.y-car.y),want=Math.atan2(s.y-car.y,s.x-car.x);
+    if(dist0>620){let a=want;const free=b=>!pointBlocked(car.x+Math.cos(b)*60,car.y+Math.sin(b)*60,28)&&!isBad(car.x+Math.cos(b)*60,car.y+Math.sin(b)*60);
+      if(!free(want))for(const o of[0.5,-0.5,1,-1,1.5,-1.5,2.2,-2.2]){if(free(want+o)){a=want+o;break;}}thr=1;str=clamp(angDiff(car.ang,a)*2,-1,1);}else if(car.cd<=0)catapultFire(car,d,s.x+rand(-40,40),s.y+rand(-40,40));}
+  car.speed=thr>0?Math.min(100,car.speed+120*dt):thr<0?Math.max(-60,car.speed-160*dt):car.speed*Math.exp(-2*dt);car.ang+=str*1.1*dt;
+  car.vx=Math.cos(car.ang)*car.speed;car.vy=Math.sin(car.ang)*car.speed;car.wheelRot+=car.speed*dt/9;
+  const arm=car.m&&car.m.userData.arm;if(arm)arm.rotation.x=car.armT>0?lerp(0.5,-1.1,Math.min(1,(0.6-car.armT)*6)):lerp(arm.rotation.x,0.5,Math.min(1,dt*2));}
+// ---- the mode
+const siegeOther=t=>t==='red'?'blue':'red';
+XM.siege={name:'Fort Siege',
+  init(){MODEFLAGS.siege.freeBuild=1;G.score={red:0,blue:0};G.len=2*(SIEGE.build+SIEGE.siege+SIEGE.swap);
+    G.sg={half:0,phase:'swap',end:G.time,def:'blue',site:null,camp:null,plan:[],tr:null,steal:{red:null,blue:null},trM:treasureModel(),campM:null};
+    // two catapults for the attackers (moved to the attackers' camp each half)
+    G.cars=[];for(let k=0;k<2;k++){const v=newVehicle(WORLD/2+k*80,WORLD/2,0,k?'#1f6fd6':'#e2312b','catapult');v.hp=v.maxHp=1e6;G.cars.push(v);}
+    G.chars.filter(c=>!c.isPlayer).forEach((c,i)=>{c.ai.role=i%2?'guard':'roam';});
+    this.half(1);},
+  // a new half: the fort is cleared away, the teams switch, everyone goes to their side
+  half(h){const S=G.sg;S.half=h;S.def=h===1?'red':'blue';const att=siegeOther(S.def);
+    for(const q of G.pieces){q.dead=true;for(const o of q.parts)removeOb(o);scene.remove(q.mesh);}G.pieces.length=0;
+    S.site=siegeSite(S.def);S.plan=siegeBlueprint(S.site);S.tr={x:S.site.x,y:S.site.y,z:groundAt(S.site.x,S.site.y,10),home:true,carrier:null,dropT:0};
+    // the attackers' camp: open ground about 1250 from the fort, toward the attackers' base
+    const ca=Math.atan2(BASES[att].y-S.site.y,BASES[att].x-S.site.x);let a=null;
+    for(const r of[1250,1100,1400,950,1550])for(const o of[0,0.3,-0.3,0.6,-0.6,0.9,-0.9]){if(a)break;const x=S.site.x+Math.cos(ca+o)*r,y=S.site.y+Math.sin(ca+o)*r;
+      if(x>200&&y>200&&x<WORLD-200&&y<WORLD-200&&!pointBlocked(x,y,60)&&!isBad(x,y)&&!inBuilding(x,y,80))a={x,y};}
+    if(!a)a=freeSpot(clamp(S.site.x+Math.cos(ca)*1250,200,WORLD-200),clamp(S.site.y+Math.sin(ca)*1250,200,WORLD-200),200,0,null);S.camp={x:a.x,y:a.y};
+    if(S.campM)scene.remove(S.campM);S.campM=siegeCampModel(att);S.campM.position.set(a.x,groundAt(a.x,a.y,10),a.y);
+    G.cars.forEach((v,k)=>{if(v.driver)exitCar(v.driver);const ang=Math.atan2(S.site.y-a.y,S.site.x-a.x),x=a.x+Math.cos(ang+Math.PI/2)*(k?110:-110),y=a.y+Math.sin(ang+Math.PI/2)*(k?110:-110);
+      Object.assign(v,{x,y,z:groundAt(x,y,10),ang,speed:0,vx:0,vy:0,home:{x,y,ang}});});
+    const placed=G.cars.slice();for(const c of G.chars){if(c.vehicle)exitCar(c);if(c.state!=='alive')continue;const p=this.spot(c,placed);placed.push(p);showTp(c,p.x,p.y,S.site.x,S.site.y);c.sgBuild=null;this.loadout(c);}
+    MODEFLAGS.siege.freeBuild=1;S.phase='build';S.end=G.time+SIEGE.build;
+    const me=G.player.team===S.def;announce('Half '+h+': '+(S.def==='red'?'Red':'Blue')+' builds!',me?`Build a fort around your treasure! Building is free for ${SIEGE.build} seconds.`:`The ${S.def} team is building a fort. Get ready to attack!`,3.6);sfx('pickup');},
+  // where a character starts (and comes back after a drone rescue): defenders around the fort, attackers at their camp
+  spot(c,placed){const S=G.sg,away=placed||G.chars.filter(o=>o!==c&&o.state==='alive');if(c.team===S.def){const a=Math.random()*TAU;return freeSpot(S.site.x+Math.cos(a)*300,S.site.y+Math.sin(a)*300,120,50,away);}return freeSpot(S.camp.x,S.camp.y,200,50,away);},
+  spawn(c){return this.spot(c);},
+  hold(c){const S=G.sg;return!!(S&&S.phase==='build'&&c.team&&c.team!==S.def);},
+  // what each side carries: attackers a Foam Cannon and a Foam Pistol, defenders a Foam Pistol and a Baseball Bat (topped up all the time)
+  loadout(c){const S=G.sg,att=c.team!==S.def,want=att?['foamcannon','pistol']:['pistol','bat'];
+    want.forEach((id,i)=>{const s=c.slots[i+1];if(!s||s.id!==id)c.slots[i+1]={id,r:WEAPONS[id].rar,ammo:WEAPONS[id].ammo?Math.max(WEAPONS[id].ammo,30):undefined};else if(s.ammo!=null&&s.ammo<5)s.ammo=30;});},
+  update(dt){const S=G.sg,left=S.end-G.time,att=siegeOther(S.def),T0=S.tr;
+    for(const c of G.chars)if(c.state==='alive'&&c.team)this.loadout(c);
+    if(S.phase==='build'){
+      // the fort is built to last: pieces built in the build time are three times as tough
+      for(const q of G.pieces)if(!q.sgTough){q.sgTough=1;q.hp*=3;}
+      // the defending bots build the fort's plan, one piece every half second each, from outside it
+      for(const c of G.chars){if(c.isPlayer||c.remote||c.team!==S.def||c.state!=='alive')continue;c.sgT=(c.sgT||0)-dt;const p=c.sgBuild;if(!p||c.sgT>0)continue;
+        if(Math.hypot(p.ob.x+p.ob.w/2-c.x,p.ob.y+p.ob.d/2-c.y)<260&&!this.built(p)&&!G.chars.some(o=>o.state==='alive'&&inFoot(p.ob,o.x,o.y,14)&&o.z<p.ob.z0+p.ob.h&&o.z+CH>p.ob.z0)){placePiece(Object.assign({},p.ob),c,p.m);c.sgT=0.5;c.sgBuild=null;}}
+      if(left<=0){S.phase='siege';S.end=G.time+SIEGE.siege;MODEFLAGS.siege.freeBuild=0;const me=G.player.team===att;
+        announce('⚔️ ATTACK!',me?'Break into the fort, grab the treasure and carry it back to your camp!':'Defend your treasure! Bonk the attackers!',3);sfx('horn');
+        // two attacking bots jump into the catapults
+        G.cars.forEach(v=>{const b=G.chars.filter(c=>c.team===att&&!c.isPlayer&&!c.remote&&c.state==='alive'&&!c.vehicle).sort((p,q)=>Math.hypot(p.x-v.x,p.y-v.y)-Math.hypot(q.x-v.x,q.y-v.y))[0];if(b)enterCar(b,v);});}}
+    else if(S.phase==='siege'){
+      // the treasure: grab it (attackers), carry it home, drop it when bonked; a defender touching a dropped treasure sends it home
+      if(T0.carrier){const c=T0.carrier;
+        if(c.state!=='alive'){T0.carrier=null;T0.x=c.koX??c.x;T0.y=c.koY??c.y;T0.z=groundAt(T0.x,T0.y,c.z+10);T0.dropT=G.time;feed(nameTag(c)+' dropped the treasure!');}
+        else{T0.x=c.x-Math.cos(c.face)*10;T0.y=c.y-Math.sin(c.face)*10;T0.z=c.z;
+          if(Math.hypot(c.x-S.camp.x,c.y-S.camp.y)<90){this.stolen(c,left);return;}}}
+      else{if(!T0.home&&G.time-T0.dropT>20)this.home();
+        for(const c of G.chars){if(c.state!=='alive'||!c.team||c.vehicle||Math.hypot(c.x-T0.x,c.y-T0.y)>40||Math.abs(c.z-T0.z)>50)continue;
+          if(c.team===att){T0.carrier=c;T0.home=false;feed(nameTag(c)+' grabbed the treasure!');sfx('chest',c);if(c.isPlayer||c.remote)tellOrAnnounce(c,'You have the treasure!','Run it back to your camp!',2.6);else if(G.player.team===S.def)announce('They took the treasure!','Get it back!',2.2);break;}
+          else if(!T0.home){this.home();feed(nameTag(c)+' saved the treasure!');sfx('chest',c);break;}}}
+      // attacking bots near the fort blast the walls between them and the treasure
+      for(const c of G.chars){if(c.isPlayer||c.remote||c.team!==att||c.state!=='alive'||c.vehicle||T0.carrier)continue;c.sgT=(c.sgT||0)-dt;if(c.sgT>0||Math.hypot(T0.x-c.x,T0.y-c.y)>360)continue;
+        let wp=null,wd=1e9;for(const q of G.pieces){const d=Math.hypot(q.cx-c.x,q.cy-c.y);if(Math.hypot(q.cx-T0.x,q.cy-T0.y)<200&&d<wd&&q.ob.z0<100){wd=d;wp=q;}}
+        if(wp&&wd<300){const i=c.slots.findIndex(s=>s&&s.id==='foamcannon');if(i>=0&&c.cd<=0){c.cur=i;c.face=Math.atan2(wp.cy-c.y,wp.cx-c.x);fire(c,norm3({x:wp.cx-c.x,y:wp.cy-c.y,z:wp.ob.z0+30-c.z-30}));c.sgT=1.8;}}}
+      if(left<=0){S.phase='swap';S.end=G.time+SIEGE.swap;announce((S.def==='red'?'Red':'Blue')+"'s fort held!",'Nobody stole the treasure this time.',3);sfx(G.player.team===S.def?'victory':'lose');}}
+    else if(S.phase==='swap'&&left<=0){if(S.half<2)this.half(S.half+1);else this.finish();}},
+  built(p){const o=p.ob;return G.pieces.some(q=>q.ob.t===o.t&&Math.abs(q.ob.x-o.x)<1&&Math.abs(q.ob.y-o.y)<1&&Math.abs(q.ob.z0-o.z0)<1);},
+  home(){const S=G.sg,T0=S.tr;Object.assign(T0,{x:S.site.x,y:S.site.y,z:groundAt(S.site.x,S.site.y,10),home:true,carrier:null});},
+  stolen(c,left){const S=G.sg,t=SIEGE.siege-Math.max(0,left),pts=100+Math.max(0,Math.ceil(left));G.score[c.team]+=pts;S.steal[c.team]=t;S.tr.carrier=null;this.home();
+    S.phase='swap';S.end=G.time+SIEGE.swap;burst(c.x,c.y,c.z+40,80,'confetti',null,260);sfx('victory');feed(nameTag(c)+' stole the treasure!');
+    announce((c.team==='red'?'Red':'Blue')+' stole the treasure!',`In ${fmt(t)}: ${pts} points!`,3.2);},
+  finish(){if(G.endAt)return;const S=G.sg;S.phase='done';const myT=G.player.team,oth=siegeOther(myT);G.win=G.score[myT]>G.score[oth];G.draw=G.score.red===G.score.blue;G.endAt=G.time+(G.win?5:3);
+    if(G.win){startVictory();announce('#1 VICTORY BONK!','Your team pulled off the best steal!',4.6,'victory');sfx('victory');}
+    else if(G.draw)announce("It's a tie!",G.score.red?'Both teams stole the treasure just as fast!':'Both forts held!',3);else{announce((oth==='blue'?'Blue':'Red')+' team wins!','So close. Try again?',3);sfx('lose');}},
+  // the bots' plans: builders go to a piece of the plan, attackers go for the treasure (and its carrier goes home), defenders guard it
+  bot(c){const ai=c.ai,S=G.sg;if(!S||!S.tr)return;const T0=S.tr,att=c.team!==S.def;
+    if(S.phase==='build'){if(att)return;if(!c.sgBuild||this.built(c.sgBuild)){const mine=new Set(G.chars.map(o=>o!==c&&o.sgBuild).filter(Boolean));
+        let best=null,bd=1e9;for(const p of S.plan){if(this.built(p)||mine.has(p))continue;const d=Math.hypot(p.ob.x+p.ob.w/2-c.x,p.ob.y+p.ob.d/2-c.y)+p.ob.z0*2;if(d<bd){bd=d;best=p;}}c.sgBuild=best;}
+      if(c.sgBuild){const o=c.sgBuild.ob,px=o.x+o.w/2,py=o.y+o.d/2,a=Math.atan2(py-S.site.y,px-S.site.x);ai.mode='obj';ai.target=null;ai.gx=S.site.x+Math.cos(a)*200;ai.gy=S.site.y+Math.sin(a)*200;}
+      else if(Math.hypot(c.x-S.site.x,c.y-S.site.y)>320){ai.mode='obj';ai.gx=S.site.x+rand(-250,250);ai.gy=S.site.y+rand(-250,250);}return;}
+    if(S.phase!=='siege')return;
+    if(att){if(T0.carrier===c){ai.mode='obj';ai.gx=S.camp.x;ai.gy=S.camp.y;return;}
+      if(ai.target&&ai.mode==='fight'&&dist(ai.target,c)<200)return;
+      if(T0.carrier){ai.mode='obj';ai.gx=T0.carrier.x;ai.gy=T0.carrier.y;return;}
+      const i=c.slots.findIndex(s=>s&&s.id==='foamcannon');if(i>=0&&!ai.target)c.cur=i;ai.mode='obj';ai.gx=T0.x;ai.gy=T0.y;return;}
+    if(T0.carrier&&T0.carrier.state==='alive'){ai.target=T0.carrier;ai.mode='fight';return;}
+    if(!T0.home){ai.mode='obj';ai.gx=T0.x;ai.gy=T0.y;return;}
+    if(ai.target&&ai.mode==='fight'&&dist(ai.target,c)<(ai.role==='guard'?300:600))return;
+    if(Math.hypot(c.x-S.site.x,c.y-S.site.y)>(ai.role==='guard'?260:420)||ai.mode!=='obj'||ai.gx==null){const a=Math.random()*TAU,r=ai.role==='guard'?190:330;ai.mode='obj';ai.target=null;ai.gx=S.site.x+Math.cos(a)*r;ai.gy=S.site.y+Math.sin(a)*r;}},
+  hud(c1,c2,c3,p){const S=G.sg;if(!S||!S.tr)return;const att=p.team!==S.def,left=Math.max(0,S.end-G.time),T0=S.tr;
+    setC(c1,'chip');setH(c1,`<span style="color:#e2312b">Red ${G.score.red}</span> – <span style="color:#1f6fd6">${G.score.blue} Blue</span> · half ${S.half} of 2`);
+    setC(c2,S.phase==='siege'?'chip final':'chip storm');setH(c2,S.phase==='build'?(att?'⏳ They are building: ':'🔨 Build your fort! ')+fmt(left):S.phase==='siege'?(att?'⚔️ Attack! ':'🛡️ Defend! ')+fmt(left):'Switching sides…');
+    setC(c3,T0.carrier===p?'chip final':'chip');setH(c3,T0.carrier===p?'You have the treasure! Run to your camp!':'Treasure: '+(T0.home?'in the fort':T0.carrier?(T0.carrier.team===p.team?'your team has it!':'TAKEN!'):'dropped!'));},
+  visual(dt,t){const S=G.sg;if(!S||!S.tr)return;const T0=S.tr,m=S.trM;m.position.set(T0.x,T0.z+(T0.carrier?18:0),T0.y);m.rotation.y=T0.carrier?0:t*0.5;m.userData.beam.visible=!T0.carrier;
+    if(S.campM)S.campM.children[0].rotation.y=t;},
+  mini(m,k){const S=G.sg;if(!S||!S.site)return;m.strokeStyle=S.def==='red'?'#e2312b':'#1f6fd6';m.lineWidth=3;m.strokeRect((S.site.ci-1)*T*k,(S.site.cj-1)*T*k,3*T*k,3*T*k);
+    m.fillStyle='#ffcb1f';m.beginPath();m.arc(S.tr.x*k,S.tr.y*k,6,0,TAU);m.fill();m.strokeStyle='#1b2235';m.lineWidth=2;m.stroke();
+    m.fillStyle=S.def==='red'?'#1f6fd6':'#e2312b';m.beginPath();m.arc(S.camp.x*k,S.camp.y*k,7,0,TAU);m.fill();m.stroke();},
+  cleanup(){const S=G.sg;if(S){if(S.trM)scene.remove(S.trM);if(S.campM)scene.remove(S.campM);}MODEFLAGS.siege.freeBuild=1;},
+  end(p,b){b.xm=b.xm||{};b.xm.siege=b.xm.siege||{wins:0};if(G.win)b.xm.siege.wins++;const S=G.sg||{steal:{}},st=t=>t==null?'held':fmt(t);
+    return{title:G.draw?"It's a tie!":(G.score.red>G.score.blue?'Red':'Blue')+' team wins!',sub:'Fort Siege',cls:G.win?'':G.draw?'purple':'blue',
+      stats:[[G.score.red+' – '+G.score.blue,'Points'],[st(S.steal.red),'Red steal'],[st(S.steal.blue),'Blue steal'],[p.kos,'Your KOs']]};}};
+// joiners: the phase, the clock, the fort site, the camp, the treasure and the points
+const SIEGE_NET={s:()=>{const S=G.sg,T0=S.tr;return{h:S.half,p:S.phase,e:r2(S.end-G.time),d:S.def,s:[S.site.ci,S.site.cj],c:[ri(S.camp.x),ri(S.camp.y)],t:[ri(T0.x),ri(T0.y),ri(T0.z),T0.home?1:0,T0.carrier?T0.carrier.cid+1:0],sc:[G.score.red,G.score.blue],st:[S.steal.red,S.steal.blue]};},
+  a:s=>{const S=G.sg;if(!S)return;S.half=s.h;S.phase=s.p;S.end=G.time+s.e;S.def=s.d;MODEFLAGS.siege.freeBuild=s.p==='build'?1:0;
+    if(!S.site||S.site.ci!==s.s[0]||S.site.cj!==s.s[1])S.site={ci:s.s[0],cj:s.s[1],x:(s.s[0]+0.5)*T,y:(s.s[1]+0.5)*T};
+    if(!S.camp||S.camp.x!==s.c[0]||S.camp.y!==s.c[1]){S.camp={x:s.c[0],y:s.c[1]};if(S.campM)scene.remove(S.campM);S.campM=siegeCampModel(siegeOther(s.d));S.campM.position.set(s.c[0],groundAt(s.c[0],s.c[1],10),s.c[1]);}
+    Object.assign(S.tr,{x:s.t[0],y:s.t[1],z:s.t[2],home:!!s.t[3],carrier:s.t[4]?byCid(s.t[4]-1):null});G.score.red=s.sc[0];G.score.blue=s.sc[1];S.steal.red=s.st[0];S.steal.blue=s.st[1];}};
 // @module src/js/30-fun.js: Fun extras: bonk streaks (DOUBLE BONK! …) and the end-of-match party with fireworks and dancing.
 // Main: bonkStreak, startParty, partyTick, STREAK_NAMES
 // See also: combat (calls bonkStreak), update (starts the party)
@@ -4260,6 +4414,8 @@ function update(dt){
   for(const c of G.chars)updateChar(c,dt);
   updateCars(dt);engineUpdate();bossCheck();
   for(let i=G.projs.length-1;i>=0;i--){const p=G.projs[i];
+    if(p.t==='boulder'){p.t0+=dt;p.vz-=700*dt;const nx=p.x+p.vx*dt,ny=p.y+p.vy*dt,nz=p.z+p.vz*dt;p.x=nx;p.y=ny;p.z=nz;
+      if(blocked3D(nx,ny,nz)||nz<=groundAt(nx,ny,nz+20)||p.t0>p.fuse+2){p.z=Math.max(p.z,2);explode(p);removeModel(p);G.projs.splice(i,1);}continue;}
     if(p.t==='grenade'||p.t==='balloon'){p.t0+=dt;p.vz-=700*dt;const nx=p.x+p.vx*dt,ny=p.y+p.vy*dt,nz=p.z+p.vz*dt;const ob=blocked3D(nx,ny,nz);
       if(ob){if(nz<0||(ob&&p.z>=surfAt(ob,p.x,p.y)-2)){p.vz=Math.abs(p.vz)*0.35;p.vx*=0.6;p.vy*=0.6;if(nz<0)p.z=0.5;}else{p.vx*=-0.4;p.vy*=-0.4;}}else{p.x=nx;p.y=ny;p.z=nz;}
       if(p.t0>=p.fuse){explode(p);removeModel(p);G.projs.splice(i,1);}continue;}
@@ -4307,7 +4463,7 @@ let stormMesh=null,nextRing=null;
 (()=>{stormMesh=new THREE.Mesh(GEO.cylOpen,new THREE.MeshBasicMaterial({color:0x6a3df5,transparent:true,opacity:0.4,side:THREE.DoubleSide,depthWrite:false}));stormMesh.visible=false;scene.add(stormMesh);
   nextRing=new THREE.Mesh(GEO.ring,new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.85,side:THREE.DoubleSide}));nextRing.visible=false;scene.add(nextRing);})();
 function projMesh(p){let m;
-  if(p.t==='grenade')m=weaponModel('grenade');else if(p.t==='balloon'){m=new THREE.Group();const b=new THREE.Mesh(GEO.sphC,mat('#43c6ff'));b.scale.set(14,16,14);m.add(b);}else if(p.t==='chicken')m=weaponModel('chicken');
+  if(p.t==='grenade')m=weaponModel('grenade');else if(p.t==='balloon'){m=new THREE.Group();const b=new THREE.Mesh(GEO.sphC,mat('#43c6ff'));b.scale.set(14,16,14);m.add(b);}else if(p.t==='boulder'){m=new THREE.Group();const b=new THREE.Mesh(GEO.sphC,mat('#ff7b1c'));b.scale.set(24,24,24);m.add(b);}else if(p.t==='chicken')m=weaponModel('chicken');
   else if(p.t==='pellet'){m=new THREE.Mesh(GEO.sphC,basic('#b6ff3b'));m.scale.set(5,5,5);}
   else if(p.t==='bolt'){m=new THREE.Mesh(GEO.boxC,basic('#7ff9ff'));m.scale.set(3,3,22);}
   else if(p.t==='snipe'){m=new THREE.Mesh(GEO.boxC,basic('#ffcf3a'));m.scale.set(3,3,46);}
@@ -4381,7 +4537,7 @@ function syncVisuals(dt){
   // items
   for(const it of G.items){if(!it.mesh)it.mesh=itemMesh(it);it.mesh.position.set(it.x,it.z+18+Math.sin(t*3+it.bob)*3,it.y);it.mesh.userData.inner.rotation.y=t*1.6+it.bob;if(it.mesh.userData.mythic)it.mesh.userData.mythic.material.color.setHSL((t*0.25)%1,1,0.6);}
   for(const pr of G.projs){if(!pr.mesh)pr.mesh=projMesh(pr);pr.mesh.position.set(pr.x,pr.z,pr.y);
-    if(pr.t==='chicken'||pr.t==='grenade'||pr.t==='balloon'){pr.mesh.rotation.x+=dt*12;}else{tmpV.set(pr.x+pr.vx,pr.z+pr.vz,pr.y+pr.vy);pr.mesh.lookAt(tmpV);}}
+    if(pr.t==='chicken'||pr.t==='grenade'||pr.t==='balloon'||pr.t==='boulder'){pr.mesh.rotation.x+=dt*12;}else{tmpV.set(pr.x+pr.vx,pr.z+pr.vz,pr.y+pr.vy);pr.mesh.lookAt(tmpV);}}
   for(const tr of G.traps){if(!tr.mesh)tr.mesh=trapMesh();tr.mesh.position.set(tr.x,tr.z,tr.y);}
   for(const d of G.drones){const u=d.m.userData,vx=d.x-(d.px??d.x),vy=d.y-(d.py??d.y),sp=Math.hypot(vx,vy)/Math.max(dt,1e-4);d.px=d.x;d.py=d.y;
     if(sp>20)d.hd=Math.atan2(vx,vy);d.tilt=lerp(d.tilt||0,Math.min(0.35,sp/1800),Math.min(1,dt*5));d.bob=(d.bob||Math.random()*9)+dt;
@@ -4494,11 +4650,12 @@ function updateHUD(){updateNetHUD();gadgetHud();{const at=$('autoTag'),on=!!(G&&
     else if(p.vehicle&&G.mode==='race')h='<kbd>W</kbd> go · <kbd>A</kbd><kbd>D</kbd> steer · <kbd>Shift</kbd> turbo · <kbd>R</kbd> reset car';else if(p.vehicle&&p.vehicle.kind==='mech'){const v=p.vehicle;h=(v.boss?'👑 BOSS MECH ':'🤖 MECH ')+Math.max(0,Math.round(v.hp))+'/'+v.maxHp+' · <kbd>Click</kbd> blast · <kbd>Space</kbd> jump + STOMP · <kbd>Shift</kbd> run'+(v.boss?'':' · <kbd>F</kbd> get out');}
     else if(p.vehicle&&p.vehicle.kind==='plane'){const v=p.vehicle,ins='✈️ '+Math.round((v.speed||0)/4)+' mph · ⬆ '+Math.max(0,Math.round((v.z-groundAt(v.x,v.y,v.z+20))/4))+' ft · throttle '+Math.round((v.thr||0)*100)+'%<br>';
       h=ins+(v.fly?'<kbd>W</kbd><kbd>S</kbd> throttle · <kbd>A</kbd><kbd>D</kbd> roll · <kbd>Space</kbd>/<kbd>Q</kbd> nose up/down · <kbd>←</kbd><kbd>→</kbd> or mouse rudder · '+(G.mode==='airrace'?'<kbd>R</kbd> back to the last ring':'<kbd>Click</kbd> balloons · <kbd>F</kbd> jump out'):'<kbd>W</kbd> throttle up · <kbd>A</kbd><kbd>D</kbd> steer · when fast, hold <kbd>Space</kbd> to pull up and take off · <kbd>F</kbd> get out');}
+    else if(p.vehicle&&p.vehicle.kind==='catapult')h='🏰 CATAPULT · <kbd>W</kbd><kbd>S</kbd> roll · <kbd>A</kbd><kbd>D</kbd> turn · aim at the fort and <kbd>Click</kbd> to launch a foam boulder · <kbd>F</kbd> get out';
     else if(p.vehicle&&p.vehicle.kind==='board')h='🛹 <kbd>W</kbd> go · <kbd>A</kbd><kbd>D</kbd> steer · <kbd>Shift</kbd> boost · <kbd>Space</kbd> jump, and in the air: tricks! · ride along a rail to grind · <kbd>F</kbd> get off';
     else if(p.vehicle&&p.vehicle.kind==='boat')h='⛵ <kbd>W</kbd> go · <kbd>A</kbd><kbd>D</kbd> steer · <kbd>Click</kbd> foam cannon · <kbd>F</kbd> get out';
-    else if(p.vehicle)h='Driving! <kbd>F</kbd> get out · <kbd>Space</kbd> honk · <kbd>Shift</kbd> turbo';else if(reviveTarget(p))h='Hold <kbd>E</kbd> to revive '+esc(reviveTarget(p).name);else if(nearInteract(p)){const ni=nearInteract(p);h=ni.type==='llama'?'Press <kbd>E</kbd> to open the Loot Llama!':'Press <kbd>E</kbd> to buy '+esc(itemName(ni.o.id,ni.o.r))+' for '+ni.o.cost.n+' '+ni.o.cost.mat;}else if(p.state==='alive'&&nearestCar(p))h={mech:'Press <kbd>F</kbd> to climb into the MECH!',plane:'Press <kbd>F</kbd> to fly the PLANE!',board:'Press <kbd>F</kbd> to ride the HOVERBOARD!',boat:'Press <kbd>F</kbd> to drive the BOAT!'}[nearestCar(p).kind]||'Press <kbd>F</kbd> to drive';
+    else if(p.vehicle)h='Driving! <kbd>F</kbd> get out · <kbd>Space</kbd> honk · <kbd>Shift</kbd> turbo';else if(reviveTarget(p))h='Hold <kbd>E</kbd> to revive '+esc(reviveTarget(p).name);else if(nearInteract(p)){const ni=nearInteract(p);h=ni.type==='llama'?'Press <kbd>E</kbd> to open the Loot Llama!':'Press <kbd>E</kbd> to buy '+esc(itemName(ni.o.id,ni.o.r))+' for '+ni.o.cost.n+' '+ni.o.cost.mat;}else if(p.state==='alive'&&nearestCar(p))h={mech:'Press <kbd>F</kbd> to climb into the MECH!',plane:'Press <kbd>F</kbd> to fly the PLANE!',board:'Press <kbd>F</kbd> to ride the HOVERBOARD!',catapult:'Press <kbd>F</kbd> to use the CATAPULT!',boat:'Press <kbd>F</kbd> to drive the BOAT!'}[nearestCar(p).kind]||'Press <kbd>F</kbd> to drive';
     else if(G.swap&&p.state==='alive')h='Press <kbd>E</kbd> to swap for '+esc(itemName(G.swap.id,G.swap.r??WEAPONS[G.swap.id].rar));
-    if(TOUCH.on&&h){if(TOUCH.act)h='';else if(p.vehicle){const v=p.vehicle;h=G.mode==='race'?'Use the joystick to drive · push it all the way for turbo':v.kind==='plane'?('✈️ '+Math.round((v.speed||0)/4)+' mph · throttle '+Math.round((v.thr||0)*100)+'% · '+(v.fly?'stick: throttle and roll · UP / CROUCH: nose up and down · drag: rudder'+(G.mode==='airrace'?'':' · FIRE: balloons'):'push the stick forward for throttle · when fast, hold UP to take off')):v.kind==='board'?'🛹 Steer with the stick · JUMP to jump, and again in the air for tricks · ride along a rail to grind':v.kind==='boat'?'⛵ Steer with the stick · FIRE for the foam cannon':v.kind==='mech'?(v.boss?'👑 BOSS MECH ':'🤖 MECH ')+Math.max(0,Math.round(v.hp))+'/'+v.maxHp+' · fire to blast · STOMP to jump':'';}else h=h.split('Press <kbd>Space</kbd> to jump out').join('Tap <b>JUMP OUT</b> to jump out').split('Press <kbd>Space</kbd>').join('Tap <b>GLIDE</b>');}
+    if(TOUCH.on&&h){if(TOUCH.act)h='';else if(p.vehicle){const v=p.vehicle;h=G.mode==='race'?'Use the joystick to drive · push it all the way for turbo':v.kind==='plane'?('✈️ '+Math.round((v.speed||0)/4)+' mph · throttle '+Math.round((v.thr||0)*100)+'% · '+(v.fly?'stick: throttle and roll · UP / CROUCH: nose up and down · drag: rudder'+(G.mode==='airrace'?'':' · FIRE: balloons'):'push the stick forward for throttle · when fast, hold UP to take off')):v.kind==='catapult'?'🏰 Roll with the stick · aim at the fort and press FIRE to launch a foam boulder':v.kind==='board'?'🛹 Steer with the stick · JUMP to jump, and again in the air for tricks · ride along a rail to grind':v.kind==='boat'?'⛵ Steer with the stick · FIRE for the foam cannon':v.kind==='mech'?(v.boss?'👑 BOSS MECH ':'🤖 MECH ')+Math.max(0,Math.round(v.hp))+'/'+v.maxHp+' · fire to blast · STOMP to jump':'';}else h=h.split('Press <kbd>Space</kbd> to jump out').join('Tap <b>JUMP OUT</b> to jump out').split('Press <kbd>Space</kbd>').join('Tap <b>GLIDE</b>');}
     if(h){pr.hidden=false;if(pr.dataset.t!==h){pr.dataset.t=h;pr.innerHTML=h;}}else{pr.hidden=true;pr.dataset.t='';}}
   if(G.feed.length&&G.time-G.feed[G.feed.length-1].t>7){G.feed.pop();renderFeed();}
   $('stormVig').style.opacity=st&&p.state==='alive'&&Math.hypot(p.x-st.x,p.y-st.y)>st.r?'1':'0';
@@ -4522,7 +4679,7 @@ function drawMini(){
     if(st.nextIdx!=null){const n=st.C[st.nextIdx];m.beginPath();m.arc(n.x*k,n.y*k,SR[st.nextIdx]*k,0,TAU);m.strokeStyle='#fff';m.setLineDash([6,6]);m.lineWidth=2.5;m.stroke();m.setLineDash([]);}}
   if(G.bus&&G.bus.t<G.bus.dur){const b=G.bus;m.strokeStyle='rgba(255,255,255,.85)';m.lineWidth=3;m.setLineDash([10,8]);m.beginPath();m.moveTo(b.x0*k,b.y0*k);m.lineTo(b.x1*k,b.y1*k);m.stroke();m.setLineDash([]);
     m.fillStyle='#1f6fd6';m.beginPath();m.arc(b.x*k,b.y*k,7,0,TAU);m.fill();}
-  for(const c of G.chars){if(c.isPlayer||c.state!=='alive')continue;if(!['team','ctf','zombie'].includes(G.mode)&&!isMate(c))continue;if((G.mode==='team'||G.mode==='ctf')&&c.team!==G.player.team)continue;m.fillStyle=c.zombie?'#5f8f2f':isMate(c)?'#43c6ff':'#e2312b';m.beginPath();m.arc(c.x*k,c.y*k,isMate(c)?5:3.5,0,TAU);m.fill();}
+  for(const c of G.chars){if(c.isPlayer||c.state!=='alive')continue;if(!['team','ctf','zombie','siege'].includes(G.mode)&&!isMate(c))continue;if((G.mode==='team'||G.mode==='ctf'||G.mode==='siege')&&c.team!==G.player.team)continue;m.fillStyle=c.zombie?'#5f8f2f':isMate(c)?'#43c6ff':'#e2312b';m.beginPath();m.arc(c.x*k,c.y*k,isMate(c)?5:3.5,0,TAU);m.fill();}
   if(XM[G.mode]&&XM[G.mode].mini)XM[G.mode].mini(m,k);
   for(const car of G.cars){if(car.dead)continue;if(car.kind==='mech'){m.fillStyle=car.boss?'#ffcb1f':car.col;m.strokeStyle='#1b2235';m.lineWidth=2;m.beginPath();m.arc(car.x*k,car.y*k,car.boss?9:6,0,TAU);m.fill();m.stroke();continue;}m.save();m.translate(car.x*k,car.y*k);m.rotate(car.ang);m.fillStyle=car.col;m.strokeStyle='#1b2235';m.lineWidth=1.5;m.fillRect(-6,-3.5,12,7);m.strokeRect(-6,-3.5,12,7);m.restore();}
   for(const it of G.items){if(it.id!=='laser')continue;const x=it.x*k,y=it.y*k,tt=performance.now()/300;m.fillStyle=LASER_COLS[Math.floor(tt)%LASER_COLS.length];m.strokeStyle='#ffffff';m.lineWidth=2;m.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5+tt*0.3,r=i%2?4:10;m.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);}m.closePath();m.stroke();m.fill();}
@@ -4542,7 +4699,7 @@ function applyOpts(){[['len',opts.len],['diff',cap(opts.diff)],['map',cap(opts.m
 function syncMenu(){const mode=radioVal('mode'),map=radioVal('map'),stormOff=mode==='royale'&&radioVal('storm')==='off';
   $('modeDesc').textContent=stormOff?'Ride the battle bus in, then bash away with no storm. Everyone respawns until the timer runs out!':MODES[mode].desc;$('mapDesc').textContent=MAPS[map].desc;
   $('optStorm').hidden=mode!=='royale';$('optSquad').hidden=mode!=='royale';$('optRule').hidden=!stormOff;$('ruleDesc').textContent=RULES[radioVal('rule')].sub;
-  $('optLen').hidden=mode==='zombie'||mode==='race'||mode==='airrace';$('optBots').hidden=mode==='zombie';$('botsLabel').textContent=(mode==='team'||mode==='ctf')?'Bots (split into two teams)':'Bots';$('diffLabel').textContent=mode==='zombie'?'Zombie toughness':'Bot skill';
+  $('optLen').hidden=mode==='zombie'||mode==='race'||mode==='airrace'||mode==='siege';$('optBots').hidden=mode==='zombie';$('botsLabel').textContent=(mode==='team'||mode==='ctf'||mode==='siege')?'Bots (split into two teams)':'Bots';$('diffLabel').textContent=mode==='zombie'?'Zombie toughness':'Bot skill';
   {const parts=[];if(!$('optStorm').hidden)parts.push(radioVal('storm')==='off'?'Storm off':'Storm on');if(!$('optSquad').hidden)parts.push(cap(radioVal('squad')));if(!$('optLen').hidden)parts.push(radioVal('len')+' min');if(!$('optBots').hidden)parts.push($('bots').value+' bots');parts.push(cap(radioVal('diff')));
     $('matchSum').textContent='⚙️ '+parts.join(' · ');$('matchFor').textContent='for '+(document.querySelector('label[for=mode'+cap(mode)+']').lastChild.textContent.trim());}
   if(map!==MAP_ID&&!G){genMap(map);buildWorld();}showBest();}
@@ -4715,7 +4872,7 @@ const HELP_PAGES=[
     :`<ul><li><b>Z</b> wall · <b>X</b> ramp · <b>C</b> floor · <b>V</b> roof. Click to place, hold to keep building.</li><li>Look up to build higher.</li><li><b>G</b> edits a wall into a door or window.</li><li><b>T</b> switches wood, stone and metal. Metal is strongest!</li><li>Swing your pickaxe at trees, rocks and walls to collect materials.</li></ul>`},
   {t:'🚌 Bus & storm',shots:['bus','storm'],body:()=>`<ul><li>Battle Royale starts on the <b>battle bus</b>. ${TOUCH.on?'Tap JUMP OUT':'Press Space'} over the spot you want to land.</li><li>Your glider opens by itself, or open it early.</li><li>The <b>purple storm</b> shrinks the island. It hurts while you are in it, so keep moving to the safe circle!</li><li>The white dashed circle on the minimap shows where the storm goes next.</li></ul>`},
   {t:'🚁 Getting bonked',shots:['drone'],body:()=>`<ul><li>When you run out of health you get knocked out, but a <b>rescue drone</b> flies you back in after a few seconds.</li><li>In Battle Royale, drones stop at the <b>final circle</b>. Then it's last one standing!</li><li>In <b>Squads</b> you get knocked down first. A teammate can revive you by holding ${TOUCH.on?'the green REVIVE button':'E'} next to you.</li><li>Heal up with bandages, med kits and shield potions.</li></ul>`},
-  {t:'🏆 How to win',shots:[],body:()=>`<p>Every game mode has its own way to win:</p><div class="hwin">${[['🪂 Battle Royale','Be the last one (or last squad) standing when the storm closes.'],['⚔️ Team Battle','Red team needs 20 knockouts before blue does.'],['🧟 Zombie Survival','Survive as many zombie waves as you can. Build walls!'],['🏎️ Car Race','Drive through the glowing gates in order. Finish 3 laps first.'],['✈️ Plane Race','Fly through the glowing rings in the sky in order. Finish 3 laps first.'],['🌋 Floor is Lava','Build up and stay above the rising lava the longest.'],['👑 Capture the Crown','Grab the crown and hold it to score points.'],['🚩 Capture the Flag','Steal the blue flag and bring it back to your base.'],['⛰️ King of the Hill','Stand in the golden circle to score. It moves around!'],['🏗️ Build Battle','Build the tallest tower before time runs out.'],['🤖 Mega Robot','Everyone teams up against one giant robot. Bonk it before time runs out!'],['🎯 Training Room','No winning here: practice your aim, building and every weapon.']].map(([a,b])=>`<div><b>${a}</b>${b}</div>`).join('')}</div>`},
+  {t:'🏆 How to win',shots:[],body:()=>`<p>Every game mode has its own way to win:</p><div class="hwin">${[['🪂 Battle Royale','Be the last one (or last squad) standing when the storm closes.'],['⚔️ Team Battle','Red team needs 20 knockouts before blue does.'],['🧟 Zombie Survival','Survive as many zombie waves as you can. Build walls!'],['🏎️ Car Race','Drive through the glowing gates in order. Finish 3 laps first.'],['✈️ Plane Race','Fly through the glowing rings in the sky in order. Finish 3 laps first.'],['🌋 Floor is Lava','Build up and stay above the rising lava the longest.'],['👑 Capture the Crown','Grab the crown and hold it to score points.'],['🚩 Capture the Flag','Steal the blue flag and bring it back to your base.'],['🏰 Fort Siege','Build a fort around your treasure, then steal theirs and carry it home. The fastest steal wins.'],['⛰️ King of the Hill','Stand in the golden circle to score. It moves around!'],['🏗️ Build Battle','Build the tallest tower before time runs out.'],['🤖 Mega Robot','Everyone teams up against one giant robot. Bonk it before time runs out!'],['🎯 Training Room','No winning here: practice your aim, building and every weapon.']].map(([a,b])=>`<div><b>${a}</b>${b}</div>`).join('')}</div>`},
   {t:'🌐 Play with friends',shots:[],body:()=>`<ul><li>Tap <b>🌐 Multiplayer</b> on the welcome screen and type your <b>name</b>.</li><li><b>One player hosts:</b> tap <b>Host a game</b> and read out the 4-letter <b>room code</b>.</li><li><b>Everyone else joins:</b> tap <b>Join</b> and type the code. The host sees <b>🙋 wants to join</b> and taps <b>✅ Allow</b> (or <b>❌ Kick</b>).</li><li>The host picks the <b>game</b>, the <b>map</b> and the <b>teams</b>: <i>Host picks</i> (tap a player to move them), <i>🎲 Random</i>, <i>Pick your own</i> (tap Join Red/Blue…), or <i>Everyone vs everyone</i>.</li><li>Bots fill the empty spots. The host presses <b>START</b> and everyone drops into the same match!</li><li>Up to 8 real players, in every game mode: Battle Royale, Team Battle, Zombie Survival (team up against the waves), Car Race, Floor is Lava, Capture the Crown, Capture the Flag, King of the Hill, Build Battle and the Training Room.</li><li>Hold <b>Tab</b> (or tap <b>🏆</b>) for the <b>scoreboard</b>: everyone's knockouts and ping.</li><li>Out of the match? You <b>watch a teammate</b>. Press Space, click or tap JUMP to switch who you watch.</li><li>Friends who arrive late can <b>jump into a match that already started</b> by taking over a bot (the host can turn this off in Settings → 🌐 Multiplayer).</li><li>Need a break? Press <b>O</b> (or tap <b>🤖</b>) and autopilot plays for you. If you stop playing for a bit, a <b>💤 bot helper</b> plays for you until you're back. The host can turn either off in Settings → 🌐 Multiplayer.</li><li>After the match, <b>Play again</b> takes everyone back to the room.</li></ul>`},
   {t:'🔧 Connection trouble',shots:[],body:()=>`<ul><li>Everyone opens <b>the same Bonk Royale website</b> (or its app on the home screen). No account needed.</li><li>Everyone needs the <b>same version</b>: Stable, Beta and Alpha are separate websites, and players on different ones can't join each other.</li><li>At home, a <b>home server</b> is even faster (see 🏠 Home server).</li><li>Every device needs to be <b>online</b> during the match.</li><li>Run <b>Settings → 🌐 Multiplayer → Connection test</b>. Green checks mean you're ready.</li><li>Use <b>Test with a friend</b> to see how fast two devices talk. Under 150 ms feels smooth.</li><li>“No game found”: check the 4 letters, and make sure the host is still on the room screen.</li><li>If the host leaves, the match ends for everyone. If a player leaves, a bot takes over their character.</li></ul>`},
   {t:"🎤 Mr. Bonk's Show",shots:[],body:()=>`<p>A game show in five rounds. Win rounds to get points. The most points after round 5 wins <b>${SHOW_PRIZE} tickets</b>!</p><ol><li><b>Bonk Bat Brawl:</b> everyone gets a giant foam bat. ${TOUCH.on?'Tap FIRE':'Click'} to swing and bonk others out of the glowing circle. Knocked out? You're out, and your bat stops working. Everyone still in when time runs out wins <b>${SHOW_BRAWL_TK} tickets</b>!</li><li><b>Red Light, Green Light:</b> run to the finish on <b>🟢 GREEN</b>. On <b>🔴 RED</b>, freeze! Move and you go back to the start.</li><li><b>The Obstacle Course:</b> jump the pink hurdles and dodge the swinging foam hammers. The first three to the finish get points.</li><li><b>Hide and Seek:</b> hide inside the big ring. Seekers count to 15, then hunt. If a seeker touches you, you are out. Stay hidden until time runs out to win!</li><li><b>The Button Challenge:</b> one button wins the round. The others are traps (BOING!). Find the winner first!</li></ol><p>No real fighting in this mode (the foam bat only pushes), and it works in multiplayer too.</p>`},
@@ -5015,10 +5172,10 @@ if(!(window.claude&&window.claude.use)&&!window.BONK_WS&&!/mplocal/.test(locatio
 // Main: NET, NET_TEAMS, NET_MODES, netTeamKind, myLook, lookFromNet, netMe
 // See also: net-lobby, safety
 const NET_TEAMS=[{id:'r',name:'Red',col:'#e2312b'},{id:'b',name:'Blue',col:'#1f6fd6'},{id:'g',name:'Green',col:'#3aa845'},{id:'y',name:'Yellow',col:'#e0a800'}];
-const NET_MODES=['royale','team','zombie','race','airrace','floorlava','crown','ctf','koth','buildbattle','training','show','robot'];
+const NET_MODES=['royale','team','zombie','race','airrace','siege','floorlava','crown','ctf','koth','buildbattle','training','show','robot'];
 const NET_TEAMMODES={host:'Host picks',random:'🎲 Random',self:'Pick your own',ffa:'Everyone vs everyone'};
 // how teams work in each mode: 'free' (any teams or FFA), 'rb' (red vs blue only), 'coop' (everyone together)
-const netTeamKind=m=>m==='team'||m==='ctf'?'rb':m==='zombie'||m==='training'||m==='robot'?'coop':'free';
+const netTeamKind=m=>m==='team'||m==='ctf'||m==='siege'?'rb':m==='zombie'||m==='training'||m==='robot'?'coop':'free';
 const NET={R:null,code:'',role:null,lob:null,offPeers:null,offChat:null,startId:null,hostPeer:null,maxPlayers:8};
 function myLook(){const L=PROG.locker;return{o:L.outfit,b:L.back,g:L.glider,p:L.pick,w:L.wrap,pt:L.pet};}
 function lookFromNet(l){l=l||{};const o=OUTFITS.find(x=>x.id===l.o)||OUTFITS[0];return Object.assign({},o,{back:l.b==='outfit'||!l.b?o.back:l.b,glider:l.g||'classic',pick:l.p||'classic',wrap:l.w||'none',pet:l.pt||'none',emblem:true});}
@@ -5212,6 +5369,7 @@ function netPtsApply(p){for(const[id,v]of p||[]){const c=byCid(id);if(c)c.pts=v;
 const XMNET={
   show:SHOW_NET, // Mr. Bonk's Challenge Show (defined with the mode, in its own module)
   robot:ROBOT_NET, // the Mega Robot (also in its own module)
+  siege:SIEGE_NET, // Fort Siege (also in its own module)
   ctf:{s:()=>({f:['red','blue'].map(t=>{const F=G.flags[t];return[ri(F.x),ri(F.y),ri(F.z),F.carrier?F.carrier.cid+1:0,F.home?1:0];})}),
     a:s=>{['red','blue'].forEach((t,i)=>{const F=G.flags&&G.flags[t],a=s.f[i];if(!F||!a)return;F.x=a[0];F.y=a[1];F.z=a[2];F.carrier=a[3]?byCid(a[3]-1):null;F.home=!!a[4];});}},
   crown:{s:()=>({c:[ri(G.crown.x),ri(G.crown.y),ri(G.crown.z),G.crown.carrier?G.crown.carrier.cid+1:0],p:netPts()}),
@@ -5266,7 +5424,7 @@ function netPriv(c){return{sl:c.slots.map(s=>s?[wcode(s.id),s.ammo??-1,s.r??-1]:
   bl:ri(c.bleed),rp:r2(c.revProg),sw:c.swapIt?wcode(c.swapIt.id):-1,as:c.actSeq,el:c.eliminated?1:0,td:ri(c.trDmg),dp:ri((c.trLog||[]).reduce((a,e)=>a+e[1],0)/3),lv:c.lives??null};}
 function netSnap(){const N=G.net;for(const c of G.chars)if(c.cid==null)c.cid=N.cidNext++;const S={t:r2(G.time),c:G.chars.map(netCharPack),car:G.cars.map(c=>c.dead?0:[ri(c.x),ri(c.y),ri(c.z),r2(c.ang),c.driver?c.driver.cid+1:0].concat(c.boss?[1]:c.kind==='plane'&&c.q?[0,r2(c.q.x),r2(c.q.y),r2(c.q.z),r2(c.q.w),c.fly?1:0,c.chute?1:0]:c.kind==='board'?[0,c.trk||0,r2(c.trT||0),c.grind?1:0]:[])),
     dr:G.drones.map(d=>[ri(d.x),ri(d.y),ri(d.z),DRM.indexOf(d.mode)]),bus:G.bus?[ri(G.bus.x),ri(G.bus.y),ri(G.bus.z),r2(G.bus.t)]:0,
-    cr:G.crate?[ri(G.crate.x),ri(G.crate.y),ri(G.crate.z),G.crate.landed?1:0,G.crate.taken?1:0]:0,sc:G.mode==='team'||G.mode==='ctf'?[G.score.red,G.score.blue]:0,nr:G.noRespawn?1:0,es:N.seq};if(XMNET[G.mode])S.xm=Object.assign({m:G.mode},XMNET[G.mode].s());S.id=N.start.id;if(G.paused)S.hp=1;
+    cr:G.crate?[ri(G.crate.x),ri(G.crate.y),ri(G.crate.z),G.crate.landed?1:0,G.crate.taken?1:0]:0,sc:G.mode==='team'||G.mode==='ctf'||G.mode==='siege'?[G.score.red,G.score.blue]:0,nr:G.noRespawn?1:0,es:N.seq};if(XMNET[G.mode])S.xm=Object.assign({m:G.mode},XMNET[G.mode].s());S.id=N.start.id;if(G.paused)S.hp=1;
   const rem=G.chars.filter(c=>c.remote);if(rem.length){S.pv={};const c=rem[N.rr++%rem.length];S.pv[c.peer]=netPriv(c);}
   const pe={};for(const p of netPlayers())if(!p.sameTab&&p.presence.pg)pe[p.peer]=p.presence.pg;if(Object.keys(pe).length)S.pe=pe;if(G.paused)S.hp=1;return S;}
 function netWorldDiff(){const N=G.net,seen=new Set();
@@ -5274,7 +5432,7 @@ function netWorldDiff(){const N=G.net,seen=new Set();
   for(const[k]of N.items)if(!seen.has(k)){N.items.delete(k);netEv(['i-',k]);}
   seen.clear();for(const q of G.pieces){if(!q.nid){q.nid=++N.nid;q.nedit=q.edit;N.pieces.set(q.nid,q);netEv(['p+',q.nid,netObPack(q.ob),q.col,q.edit||0,q.owner&&q.owner.cid!=null?q.owner.cid:-1]);}else if(q.edit!==q.nedit){q.nedit=q.edit;netEv(['pe',q.nid,q.edit]);}seen.add(q.nid);}
   for(const[k]of N.pieces)if(!seen.has(k)){N.pieces.delete(k);netEv(['p-',k]);}
-  for(const p of G.projs)if(!p.nid){p.nid=++N.nid;netEv(['j',p.t,ri(p.x),ri(p.y),ri(p.z),ri(p.vx),ri(p.vy),ri(p.vz),r2(p.t==='grenade'||p.t==='balloon'?p.fuse:p.life),p.owner&&p.owner.cid!=null?p.owner.cid:-1]);}
+  for(const p of G.projs)if(!p.nid){p.nid=++N.nid;netEv(['j',p.t,ri(p.x),ri(p.y),ri(p.z),ri(p.vx),ri(p.vy),ri(p.vz),r2(p.t==='grenade'||p.t==='balloon'||p.t==='boulder'?p.fuse:p.life),p.owner&&p.owner.cid!=null?p.owner.cid:-1]);}
   seen.clear();for(const t of G.traps){if(!t.nid){t.nid=++N.nid;N.traps.set(t.nid,t);netEv(['t+',t.nid,ri(t.x),ri(t.y),ri(t.z)]);}seen.add(t.nid);}
   for(const[k]of N.traps)if(!seen.has(k)){N.traps.delete(k);netEv(['t-',k]);}
   G.chests.forEach((c,i)=>{if(c.open&&!N.chests.has(i)){N.chests.add(i);netEv(['ch',i]);}});
@@ -5294,9 +5452,9 @@ function netHostTick(dt){const N=G.net;if(!NET.R||!N.evq)return;netHostReadInput
     if(ps.some(p=>p.presence.need&&p.presence.need!==N.need[p.peer])){ps.forEach(p=>N.need[p.peer]=p.presence.need);netSendWorld();}}}
 // host: who won, for each player
 function netHostEnd(){const N=G.net;if(!N||N.ended)return;N.ended=true;const res={};const rem=G.chars.filter(c=>!c.eliminated);
-  const winTeam=G.mode==='team'||G.mode==='ctf'?(G.score.red>G.score.blue?'red':G.score.blue>G.score.red?'blue':null):null;
+  const winTeam=G.mode==='team'||G.mode==='ctf'||G.mode==='siege'?(G.score.red>G.score.blue?'red':G.score.blue>G.score.red?'blue':null):null;
   for(const c of G.chars){if(!c.human)continue;const peer=c===G.player?(netMe()||{}).peer:c.peer;let win=false;
-    if(G.mode==='team'||G.mode==='ctf')win=!!winTeam&&c.team===winTeam;else if(G.mode==='royale'&&G.storm)win=!c.eliminated&&rem.length>0&&(rem.length===1||rem.every(o=>o.team&&o.team===c.team));
+    if(G.mode==='team'||G.mode==='ctf'||G.mode==='siege')win=!!winTeam&&c.team===winTeam;else if(G.mode==='royale'&&G.storm)win=!c.eliminated&&rem.length>0&&(rem.length===1||rem.every(o=>o.team&&o.team===c.team));
     else if(G.mode==='robot')win=!!G.win; // everyone wins (or loses) together
     else if(G.final){const e=G.final.find(x=>x.c===c);win=!!e&&e.place===1;}else if(G.mode==='royale'){const r=ranking();const e=r.find(x=>x.c===c);win=!!e&&e.place===1;}
     res[peer]={w:win?1:0,pl:win?1:c.place||0,k:c.kos,d:c.deaths,dr:G.draw?1:0};}
@@ -5396,7 +5554,7 @@ function netInterp(dt){const N=G.net,rt=G.time-(N.interpD||0.12);
     else if(z[6]!=null){if(!car.q)car.q=new THREE.Quaternion();const qa=new THREE.Quaternion(a[6]??z[6],a[7]??z[7],a[8]??z[8],a[9]??z[9]).normalize(),qb=new THREE.Quaternion(z[6],z[7],z[8],z[9]).normalize();car.q.slerpQuaternions(qa,qb,t);car.fly=!!z[10];car.chute=!!z[11];} // a plane: its full orientation
     car.speed=Math.hypot(car.x-ox,car.y-oy)/Math.max(dt,1e-3)*Math.sign(Math.cos(car.ang)*(car.x-ox)+Math.sin(car.ang)*(car.y-oy)||1);car.onGround=true;}}
 function netClientProjs(dt){for(let i=G.projs.length-1;i>=0;i--){const p=G.projs[i];let dead;
-  if(p.t==='grenade'||p.t==='balloon'){p.t0+=dt;p.vz-=700*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;const g=groundAt(p.x,p.y,p.z+5);if(p.z<g){p.z=g;p.vz=Math.abs(p.vz)*0.35;p.vx*=0.6;p.vy*=0.6;}dead=p.t0>=p.fuse;}
+  if(p.t==='grenade'||p.t==='balloon'||p.t==='boulder'){p.t0+=dt;p.vz-=700*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;const g=groundAt(p.x,p.y,p.z+5);if(p.z<g){p.z=g;p.vz=Math.abs(p.vz)*0.35;p.vx*=0.6;p.vy*=0.6;}dead=p.t0>=p.fuse;}
   else{p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;if(p.t==='bubble')p.vz+=40*dt;dead=p.life<=0||!!blocked3D(p.x,p.y,p.z);}
   if(dead){removeModel(p);G.projs.splice(i,1);}}}
 // what this player pressed, sent to the host
