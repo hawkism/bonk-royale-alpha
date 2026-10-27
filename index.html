@@ -417,6 +417,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
           <input type="radio" name="mode" id="modeCrown" value="crown"><label for="modeCrown"><i>👑</i>Capture the Crown</label>
           <input type="radio" name="mode" id="modeCtf" value="ctf"><label for="modeCtf"><i>🚩</i>Capture the Flag</label>
           <input type="radio" name="mode" id="modeSiege" value="siege"><label for="modeSiege"><i>🏰</i>Fort Siege</label>
+          <input type="radio" name="mode" id="modeRescue" value="rescue"><label for="modeRescue"><i>🚒</i>Rescue Squad</label>
           <input type="radio" name="mode" id="modeKoth" value="koth"><label for="modeKoth"><i>⛰️</i>King of the Hill</label>
           <input type="radio" name="mode" id="modeBuildbattle" value="buildbattle"><label for="modeBuildbattle"><i>🏗️</i>Build Battle</label>
           <input type="radio" name="mode" id="modeTraining" value="training"><label for="modeTraining"><i>🎯</i>Training Room</label><input type="radio" name="mode" id="modeRobot" value="robot"><label for="modeRobot"><i>🤖</i>Mega Robot</label><input type="radio" name="mode" id="modeShow" value="show"><label for="modeShow"><i>🎤</i>Mr. Bonk's Show</label>
@@ -637,7 +638,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
       <p>Nobody really gets hurt: when you get bonked, a friendly rescue drone carries you away and drops you back in.</p>
       <h3>What's inside</h3>
       <ul>
-        <li>🎮 14 game modes: Battle Royale, Team Battle, Zombie Survival, Car Race, Plane Race, Floor is Lava, Capture the Crown, Capture the Flag, Fort Siege, King of the Hill, Build Battle, the Training Room, Mr. Bonk's Challenge Show and the Mega Robot</li>
+        <li>🎮 15 game modes: Battle Royale, Team Battle, Zombie Survival, Car Race, Plane Race, Floor is Lava, Capture the Crown, Capture the Flag, Fort Siege, Rescue Squad, King of the Hill, Build Battle, the Training Room, Mr. Bonk's Challenge Show and the Mega Robot</li>
         <li>🗺️ 10 maps, from Candy Land and a low-gravity Space Station to slippery Frozen Peaks and the Big City</li>
         <li>🔫 20+ weapons with Common to Legendary rarities, plus your very own Mythic Laser Blaster</li>
         <li>🔨 Building and editing, cars, loot llamas, vending machines and squads</li>
@@ -852,6 +853,7 @@ const WEAPONS={
   freeze:{name:'Freeze Ray',kind:'shot',dmg:10,speed:900,life:0.9,cd:0.9,ammo:10,spread:0.01,rar:2,snd:'freeze',proj:'ice'},
   bubble:{name:'Bubble Gun',kind:'shot',dmg:12,speed:420,life:1.6,cd:0.8,ammo:12,spread:0.02,rar:2,snd:'blub',proj:'bubble'},
   ultra:{name:'ULTRA RIFLE',kind:'ultra',dmg:100,cd:0.7,ammo:8,rar:4,snd:'ultra'},
+  squirt:{name:'Water Squirter',kind:'shot',dmg:8,speed:640,life:1.1,cd:0.11,ammo:99,spread:0.04,rar:1,snd:'blub',proj:'water'}, // Rescue Squad only: puts out fires, never hurts anyone
   laser:{name:'MYTHIC LASER BLASTER',kind:'laser',dmg:100,cd:0.1,rar:5,snd:'laser',zoom:true}
 };
 const RATING={laser:12,fists:1,bat:3,nunchucks:3,sword:4,hammer:5,pistol:3.5,rapid:5,shotgun:4.5,chicken:4,banana:2,grenade:4,burst:5,sniper:6,minigun:6,rocket:6,foamcannon:5,freeze:4.5,bubble:4.5,ultra:10,bandage:2,medkit:3,smallshield:3,bigshield:4};
@@ -881,6 +883,7 @@ function drawWeapon(g,id,t=0){ // 2D icon art for the HUD
     case 'rocket':g.fillStyle='#3aa845';rr(g,-4,-5,40,10,4);g.fill();g.fillStyle='#ff4fa3';g.beginPath();g.moveTo(36,-5);g.lineTo(46,0);g.lineTo(36,5);g.fill();g.fillStyle='#2b2f3a';g.fillRect(8,4,5,7);g.fillStyle='#ffcb1f';g.fillRect(20,-7,6,2);break;
     case 'foamcannon':g.fillStyle='#ff7b1c';rr(g,-4,-7,36,14,6);g.fill();g.fillStyle='#ffcb1f';g.beginPath();g.arc(34,0,8,0,TAU);g.fill();g.fillStyle='#2b2f3a';g.fillRect(8,6,5,7);break;
     case 'freeze':g.fillStyle='#bfe8ff';rr(g,-2,-4,26,8,3);g.fill();g.fillStyle='#43c6ff';g.beginPath();g.arc(28,0,6,0,TAU);g.fill();g.fillStyle='#ffffff';g.fillRect(25,-1,6,2);g.fillStyle='#1f6fd6';g.fillRect(4,3,5,7);break;
+    case 'squirt':g.fillStyle='#43c6ff';rr(g,-2,-5,26,10,4);g.fill();g.fillStyle='#ffcb1f';g.fillRect(24,-2,10,4);g.fillStyle='#1f6fd6';g.fillRect(4,4,6,8);g.beginPath();g.arc(8,-8,6,0,TAU);g.fill();break;
     case 'bubble':g.fillStyle='#ff9ad5';rr(g,-2,-4,22,8,3);g.fill();g.strokeStyle='#43c6ff';g.lineWidth=2;g.beginPath();g.arc(30,-2,7,0,TAU);g.stroke();g.beginPath();g.arc(38,-9,3.5,0,TAU);g.stroke();g.fillStyle='#ffcb1f';g.fillRect(4,3,5,7);break;
     case 'bandage':g.fillStyle='#ffffff';rr(g,6,-8,18,16,4);g.fill();g.strokeStyle='#c5ccd6';g.lineWidth=1;g.stroke();g.fillStyle='#e2312b';g.fillRect(13,-6,4,12);g.fillRect(9,-2,12,4);break;
     case 'medkit':g.fillStyle='#ffffff';rr(g,2,-9,28,18,3);g.fill();g.strokeStyle='#c5ccd6';g.lineWidth=1;g.stroke();g.fillStyle='#e2312b';g.fillRect(13.5,-6,5,12);g.fillRect(10,-2.5,12,5);g.fillStyle='#8f98a3';g.fillRect(12,-12,8,3);break;
@@ -1516,6 +1519,7 @@ function weaponModel(id){
     case 'foamcannon':{const t=new THREE.Mesh(GEO.cylC,mat('#ff7b1c'));t.scale.set(13,36,13);t.rotation.x=Math.PI/2;t.position.set(0,6,10);g.add(t);Sp('#ffcb1f',0,6,29,12,12,6);B('#2b2f3a',0,-4,4,4,9,5);break;}
     case 'rocket':{const t=new THREE.Mesh(GEO.cylC,mat('#3aa845'));t.scale.set(10,40,10);t.rotation.x=Math.PI/2;t.position.set(0,6,10);g.add(t);const n=new THREE.Mesh(GEO.cone,mat('#ff4fa3'));n.scale.set(9,10,9);n.rotation.x=Math.PI/2;n.position.set(0,6,30);g.add(n);B('#2b2f3a',0,-3,4,4,9,5);B('#ffcb1f',0,12,8,3,3,8);break;}
     case 'freeze':B('#bfe8ff',0,2,8,6,7,24);Sp('#43c6ff',0,2,22,10,10,10);B('#ffffff',0,2,27,2,2,4,1);B('#1f6fd6',0,-4,4,4,9,5);break;
+    case 'squirt':B('#43c6ff',0,2,8,7,8,20);B('#ffcb1f',0,2,22,3,3,10);Sp('#1f6fd6',0,9,6,9,9,9);B('#1f6fd6',0,-4,4,4,9,5);break;
     case 'bubble':B('#ff9ad5',0,2,8,6,7,20);{const s=new THREE.Mesh(GEO.sphC,new THREE.MeshLambertMaterial({color:0xbfe8ff,transparent:true,opacity:0.55}));s.scale.set(11,11,11);s.position.set(0,4,22);g.add(s);}B('#ffcb1f',0,-4,4,4,9,5);break;
     case 'fuel':B('#e2312b',0,9,0,16,18,10);B('#2b2f3a',4,19.5,0,4,3,4);B('#ffcb1f',0,9,5.3,9,6,0.6);break;
     case 'gshield':{const m=new THREE.Mesh(GEO.sphC,new THREE.MeshBasicMaterial({color:'#9fe3ff',transparent:true,opacity:0.6}));m.scale.set(18,18,18);m.position.y=9;g.add(m);B('#ffffff',0,9,0,6,6,6);}break;
@@ -2771,7 +2775,7 @@ function touchActNow(p){if(!G||G.ended||!p)return null;
   if(p.vehicle){if(G.mode==='race'||G.mode==='airrace')return p.raceCar&&G.time>G.goAt?{k:'reset',l:G.mode==='race'?'RESET CAR':'RESET PLANE',i:'🔄'}:null;return p.vehicle.boss?null:{k:'exit',l:'GET OUT',i:'🚪'};}
   if(p.state!=='alive')return null;const rv=reviveTarget(p);if(rv)return{k:'revive',l:'REVIVE',i:'➕',hold:1};
   const ni=nearInteract(p);if(ni)return ni.type==='llama'?{k:'llama',l:'OPEN',i:'🦙'}:{k:'vend',l:'BUY · '+ni.o.cost.n+' '+ni.o.cost.mat,i:'🛒'};
-  if(G.mode!=='race'&&nearestCar(p))return nearestCar(p).kind==='mech'?{k:'drive',l:'MECH',i:'🤖'}:nearestCar(p).kind==='board'?{k:'drive',l:'RIDE',i:'🛹'}:nearestCar(p).kind==='catapult'?{k:'drive',l:'CATAPULT',i:'🏰'}:{k:'drive',l:'DRIVE',i:'🚗'};if(G.swap)return{k:'swap',l:'SWAP',i:'🔁'};return null;}
+  if(G.mode!=='race'&&nearestCar(p))return nearestCar(p).kind==='mech'?{k:'drive',l:'MECH',i:'🤖'}:nearestCar(p).kind==='board'?{k:'drive',l:'RIDE',i:'🛹'}:nearestCar(p).kind==='catapult'?{k:'drive',l:'CATAPULT',i:'🏰'}:nearestCar(p).kind==='heli'?{k:'drive',l:'FLY',i:'🚁'}:nearestCar(p).kind==='firetruck'?{k:'drive',l:'FIRE TRUCK',i:'🚒'}:{k:'drive',l:'DRIVE',i:'🚗'};if(G.swap)return{k:'swap',l:'SWAP',i:'🔁'};return null;}
 function setBuildUI(on){TOUCH.buildUI=on;if(!G)return;if(on){if(!G.buildMode)G.buildMode=TOUCH.lastPiece||'wall';sfx('pickup',G.player);}else{G.buildMode=null;buildHeld=false;}}
 function tAct(a,down){const p=G&&G.player;if(a==='pause'){if(down&&G&&!G.ended)setPaused(true);return;}if(a==='sound'){if(down){audioInit();setMuted(!AU.muted);}return;}
   if(a==='jump')TOUCH.jumpHeld=!!down;if(!G||G.ended||G.paused)return;if(a==='hook'||a==='speed'){if(down)gadgetKey(a==='hook'?'h':'u');return;}if(a==='score'){if(down){SB_OPEN=!SB_OPEN;renderScoreboard();}return;}if(a==='jump'&&G.net&&G.player.eliminated){if(down)specNext();return;}if(a==='auto'&&NETC()){if(down)netJoinerAuto();return;}if(NETC()&&netTouch(a,down))return;const A=TACT[a];if(a==='auto'){if(down)setAutopilot(!G.auto);return;}
@@ -3077,7 +3081,7 @@ function updateCars(dt){
     if(car.dead){if(G.time>=car.respawnAt&&!G.chars.some(c=>Math.hypot(c.x-car.home.x,c.y-car.home.y)<70)){
         Object.assign(car,{dead:false,hp:car.maxHp||400,x:car.home.x,y:car.home.y,z:groundAt(car.home.x,car.home.y,10),ang:car.home.ang,speed:0,vx:0,vy:0,vz:0,onGround:true});car.m.visible=true;burst(car.x,car.y,car.z+10,16,'puff','#ffffff',100);}continue;}
     const d=car.driver;let thr=0,str=0;const me=d&&(d.isPlayer||d.remote)&&!G.victory&&!G.paused,K=k=>d.remote?d.rkeys.has(k):keys.has(k);
-    if(car.kind==='mech')mechDrive(car,d,me,K,dt);else if(car.kind==='plane')planeDrive(car,d,me,K,dt);else if(car.kind==='boat')boatDrive(car,d,me,K,dt);else if(car.kind==='board')boardDrive(car,d,me,K,dt);else if(car.kind==='catapult')catapultDrive(car,d,me,K,dt);else{
+    if(car.kind==='mech')mechDrive(car,d,me,K,dt);else if(car.kind==='plane')planeDrive(car,d,me,K,dt);else if(car.kind==='boat')boatDrive(car,d,me,K,dt);else if(car.kind==='board')boardDrive(car,d,me,K,dt);else if(car.kind==='catapult')catapultDrive(car,d,me,K,dt);else if(car.kind==='heli')heliDrive(car,d,me,K,dt);else{
     if(me&&autoOn(d)){const r=XM[G.mode]&&XM[G.mode].drive?XM[G.mode].drive(car,dt):carAuto(car,dt);thr=r.thr;str=r.str;}
     else if(me){if(K('w')||K('arrowup'))thr=1;if(K('s')||K('arrowdown'))thr=-1;if(K('a')||K('arrowleft'))str=-1;if(K('d')||K('arrowright'))str=1;}
     else if(d&&!d.isPlayer&&!d.remote&&XM[G.mode]&&XM[G.mode].drive){const r=XM[G.mode].drive(car,dt);thr=r.thr;str=r.str;}
@@ -3093,11 +3097,11 @@ function updateCars(dt){
     if(carCollide(car)){const sp=Math.hypot(car.vx,car.vy);if(sp>170&&car.kind!=='mech'){sfx('bonk',car);if(me)G.shake=Math.max(G.shake,5);damageCar(car,sp*0.02,null);}car.speed*=-0.25;car.vx*=0.3;car.vy*=0.3;}
     if(car.dead)continue;
     const g=groundAt(car.x,car.y,car.z+4);
-    if(car.fly){car.z+=car.vz*dt;if(car.z<=g)planeTouch(car,g);} // a plane in the air (planeDrive sets its velocity)
-    else{if(car.onGround){if(car.z-g<22)car.z=g;else car.onGround=false;}}
-    if(!car.onGround&&!car.fly){car.vz-=GRAV()*dt;car.z+=car.vz*dt;if(car.z<=g){if(car.kind==='mech'&&car.vz<-250)mechStomp(car);if(car.vz<-420){sfx('land',car);burst(car.x,car.y,car.z,10,'puff','#ffffff',90);}car.z=g;car.vz=0;car.onGround=true;}}
+    if(car.fly&&car.kind!=='heli'){car.z+=car.vz*dt;if(car.z<=g)planeTouch(car,g);} // a plane in the air (planeDrive sets its velocity)
+    else if(car.kind!=='heli'){if(car.onGround){if(car.z-g<22)car.z=g;else car.onGround=false;}} // (a helicopter keeps its own height: heliDrive)
+    if(!car.onGround&&!car.fly&&car.kind!=='heli'){car.vz-=GRAV()*dt;car.z+=car.vz*dt;if(car.z<=g){if(car.kind==='mech'&&car.vz<-250)mechStomp(car);if(car.vz<-420){sfx('land',car);burst(car.x,car.y,car.z,10,'puff','#ffffff',90);}car.z=g;car.vz=0;car.onGround=true;}}
     car.padCd=Math.max(0,car.padCd-dt);
-    if(car.onGround&&car.padCd<=0)for(const pd of PADS)if(Math.hypot(car.x-pd.x,car.y-pd.y)<34){car.vz=MAP.lowG?560:700;car.onGround=false;car.padCd=1.5;sfx('boing',car);addText(car.x,car.y,car.z+50,'WHEEE!','#ff7b1c',17);break;}
+    if(car.onGround&&car.padCd<=0&&car.kind!=='heli')for(const pd of PADS)if(Math.hypot(car.x-pd.x,car.y-pd.y)<34){car.vz=MAP.lowG?560:700;car.onGround=false;car.padCd=1.5;sfx('boing',car);addText(car.x,car.y,car.z+50,'WHEEE!','#ff7b1c',17);break;}
     if(hurtAt(car.x,car.y)&&car.z<4&&car.kind!=='board')damageCar(car,30*dt,null);
     if(car.dead)continue;
     const sp=Math.hypot(car.vx,car.vy);
@@ -3107,6 +3111,7 @@ function updateCars(dt){
     if(d){if(d.state!=='alive'){car.driver=null;d.vehicle=null;if(d.isPlayer)engineStop();}
       else{d.x=car.x;d.y=car.y;d.z=car.z+6;d.face=car.ang;d.onGround=true;d.vz=0;d.vx=d.vy=0;
         if(me&&car.kind!=='mech'&&!car.fly&&Math.abs(car.speed)>60&&!mouseMovedRecently())G.yaw+=angDiff(G.yaw,car.ang)*Math.min(1,dt*1.8);}}
+    if(car.kind==='firetruck')truckSpray(car,d,me,dt);
     if(me)xpEvent('drive',Math.hypot(car.vx,car.vy)*dt);
     car.wheelRot+=car.speed*dt/9;
   }
@@ -3141,8 +3146,8 @@ function mechModel(col,boss,scale){const g=new THREE.Group(),dark=shadeHex(col,0
   if(boss){const cr=piv(torso,0,52,-14);for(let k=0;k<5;k++){const a=(k-2)*0.32;B(cr,'#ffcb1f',Math.sin(a)*16,4,0,4,10,4,0.4,'cone');}B(cr,'#ffcb1f',0,-1,0,30,4,6,0.3);g.scale.setScalar(scale||BOSS.scale);}
   g.userData={legs,shins,arms,torso};scene.add(g);return g;}
 // the parts that make a vehicle a car, a mech or a boss mech (kind: 'car' | 'mech' | 'boss')
-function vehBits(kind,col){const mega=kind==='mega',mech=kind==='mech'||kind==='boss'||mega,boss=kind==='boss'||mega,s=mega?MEGA.scale:boss?BOSS.scale:1,plane=kind==='plane',boat=kind==='boat',board=kind==='board',cat=kind==='catapult',hp=mega?MEGA.hp:boss?BOSS.hp:mech?MECH.hp:plane?300:board?250:400;
-  return{kind:mech?'mech':plane||boat||board||cat?kind:'car',boss,mega,r:mech?MECH.r*s:plane?36:boat?32:board?16:cat?26:24,h:mech?MECH.h*s:plane?30:boat?24:board?14:cat?40:28,seat:mech?MECH.seat*s:cat?16:5,hp,maxHp:hp,m:mech?mechModel(col,boss,s):plane?planeModel(col):boat?boatModel(col):board?boardModel(col):cat?catapultModel(col):carModel(col)};}
+function vehBits(kind,col){const mega=kind==='mega',mech=kind==='mech'||kind==='boss'||mega,boss=kind==='boss'||mega,s=mega?MEGA.scale:boss?BOSS.scale:1,plane=kind==='plane',boat=kind==='boat',board=kind==='board',cat=kind==='catapult',heli=kind==='heli',ft=kind==='firetruck',hp=mega?MEGA.hp:boss?BOSS.hp:mech?MECH.hp:plane?300:board?250:400;
+  return{kind:mech?'mech':plane||boat||board||cat||heli||ft?kind:'car',boss,mega,r:mech?MECH.r*s:plane?36:boat?32:board?16:cat?26:heli?34:ft?30:24,h:mech?MECH.h*s:plane?30:boat?24:board?14:cat?40:heli?40:ft?40:28,seat:mech?MECH.seat*s:cat?16:heli?10:ft?12:5,hp,maxHp:hp,m:mech?mechModel(col,boss,s):plane?planeModel(col):boat?boatModel(col):board?boardModel(col):cat?catapultModel(col):heli?heliModel(col):ft?truckModel(col):carModel(col)};} // (the helicopter and fire truck: Rescue Squad)
 function newVehicle(x,y,ang,col,kind){return{x,y,z:groundAt(x,y,10),vz:0,ang,speed:0,vx:0,vy:0,steer:0,driver:null,col,home:{x,y,ang},dead:false,respawnAt:0,onGround:true,padCd:0,wheelRot:0,walkT:0,cd:0,...vehBits(kind,col)};}
 const MECH_COLS=['#7d8796','#ff7b1c','#1f6fd6','#3aa845'];
 function spawnMechs(){const want=Math.round(2*K);
@@ -4298,6 +4303,181 @@ const SIEGE_NET={s:()=>{const S=G.sg,T0=S.tr;return{h:S.half,p:S.phase,e:r2(S.en
     if(!S.site||S.site.ci!==s.s[0]||S.site.cj!==s.s[1])S.site={ci:s.s[0],cj:s.s[1],x:(s.s[0]+0.5)*T,y:(s.s[1]+0.5)*T};
     if(!S.camp||S.camp.x!==s.c[0]||S.camp.y!==s.c[1]){S.camp={x:s.c[0],y:s.c[1]};if(S.campM)scene.remove(S.campM);S.campM=siegeCampModel(siegeOther(s.d));S.campM.position.set(s.c[0],groundAt(s.c[0],s.c[1],10),s.c[1]);}
     Object.assign(S.tr,{x:s.t[0],y:s.t[1],z:s.t[2],home:!!s.t[3],carrier:s.t[4]?byCid(s.t[4]-1):null});G.score.red=s.sc[0];G.score.blue=s.sc[1];S.steal.red=s.st[0];S.steal.blue=s.st[1];}};
+// @module src/js/29e-rescue.js: Rescue Squad (co-op): put out cartoon fires on the roofs with fire trucks and Water Squirters, and fly helicopters to lift people off the rooftops to the H. Includes the helicopter and fire truck vehicles and what the bots do.
+// Main: XM.rescue, RESCUE, RESCUE_NET, heliDrive, heliModel, truckModel, truckSpray, rescueSplash, rescueAddFire
+// See also: modes-extra (XM, MODEFLAGS), cars (updateCars drives the helicopter and trucks; vehBits), update (water drops), net-mode-state (XMNET.rescue)
+/* ================= Rescue Squad =================
+   A co-op mode: everyone (people and bots) is on one team. Cartoon fires break out on the roofs all over the island, and
+   people are stuck up on rooftops waving for help. Put the fires out with the fire trucks' water cannons or a Water
+   Squirter, and fly a helicopter to lift the people off the roofs and land them on the big H at the fire station.
+   A fire nobody sprays grows back and, after a while, jumps to the next building. Save everyone and put out every fire
+   before time runs out to win. The host runs everything; joiners get the fires and the people through RESCUE_NET. */
+MODEFLAGS.rescue={noLoot:1,noCars:1};
+MODES.rescue={desc:'Everyone is on one team! Fires break out all over the island and people are stuck on the rooftops. Put the fires out with fire trucks and Water Squirters, and fly the helicopter to lift everyone to safety before time runs out.'};
+const RESCUE={fires:8,more:4,people:6,len:300,seats:4,spread:45,ceil:900};
+RATING.squirt=2;
+// ---- the helicopter: fly it like a drone (W/S forward and back, A/D turn, Space up, Q down)
+function heliModel(col){const g=new THREE.Group(),B=(c,x,y,z,w,h,d,geo,em)=>{const m=new THREE.Mesh(GEO[geo||'boxC'],mat(c,em));m.position.set(x,y,z);m.scale.set(w,h,d);m.castShadow=true;g.add(m);return m;};
+  B(col,0,22,2,34,30,48,'sphC');B(col,0,24,-30,8,8,40);B(col,0,32,-50,3,18,10);B('#ffffff',0,22,-6,35,4,30,'boxC');
+  const glass=new THREE.Mesh(GEO.sphC,new THREE.MeshLambertMaterial({color:0xbfe8ff,transparent:true,opacity:0.6}));glass.position.set(0,26,16);glass.scale.set(26,20,22);g.add(glass);
+  for(const s of[-1,1]){B('#2b2f3a',s*14,2,2,3,3,52);B('#2b2f3a',s*12,8,12,2,12,2);B('#2b2f3a',s*12,8,-8,2,12,2);}
+  B('#2b2f3a',0,39,2,4,6,4,'cylC');const rotor=new THREE.Group();rotor.position.set(0,42,2);for(const a of[0,Math.PI/2]){const b=new THREE.Mesh(GEO.boxC,mat('#3a3f4b'));b.scale.set(6,1.5,110);b.rotation.y=a;rotor.add(b);}g.add(rotor);
+  const tail=new THREE.Group();tail.position.set(3,32,-50);const tb=new THREE.Mesh(GEO.boxC,mat('#3a3f4b'));tb.scale.set(1,22,3);tail.add(tb);g.add(tail);
+  B('#ff3b3b',0,40,-30,4,3,4,'sphC',0.9);g.userData={rotor,tail,wheels:[]};scene.add(g);return g;}
+// ---- the fire truck: a red truck with a ladder and a water cannon on top
+function truckModel(col){const g=new THREE.Group(),B=(c,x,y,z,w,h,d,geo,em)=>{const m=new THREE.Mesh(GEO[geo||'boxC'],mat(c,em));m.position.set(x,y,z);m.scale.set(w,h,d);m.castShadow=true;g.add(m);return m;};
+  B(col,0,18,-6,36,22,58);B(col,0,20,28,34,26,16);B('#ffffff',0,22,-6,37,3,58);B('#2b2f3a',0,8,0,38,4,76);
+  const glass=new THREE.Mesh(GEO.boxC,new THREE.MeshLambertMaterial({color:0xbfe8ff,transparent:true,opacity:0.55}));glass.position.set(0,27,36.5);glass.scale.set(30,10,1);g.add(glass);
+  for(const s of[-1,1])B('#c5ccd6',s*9,32,-10,3,3,52);for(let k=0;k<6;k++)B('#c5ccd6',0,32,-32+k*9,18,2,2);
+  B('#c5ccd6',0,32,20,10,6,10,'cylC');const gun=B('#ffcb1f',0,36,27,6,6,16,'cylC');gun.rotation.x=Math.PI/2;B('#43c6ff',-11,35,30,6,4,4,'boxC',0.8);B('#ff3b3b',11,35,30,6,4,4,'boxC',0.8);
+  const wheels=[];for(const[x,z]of[[-18,24],[18,24],[-18,-22],[18,-22]]){const w=new THREE.Group();w.rotation.order='YXZ';w.position.set(x,9,z);
+    const t=new THREE.Mesh(GEO.cylC,mat('#2b2f3a'));t.scale.set(18,7,18);t.rotation.z=Math.PI/2;w.add(t);const h=new THREE.Mesh(GEO.boxC,mat('#c5ccd6'));h.scale.set(7.6,12,3);w.add(h);g.add(w);wheels.push(w);}
+  g.userData.wheels=wheels;scene.add(g);return g;}
+// flying: forward/back, turn, up/down; on the ground it sits still until you lift off (pushing forward lifts it a little first)
+function heliDrive(car,d,me,K,dt){const g=groundAt(car.x,car.y,car.z+10);let f=0,s=0,u=0,boost=false;
+  if(me&&!autoOn(d)){f=(K('w')||K('arrowup')?1:0)-(K('s')||K('arrowdown')?1:0);s=(K('d')||K('arrowright')?1:0)-(K('a')||K('arrowleft')?1:0);u=(K(' ')?1:0)-(K('q')||K('control')?1:0);boost=K('shift');
+    if(d.isPlayer&&TOUCH.on){if(TOUCH.mag>0){f=-TOUCH.my;s=TOUCH.mx;}if(TOUCH.jumpHeld)u=1;}}
+  else if(d&&XM[G.mode]&&XM[G.mode].heli){const b=XM[G.mode].heli(car,dt);f=b.f;s=b.s;u=b.u;}
+  car.ang+=s*1.8*dt;car.speed=lerp(car.speed||0,f*(boost?520:380),Math.min(1,dt*1.6));if(car.onGround&&!f)car.speed*=Math.exp(-6*dt);
+  car.vx=Math.cos(car.ang)*car.speed;car.vy=Math.sin(car.ang)*car.speed;
+  let vz=u*260;if(car.z-g<30&&(f||s)&&!u&&d)vz=160;
+  car.vz=lerp(car.vz||0,vz,Math.min(1,dt*3));car.z=Math.min(car.z+car.vz*dt,RESCUE.ceil);
+  if(car.z<=g){car.z=g;if(car.vz<0)car.vz=0;car.onGround=true;}else car.onGround=false;
+  car.rot=clamp((car.rot||0)+(d||!car.onGround?dt:-dt*0.4),0,1);}
+function animHeli(car,dt){const m=car.m,u=m.userData,sp=car.speed||0;m.position.set(car.x,car.z,car.y);
+  m.rotation.set(clamp(sp/1400,-0.3,0.3),Math.PI/2-car.ang,0,'YXZ');const spin=car.driver||car.z-groundAt(car.x,car.y,car.z+10)>3?1:car.rot||0;
+  u.rotor.rotation.y+=dt*32*spin;u.tail.rotation.x+=dt*40*spin;}
+// a fire truck's water cannon: the driver aims and holds the trigger; bots (and the autopilot) spray the nearest fire
+function truckSpray(car,d,me,dt){car.cd=Math.max(0,(car.cd||0)-dt);if(!d||car.cd>0||!G.rs)return;let T=null;
+  if(craftFiring(car,d,me)){if(d.remote){const a=d.rin.aim;T=a?{x:a[0],y:a[1],z:a[2]}:{x:car.x+Math.cos(car.ang)*300,y:car.y+Math.sin(car.ang)*300,z:car.z+60};}else T=aimPoint();}
+  else if(!d.isPlayer&&!d.remote||autoOn(d)){const f=rescueNearFire(car,450);if(f)T={x:f.x,y:f.y,z:f.z+12};}
+  if(!T)return;const h={x:car.x,y:car.y,z:car.z+40};rescueJet(h,T,d,900,20,0.03);car.cd=0.07;if(Math.random()<0.25)sfx('blub',car);}
+// one squirt of water from h toward T, aimed a little high so it arcs down onto the spot
+function rescueJet(h,T,d,sp,dmg,spread){const dx=wdx(T.x-h.x),dy=wdy(h.y,T.y),D=Math.hypot(dx,dy)||1,t=D/sp,dir=norm3({x:dx+(Math.random()-.5)*spread*D,y:dy+(Math.random()-.5)*spread*D,z:T.z-h.z+0.5*420*t*t});
+  G.projs.push({t:'water',x:h.x+dir.x*20,y:h.y+dir.y*20,z:h.z,vx:dir.x*sp,vy:dir.y*sp,vz:dir.z*sp,life:D/sp+0.4,dmg,owner:d,wid:'squirt'});}
+function rescueNearFire(o,max){let b=null,bd=max;for(const f of(G.rs?G.rs.fires:[])){const d=dist(f,o);if(d<bd){bd=d;b=f;}}return b;}
+// water landing near a fire puts some of it out (called when a drop hits something, and for drops passing close by)
+function rescueSplash(p){const R=G.rs;if(!R||NETC())return;for(const f of R.fires.slice()){const d=Math.hypot(wdx(f.x-p.x),wdy(p.y,f.y),f.z+15-p.z);if(d<90)rescueHit(f,p.dmg||8,p.owner);}}
+function rescueHit(f,dmg,by){const R=G.rs;f.hp-=dmg;f.hitT=G.time;if(Math.random()<0.3)burst(f.x,f.y,f.z+20,3,'puff','#ffffff',60);if(f.hp>0)return;
+  R.fires.splice(R.fires.indexOf(f),1);if(f.m)scene.remove(f.m);R.out++;burst(f.x,f.y,f.z+20,30,'puff','#e8f4ff',140);addText(f.x,f.y,f.z+70,'FIRE OUT!','#43c6ff',20);sfx('blub',f);
+  if(by)by.pts=(by.pts||0)+1;if(by&&by.isPlayer)xpEvent('harvest',10);feed((by?nameTag(by)+' put out':'Out goes')+' a fire!');rescueCheck();}
+// the top of a building at (x,y): its roof, or the top of its wall there (a big building's walls stand above its roof)
+function rescueTop(b,x,y){let z=0;for(const o of cellOf(x??b.x+b.w/2,y??b.y+b.h/2)){if(o.z0>300||!inFoot(o,x??b.x+b.w/2,y??b.y+b.h/2,30))continue;z=Math.max(z,surfAt(o,o.x,o.y));}
+  if(b.roofs&&b.roofs.length)z=Math.max(z,...b.roofs.map(o=>o.z0+o.h));return z||72;}
+// a new fire on a building that isn't burning, near one edge of its roof (so a jet from the ground reaches it); near (x,y) if given
+function rescueAddFire(x,y){const R=G.rs,busy=new Set(R.fires.map(f=>f.b));let best=null,bd=1e18;
+  for(let i=0;i<BUILDINGS.length;i++){const b=BUILDINGS[i];if(busy.has(i)||R.people.some(p=>p.b===i&&p.st===0))continue;const d=x==null?Math.random():dist({x:b.x+b.w/2,y:b.y+b.h/2},{x,y})+Math.random()*200;if(d<bd){bd=d;best=i;}}
+  if(best==null)return null;const b=BUILDINGS[best];let fx,fy,nx,ny,ok=0;
+  // the side it burns on: open ground out there and a clear shot up to it (no tree in the way), tried round from a random spot
+  for(let k=0,side=Math.floor(Math.random()*4);k<12&&ok<2;k++,side=(side+1)%4){const t=rand(0.25,0.75),x=side<2?b.x+b.w*t:side===2?b.x+26:b.x+b.w-26,y=side>=2?b.y+b.h*t:side===0?b.y+26:b.y+b.h-26,ux=side===2?-1:side===3?1:0,uy=side===0?-1:side===1?1:0;
+    const ax=x+ux*200,ay=y+uy*200,z=rescueTop(b,x,y);let q=!walkBlocked(ax,ay,30)&&!isBad(wpx(ax),wpy(ax,ay))&&!inBuilding(wpx(ax),wpy(ax,ay),20)?1:0;
+    if(q)for(let s=0.05;s<0.75;s+=0.05){const px=lerp(ax,x,s),py=lerp(ay,y,s);if(blocked3D(wpx(px),wpy(px,py),lerp(45,z+10,s))){q=0;break;}}if(q)q=2;
+    if(q>ok||fx==null){ok=q;fx=x;fy=y;nx=ux;ny=uy;}}
+  const f={x:fx,y:fy,z:rescueTop(b,fx,fy),hp:100,b:best,t:0,hitT:-9,ax:fx+nx*200,ay:fy+ny*200};R.fires.push(f);R.spawned++;return f;}
+function fireModel(){const g=new THREE.Group();for(const[c,s,o]of[['#ff3b1f',1,0],['#ff9a3c',0.75,0.2],['#ffe14d',0.45,0.4]]){const m=new THREE.Mesh(GEO.cone,basic(c,{transparent:true,opacity:0.92}));m.scale.set(46*s,70*s,46*s);m.userData.o=o;g.add(m);}
+  scene.add(g);return g;}
+// someone stuck on a roof, waving for help
+function rescuePerson(i){const g=new THREE.Group(),body=new THREE.Group();body.position.y=10;g.add(body);const T=['#ff7b1c','#43c6ff','#5cff7a','#ff9ad5','#ffcb1f','#9b6bff'][i%6];
+  const add=(pa,geo,col,px,py,pz,sx,sy,sz)=>{const m=new THREE.Mesh(GEO[geo],mat(col));m.position.set(px,py,pz);m.scale.set(sx,sy,sz);m.castShadow=true;pa.add(m);return m;};
+  const P=buildPerson({look:{top:T,top2:'#ffffff',pants:'#2b3a5a',shoe:'#1b2235',glove:null,hair:['#3b2a1a','#e8c27a','#1b1b1b'][i%3],hairStyle:'short',hat:'none',skin:['#f1c27d','#c68642','#8d5524'][i%3]}},body,add);
+  scene.add(g);return Object.assign({g},P);}
+// ---- the mode
+XM.rescue={name:'Rescue Squad',
+  init(){G.len=RESCUE.len;for(const c of G.chars){c.team='hero';this.loadout(c);c.cur=1;}
+    const R=G.rs={fires:[],people:[],pad:{x:WORLD/2,y:WORLD/2},saved:0,out:0,spawned:0,total:RESCUE.people,padM:null};
+    if(NETC())return;
+    // the fire station: a big H on open ground near the middle, with the fire trucks and helicopters around it
+    for(const r of[300,500,800,1200]){let ok=null;for(let a=0;a<60&&!ok;a++){const s=freeSpot(WORLD/2,WORLD/2,r,0,null);if(!pointBlocked(s.x,s.y,150)&&!isBad(s.x,s.y)&&!inBuilding(s.x,s.y,160)&&!PADS.some(p=>dist(p,s)<200))ok=s;}if(ok){R.pad={x:ok.x,y:ok.y};break;}}
+    this.padModel();G.cars=[];
+    const at=(a,r)=>({x:R.pad.x+Math.cos(a)*r,y:R.pad.y+Math.sin(a)*r});
+    [[0.3,'heli'],[3.4,'heli'],[1.6,'firetruck'],[2.2,'firetruck'],[4.6,'firetruck']].forEach(([a,k],i)=>{const r=k==='heli'?280:240,s=freeSpot(at(a,r).x,at(a,r).y,60,30,G.cars); // (round the edge of the H, never on it)
+      const v=newVehicle(s.x,s.y,Math.atan2(s.y-R.pad.y,s.x-R.pad.x),k==='heli'?(i?'#1f6fd6':'#ff7b1c'):'#e2312b',k);v.hp=v.maxHp=1e6;G.cars.push(v);});
+    // people on rooftops, on buildings far apart; then the fires
+    const roofy=BUILDINGS.map((b,i)=>i).filter(i=>BUILDINGS[i].roofs&&BUILDINGS[i].roofs.length).sort(()=>Math.random()-0.5);
+    for(const i of roofy){if(R.people.length>=RESCUE.people)break;const b=BUILDINGS[i],x=b.x+b.w/2,y=b.y+b.h/2;if(R.people.some(p=>dist(p,{x,y})<500)||dist(R.pad,{x,y})<400)continue;
+      R.people.push({x,y,z:rescueTop(b),b:i,st:0,car:-1});}
+    R.total=R.people.length;for(const p of R.people)p.m=rescuePerson(R.people.indexOf(p));
+    for(let k=0;k<RESCUE.fires;k++)rescueAddFire();
+    G.nav=navBuild(); // the driving grid the race bots use: the bot fire trucks find their way round buildings with it
+    const placed=G.cars.slice();for(const c of G.chars){const s=freeSpot(R.pad.x,R.pad.y,260,40,placed);c.x=s.x;c.y=s.y;c.z=groundAt(s.x,s.y,10);c.face=Math.atan2(WORLD/2-s.y,WORLD/2-s.x);placed.push(c);}
+    // bots take the second helicopter and two of the trucks; the rest grab Water Squirters
+    const bots=G.chars.filter(c=>!c.isPlayer&&!c.human),take=[G.cars[1],G.cars[3],G.cars[4]];take.forEach((v,i)=>{const b=bots[i];if(b){b.x=v.x;b.y=v.y;enterCar(b,v);}});
+    announce('🚒 Rescue Squad!','Put out the fires and fly the helicopter to save the people on the roofs!',4);sfx('horn');},
+  padModel(){const R=G.rs,g=new THREE.Group(),z=groundAt(R.pad.x,R.pad.y,10);
+    const base=new THREE.Mesh(GEO.cylC,mat('#3a3f4b'));base.scale.set(220,3,220);g.add(base);const ring=new THREE.Mesh(GEO.cylC,basic('#ffcb1f'));ring.scale.set(200,3.4,200);g.add(ring);const inner=new THREE.Mesh(GEO.cylC,mat('#3a3f4b'));inner.scale.set(184,3.8,184);g.add(inner);
+    for(const[x,w,d]of[[-34,16,90],[34,16,90],[0,70,16]]){const m=new THREE.Mesh(GEO.boxC,basic('#ffffff'));m.scale.set(w,4.4,d);m.position.x=x;g.add(m);}
+    g.position.set(R.pad.x,z,R.pad.y);g.rotation.y=Math.PI/2;scene.add(g);R.padM=g;},
+  // everyone carries a Water Squirter (topped up all the time)
+  loadout(c){if(c.zombie)return;const s=c.slots[1];if(!s||s.id!=='squirt')c.slots[1]={id:'squirt',r:1,ammo:99};else s.ammo=99;if(c.slots[c.cur]&&c.slots[c.cur].id==='pistol')c.cur=1;for(let i=2;i<5;i++)if(c.slots[i]&&c.slots[i].id==='pistol')c.slots[i]=null;},
+  spawn(c){const R=G.rs;return freeSpot(R.pad.x,R.pad.y,260,40,G.chars.filter(o=>o!==c&&o.state==='alive'));},
+  update(dt){const R=G.rs;if(NETC()||!R)return;
+    for(const c of G.chars)if(c.state==='alive')this.loadout(c);
+    // drops flying close by a fire put it out too
+    for(let i=G.projs.length-1;i>=0;i--){const p=G.projs[i];if(p.t!=='water')continue;for(const f of R.fires)if(Math.hypot(wdx(f.x-p.x),wdy(p.y,f.y),f.z+15-p.z)<60){rescueHit(f,p.dmg,p.owner);removeModel(p);G.projs.splice(i,1);break;}}
+    // a fire nobody sprays grows back, and after a while jumps to the next building
+    for(const f of R.fires.slice()){if(G.time-f.hitT>3)f.hp=Math.min(100,f.hp+3*dt);f.t+=dt;
+      if(f.t>RESCUE.spread&&f.hp>=100&&R.fires.length<10&&R.spawned<RESCUE.fires+RESCUE.more){f.t=0;const n=rescueAddFire(f.x,f.y);if(n)feed('🔥 The fire spread!');}}
+    // the helicopters: hover by a roof to pick people up, land on the H to drop them off
+    for(const v of G.cars){if(v.kind!=='heli')continue;const on=R.people.filter(p=>p.st===1&&p.car===v);
+      if(v.dead){for(const p of on){p.st=0;p.car=-1;}continue;}
+      if(on.length<RESCUE.seats)for(const p of R.people){if(p.st!==0||on.length>=RESCUE.seats)continue;if(dist(p,v)<90&&v.z-p.z>-10&&v.z-p.z<80){p.st=1;p.car=v;on.push(p);sfx('pickup',v);addText(p.x,p.y,p.z+60,'THANK YOU!','#ffcb1f',16);
+          if(v.driver)tellOrAnnounce(v.driver,'🚁 Got one!',on.length+' aboard. Land on the H at the fire station to drop them off.',2.2);}}
+      if(on.length&&v.onGround&&dist(v,R.pad)<170){for(const p of on){p.st=2;p.car=-1;R.saved++;}burst(v.x,v.y,v.z+30,50,'confetti',null,220);sfx('victory');addText(v.x,v.y,v.z+80,on.length>1?on.length+' SAVED!':'SAVED!','#5cff7a',22);
+        if(v.driver)v.driver.pts=(v.driver.pts||0)+on.length*2;feed((v.driver?nameTag(v.driver):'The helicopter')+' rescued '+on.length+(on.length>1?' people!':' person!'));rescueCheck();}}
+    if(!G.endAt&&G.mt>=G.len)this.finish(false);},
+  finish(won){if(G.endAt)return;const R=G.rs;G.win=won;G.endAt=G.time+(won?5:3);
+    if(won){startVictory();announce('#1 RESCUE SQUAD!','Every fire is out and everyone is safe. Heroes!',4.6,'victory');sfx('victory');}
+    else{announce("Time's up!",`You saved ${R.saved} of ${R.total} people and put out ${R.out} fires.`,3.4);sfx('lose');}},
+  // the bots: in a truck or helicopter the vehicle does the work; on foot, head for the nearest fire and spray it
+  bot(c){const ai=c.ai,R=G.rs;if(!R||c.vehicle)return;const f=rescueNearFire(c,1e9);if(!f){ai.mode='obj';ai.gx=R.pad.x;ai.gy=R.pad.y;return;}
+    const a=rand(-60,60);ai.target=null;ai.mode='obj';ai.gx=wpx((f.ax??f.x)+(f.ay!=null&&f.ay!==f.y?a:0));ai.gy=wpy(ai.gx,(f.ay??f.y)+(f.ax!=null&&f.ax!==f.x?a:0));}, // (from the side it burns on)
+  botTick(c,dt){const R=G.rs;if(!R||c.vehicle)return null;const f=rescueNearFire(c,330);if(!f)return null;
+    c.face=Math.atan2(wdy(c.y,f.y),wdx(f.x-c.x));if(c.cd<=0){c.cur=1;const h=handPos(c),dx=wdx(f.x-h.x),dy=wdy(h.y,f.y),D=Math.hypot(dx,dy)||1,t=D/WEAPONS.squirt.speed;
+      fire(c,norm3({x:dx,y:dy,z:f.z+12-h.z+0.5*420*t*t}));}
+    return[0,0,false];},
+  // a bot (or autopilot) fire truck: drive (round the buildings, on the race bots' grid) to the side a fire burns on, stop and spray it
+  drive(car,dt){const f=rescueNearFire(car,1e9);if(!f||car.kind!=='firetruck')return{thr:0,str:0};const A=car.auto||(car.auto={stuck:0,rev:0,path:null,goal:null,re:0});
+    const gx=f.ax??f.x,gy=f.ay??f.y;if(Math.hypot(gx-car.x,gy-car.y)<110||dist(f,car)<240)return{thr:0,str:0};
+    A.re-=dt;if(A.goal!==f||A.re<=0||!A.path||!A.path.length){A.goal=f;A.re=8;A.path=(G.nav&&navPath(G.nav,{x:car.x,y:car.y},{x:gx,y:gy}))||[{x:gx,y:gy}];}
+    while(A.path.length>1&&Math.hypot(A.path[0].x-car.x,A.path[0].y-car.y)<70)A.path.shift();const w=A.path[0],dx=w.x-car.x,dy=w.y-car.y,d=Math.hypot(gx-car.x,gy-car.y);
+    if(A.rev>0){A.rev-=dt;return{thr:-1,str:A.rs};}const da=angDiff(car.ang,Math.atan2(dy,dx));
+    if(Math.abs(car.speed)<35){A.stuck+=dt;if(A.stuck>1.2){A.stuck=0;A.rev=0.9;A.rs=-Math.sign(da||1);A.re=0;}}else A.stuck=0;
+    const ax=car.x+Math.cos(car.ang)*60,ay=car.y+Math.sin(car.ang)*60,ahead=walkBlocked(ax,ay,24)||hurtAt(wpx(ax),wpy(ax,ay));
+    return{thr:ahead?0.3:Math.abs(da)>1.4?0.5:d<400?0.5:1,str:ahead?(da>=0?1:-1):clamp(da*1.8,-1,1)};},
+  // a bot (or autopilot) helicopter: fly over to the nearest person, hover by the roof, then land on the H when full or done
+  heli(car,dt){const R=G.rs;if(!R)return{f:0,s:0,u:0};const on=R.people.filter(p=>p.st===1&&p.car===car).length,wait=R.people.filter(p=>p.st===0);
+    let T,land=false;if(on>=RESCUE.seats||(on&&!wait.length)||!wait.length){T={x:R.pad.x,y:R.pad.y,z:groundAt(R.pad.x,R.pad.y,10)};land=true;}
+    else{let bd=1e9;for(const p of wait){const d=dist(p,car);if(d<bd){bd=d;T=p;}}}
+    const dx=wdx(T.x-car.x),dy=wdy(car.y,T.y),hd=Math.hypot(dx,dy),h=angDiff(car.ang,Math.atan2(dy,dx));
+    let tall=T.z;for(const s of[0,120,240,400])tall=Math.max(tall,groundAt(wpx(car.x+Math.cos(car.ang)*s),wpy(car.x,car.y+Math.sin(car.ang)*s),5000));const cruise=Math.max(tall+150,260);
+    // stuck against something (a tall tree, a wall): climb for a moment
+    car.hs=(car.lastF||0)>0.4&&Math.hypot(car.vx,car.vy)<60&&!car.onGround?(car.hs||0)+dt:0;if(car.hs>1.2)car.hup=1.5;car.hup=Math.max(0,(car.hup||0)-dt);
+    const wantZ=car.hup>0?car.z+200:hd<110?(land?T.z-20:T.z+30):hd<400?Math.max(T.z+60,tall+60):cruise,u=clamp((wantZ-car.z)/50,-1,1);
+    const f=Math.abs(h)>0.9?0:clamp(hd/250-(car.speed||0)/500,-0.6,1)*(car.z<Math.min(cruise,wantZ)-90&&hd>300?0.3:1);
+    car.lastF=hd<30?0:f;return{f:car.lastF,s:clamp(h*2,-1,1),u:car.onGround&&!on&&!wait.length?0:u};},
+  hud(c1,c2,c3,p){const R=G.rs;if(!R)return;const left=Math.max(0,G.len-G.mt),v=p.vehicle,on=v&&v.kind==='heli'?R.people.filter(q=>q.st===1&&q.car===v).length:0;
+    setC(c1,'chip');setH(c1,`🔥 ${R.fires.length} fire${R.fires.length===1?'':'s'} · 💧 ${R.out} out`);
+    setC(c2,left<30?'chip storm':'chip');setH(c2,'⏱ '+fmt(left));
+    setC(c3,R.saved===R.total?'chip final':'chip');setH(c3,`🚁 Saved ${R.saved} of ${R.total}`+(on?` · ${on} aboard: land on the H!`:''));},
+  visual(dt,t){const R=G.rs;if(!R)return;
+    for(const f of R.fires){if(!f.m)f.m=fireModel();f.m.position.set(f.x,f.z,f.y);const k=0.45+0.55*f.hp/100;f.m.children.forEach((m,i)=>{const s=1+Math.sin(t*(9+i*3)+f.x+m.userData.o*9)*0.12;m.scale.y=70*[1,0.75,0.45][i]*k*s;});
+      if(Math.random()<dt*2)burst(f.x,f.y,f.z+70*k,1,'puff','#6b6f78',40);}
+    for(const p of R.people){if(!p.m)p.m=rescuePerson(R.people.indexOf(p));const g=p.m.g;g.visible=p.st===0;if(!g.visible)continue;g.position.set(p.x,p.z,p.y);g.rotation.y=t*0.4+p.b;
+      if(p.m.armL){p.m.armL.rotation.z=2.6+Math.sin(t*8+p.b)*0.4;p.m.armR.rotation.z=-2.6-Math.sin(t*8+p.b)*0.4;}}},
+  mini(m,k){const R=G.rs;if(!R)return;m.fillStyle='#ff7b1c';for(const f of R.fires){m.beginPath();m.arc(f.x*k,f.y*k,5,0,TAU);m.fill();}
+    m.fillStyle='#ffcb1f';m.strokeStyle='#1b2235';m.lineWidth=2;for(const p of R.people)if(p.st===0){m.beginPath();m.arc(p.x*k,p.y*k,5,0,TAU);m.fill();m.stroke();}
+    m.fillStyle='#ffffff';m.font='bold 12px sans-serif';m.textAlign='center';m.textBaseline='middle';m.fillText('H',R.pad.x*k,R.pad.y*k);},
+  cleanup(){const R=G.rs;if(!R)return;for(const f of R.fires)if(f.m)scene.remove(f.m);for(const p of R.people)if(p.m)scene.remove(p.m.g);if(R.padM)scene.remove(R.padM);},
+  end(p,b){b.xm=b.xm||{};b.xm.rescue=b.xm.rescue||{wins:0};if(G.win)b.xm.rescue.wins++;const R=G.rs||{saved:0,total:0,out:0,fires:[]};
+    return{title:G.win?'Everyone is safe!':"Time's up!",sub:'Rescue Squad',cls:G.win?'':'blue',stats:[[R.saved+' / '+R.total,'People saved'],[R.out,'Fires out'],[R.fires.length,'Still burning'],[Math.floor(p.pts||0),'Your rescues']]};}};
+// every fire out and everyone safe: the squad wins
+function rescueCheck(){const R=G.rs;if(R&&!R.fires.length&&R.saved>=R.total)XM.rescue.finish(true);}
+// joiners: the fires, the people, the station, the counts
+const RESCUE_NET={s:()=>{const R=G.rs;return{f:R.fires.map(f=>[ri(f.x),ri(f.y),ri(f.z),ri(f.hp)]),p:R.people.map(p=>[ri(p.x),ri(p.y),ri(p.z),p.st,p.b,p.st===1?G.cars.indexOf(p.car):-1]),h:[ri(R.pad.x),ri(R.pad.y)],sv:R.saved,o:R.out,tt:R.total};},
+  a:s=>{const R=G.rs;if(!R)return;R.saved=s.sv;R.out=s.o;R.total=s.tt;if(R.pad.x!==s.h[0]||R.pad.y!==s.h[1]||!R.padM){R.pad={x:s.h[0],y:s.h[1]};if(R.padM)scene.remove(R.padM);XM.rescue.padModel();}
+    while(R.fires.length>s.f.length){const f=R.fires.pop();if(f.m)scene.remove(f.m);}
+    s.f.forEach((a,i)=>{let f=R.fires[i];if(!f)f=R.fires[i]={hitT:-9};if(f.x!==a[0]||f.y!==a[1]){if(f.x!=null&&f.m)burst(f.x,f.y,f.z+20,20,'puff','#e8f4ff',120);}Object.assign(f,{x:a[0],y:a[1],z:a[2],hp:a[3]});});
+    s.p.forEach((a,i)=>{const p=R.people[i]||(R.people[i]={});Object.assign(p,{x:a[0],y:a[1],z:a[2],st:a[3],b:a[4],car:a[5]>=0?G.cars[a[5]]:-1});});}};
 // @module src/js/30-fun.js: Fun extras: bonk streaks (DOUBLE BONK! …) and the end-of-match party with fireworks and dancing.
 // Main: bonkStreak, startParty, partyTick, STREAK_NAMES
 // See also: combat (calls bonkStreak), update (starts the party)
@@ -4601,7 +4781,7 @@ function update(dt){
       if(p.t0>=p.fuse){explode(p);removeModel(p);G.projs.splice(i,1);}continue;}
     {const ox=p.x,oy=p.y;p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;wrapProj(p,ox,oy);}
     if(p.t==='rocket'&&Math.random()<dt*30)burst(p.x-p.vx*0.02,p.y-p.vy*0.02,p.z,1,'puff','#ffffff',20);
-    if(p.t==='bubble'){p.vz+=40*dt;}
+    if(p.t==='bubble'){p.vz+=40*dt;}else if(p.t==='water')p.vz-=420*dt; // (water arcs down: Rescue Squad)
     {const stepLen=Math.hypot(p.vx,p.vy,p.vz)*dt;if(stepLen>20){const n=Math.ceil(stepLen/10);
       for(let k=1;k<=n;k++){const f=1-k/n,x0=p.x-p.vx*dt*f,y0=p.y-p.vy*dt*f,x=wpx(x0),y=wpy(x0,y0),z=p.z-p.vz*dt*f;
         if(blocked3D(x,y,z)||G.chars.some(o=>isEnemy(p.owner,o)&&o.state==='alive'&&Math.hypot(wdx(o.x-x),wdy(y,o.y))<15&&z>o.z-4&&z<o.z+CH+4)){p.x=x;p.y=y;p.z=z;break;}}}}
@@ -4618,7 +4798,7 @@ function update(dt){
         if(p.t==='chicken'&&p.bounces>0){let nb=null,nd=300;for(const q of G.chars){if(!isEnemy(p.owner,q)||q.state!=='alive'||p.hit.has(q))continue;const d=dist(q,o);if(d<nd){nd=d;nb=q;}}
           if(nb){p.bounces--;const v=norm3({x:wdx(nb.x-p.x),y:wdy(p.y,nb.y),z:nb.z+24-p.z});p.vx=v.x*560;p.vy=v.y*560;p.vz=v.z*560;p.life=1.0;dead=false;}}
         break;}}
-    if(dead){if(p.t==='rocket'){p.z=Math.max(p.z,2);explode(p);}removeModel(p);G.projs.splice(i,1);}}
+    if(dead){if(p.t==='rocket'){p.z=Math.max(p.z,2);explode(p);}else if(p.t==='water')rescueSplash(p);removeModel(p);G.projs.splice(i,1);}}
   for(let i=G.traps.length-1;i>=0;i--){const t=G.traps[i];t.life-=dt;t.arm-=dt;if(t.life<=0){removeModel(t);G.traps.splice(i,1);continue;}if(t.arm>0)continue;
     for(const c of G.chars){if(!isEnemy(t.owner,c)||c.state!=='alive'||!c.onGround)continue;if(Math.hypot(c.x-t.x,c.y-t.y)<20&&Math.abs(c.z-t.z)<20){
       c.stun=1.3;c.kx+=Math.cos(c.face)*300;c.ky+=Math.sin(c.face)*300;addText(c.x,c.y,c.z+50,'SLIP!','#ffd21f',18);sfx('slip',c);damage(c,10*(t.owner.isPlayer?1:G.diff.dmgMul),t.owner,'banana');removeModel(t);G.traps.splice(i,1);break;}}}
@@ -4648,6 +4828,7 @@ function projMesh(p){let m;
   else if(p.t==='bolt'){m=new THREE.Mesh(GEO.boxC,basic('#7ff9ff'));m.scale.set(3,3,22);}
   else if(p.t==='snipe'){m=new THREE.Mesh(GEO.boxC,basic('#ffcf3a'));m.scale.set(3,3,46);}
   else if(p.t==='ice'){m=new THREE.Group();const a=new THREE.Mesh(GEO.sphC,basic('#9fe4ff'));a.scale.set(10,10,10);const b=new THREE.Mesh(GEO.boxC,basic('#ffffff',{transparent:true,opacity:0.7}));b.scale.set(4,4,26);b.position.z=-12;m.add(a,b);}
+  else if(p.t==='water'){m=new THREE.Mesh(GEO.sphC,basic('#7fd3ff',{transparent:true,opacity:0.85}));m.scale.set(8,8,8);}
   else if(p.t==='bubble'){m=new THREE.Mesh(GEO.sphC,new THREE.MeshLambertMaterial({color:0xbfe8ff,transparent:true,opacity:0.5,emissive:0xff9ad5,emissiveIntensity:0.25}));m.scale.set(22,22,22);}
   else if(p.t==='rocket'){m=new THREE.Group();const t=new THREE.Mesh(GEO.cylC,mat('#3aa845'));t.scale.set(8,22,8);t.rotation.x=Math.PI/2;const n=new THREE.Mesh(GEO.cone,mat('#ff4fa3'));n.scale.set(8,9,8);n.rotation.x=Math.PI/2;n.position.z=11;
     const f=new THREE.Mesh(GEO.cone,basic('#ffb02e'));f.scale.set(7,14,7);f.rotation.x=-Math.PI/2;f.position.z=-11;m.add(t,n,f);}
@@ -4667,7 +4848,7 @@ function syncVisuals(dt){
   const p=G.player;
   if(HOSP&&HOSP.staff)HOSP.staff.sheet.visible=p.state==='gone'&&!!p.watch; // the sheet over you, in the hospital bed
   // characters
-  for(const car of G.cars){if(car.dead)continue;if(car.kind==='mech'){animMech(car,dt);continue;}if(car.kind==='plane'||car.kind==='boat'){animCraft(car,dt);continue;}if(car.kind==='board'){animBoard(car,dt);continue;}const cm=car.m;cm.position.set(car.x,car.z,car.y);cm.rotation.set(car.onGround?0:-clamp(car.vz/1500,-0.35,0.35),Math.PI/2-car.ang,0,'YXZ');
+  for(const car of G.cars){if(car.dead)continue;if(car.kind==='mech'){animMech(car,dt);continue;}if(car.kind==='plane'||car.kind==='boat'){animCraft(car,dt);continue;}if(car.kind==='board'){animBoard(car,dt);continue;}if(car.kind==='heli'){animHeli(car,dt);continue;}const cm=car.m;cm.position.set(car.x,car.z,car.y);cm.rotation.set(car.onGround?0:-clamp(car.vz/1500,-0.35,0.35),Math.PI/2-car.ang,0,'YXZ');
     cm.userData.wheels.forEach((w,i)=>{w.rotation.x=car.wheelRot;w.rotation.y=i<2?-car.steer*0.5:0;});}
   for(const car of G.cars)if(!car.dead&&car.m)wrapView(car.m,car.kind==='plane'&&car.fly); // drawn on the side of an edge nearest the camera (wrap module)
   for(const c of G.chars){if(!c.m)buildCharModel(c);const m=c.m,g=m.g;g.scale.setScalar(c.vehicle&&c.vehicle.boss&&c.state==='alive'?BOSS.scale:1);
@@ -4847,12 +5028,14 @@ function updateHUD(){updateNetHUD();gadgetHud();{const at=$('autoTag'),on=!!(G&&
     else if(p.vehicle&&G.mode==='race')h='<kbd>W</kbd> go · <kbd>A</kbd><kbd>D</kbd> steer · <kbd>Shift</kbd> turbo · <kbd>R</kbd> reset car';else if(p.vehicle&&p.vehicle.kind==='mech'){const v=p.vehicle;h=(v.boss?'👑 BOSS MECH ':'🤖 MECH ')+Math.max(0,Math.round(v.hp))+'/'+v.maxHp+' · <kbd>Click</kbd> blast · <kbd>Space</kbd> jump + STOMP · <kbd>Shift</kbd> run'+(v.boss?'':' · <kbd>F</kbd> get out');}
     else if(p.vehicle&&p.vehicle.kind==='plane'){const v=p.vehicle,ins='✈️ '+Math.round((v.speed||0)/4)+' mph · ⬆ '+Math.max(0,Math.round((v.z-groundAt(v.x,v.y,v.z+20))/4))+' ft · throttle '+Math.round((v.thr||0)*100)+'%<br>';
       h=ins+(v.fly?'<kbd>W</kbd><kbd>S</kbd> throttle · <kbd>A</kbd><kbd>D</kbd> roll · <kbd>Space</kbd>/<kbd>Q</kbd> nose up/down · <kbd>←</kbd><kbd>→</kbd> or mouse rudder · '+(G.mode==='airrace'?'<kbd>R</kbd> back to the last ring':'hold <kbd>Click</kbd> machine guns · <kbd>E</kbd> water balloons · <kbd>F</kbd> jump out'):'<kbd>W</kbd> throttle up · <kbd>A</kbd><kbd>D</kbd> steer · when fast, hold <kbd>Space</kbd> to pull up and take off · <kbd>F</kbd> get out');}
+    else if(p.vehicle&&p.vehicle.kind==='heli')h='🚁 HELICOPTER · <kbd>W</kbd><kbd>S</kbd> forward/back · <kbd>A</kbd><kbd>D</kbd> turn · <kbd>Space</kbd> up · <kbd>Q</kbd> down · hover by a roof to pick people up, then land on the H · <kbd>F</kbd> get out';
+    else if(p.vehicle&&p.vehicle.kind==='firetruck')h='🚒 FIRE TRUCK · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> drive · aim at a fire and hold <kbd>Click</kbd> to spray · <kbd>F</kbd> get out';
     else if(p.vehicle&&p.vehicle.kind==='catapult')h='🏰 CATAPULT · <kbd>W</kbd><kbd>S</kbd> roll · <kbd>A</kbd><kbd>D</kbd> turn · aim at the fort and <kbd>Click</kbd> to launch a foam boulder · <kbd>F</kbd> get out';
     else if(p.vehicle&&p.vehicle.kind==='board')h='🛹 <kbd>W</kbd> go · <kbd>A</kbd><kbd>D</kbd> steer · <kbd>Shift</kbd> boost · <kbd>Space</kbd> jump, and in the air: tricks! · ride along a rail to grind · <kbd>F</kbd> get off';
     else if(p.vehicle&&p.vehicle.kind==='boat')h='⛵ <kbd>W</kbd> go · <kbd>A</kbd><kbd>D</kbd> steer · <kbd>Click</kbd> foam cannon · <kbd>F</kbd> get out';
     else if(p.vehicle)h='Driving! <kbd>F</kbd> get out · <kbd>Space</kbd> honk · <kbd>Shift</kbd> turbo';else if(reviveTarget(p))h='Hold <kbd>E</kbd> to revive '+esc(reviveTarget(p).name);else if(nearInteract(p)){const ni=nearInteract(p);h=ni.type==='llama'?'Press <kbd>E</kbd> to open the Loot Llama!':'Press <kbd>E</kbd> to buy '+esc(itemName(ni.o.id,ni.o.r))+' for '+ni.o.cost.n+' '+ni.o.cost.mat;}else if(p.state==='alive'&&nearestCar(p))h={mech:'Press <kbd>F</kbd> to climb into the MECH!',plane:'Press <kbd>F</kbd> to fly the PLANE!',board:'Press <kbd>F</kbd> to ride the HOVERBOARD!',catapult:'Press <kbd>F</kbd> to use the CATAPULT!',boat:'Press <kbd>F</kbd> to drive the BOAT!'}[nearestCar(p).kind]||'Press <kbd>F</kbd> to drive';
     else if(G.swap&&p.state==='alive')h='Press <kbd>E</kbd> to swap for '+esc(itemName(G.swap.id,G.swap.r??WEAPONS[G.swap.id].rar));
-    if(TOUCH.on&&h){if(TOUCH.act)h='';else if(p.vehicle){const v=p.vehicle;h=G.mode==='race'?'Use the joystick to drive · push it all the way for turbo':v.kind==='plane'?('✈️ '+Math.round((v.speed||0)/4)+' mph · '+(v.fly?'stick: steer, up to climb, down to dive · let go: fly level · stick all the way up: loop · all the way to the side: barrel roll · BOOST: faster'+(G.mode==='airrace'?'':' · hold FIRE: machine guns · 💧: balloons'):'push the stick up to roll, and you take off by yourself')):v.kind==='catapult'?'🏰 Roll with the stick · aim at the fort and press FIRE to launch a foam boulder':v.kind==='board'?'🛹 Steer with the stick · JUMP to jump, and again in the air for tricks · ride along a rail to grind':v.kind==='boat'?'⛵ Steer with the stick · FIRE for the foam cannon':v.kind==='mech'?(v.boss?'👑 BOSS MECH ':'🤖 MECH ')+Math.max(0,Math.round(v.hp))+'/'+v.maxHp+' · fire to blast · STOMP to jump':'';}else h=h.split('Press <kbd>Space</kbd> to jump out').join('Tap <b>JUMP OUT</b> to jump out').split('Press <kbd>Space</kbd>').join('Tap <b>GLIDE</b>');}
+    if(TOUCH.on&&h){if(TOUCH.act)h='';else if(p.vehicle){const v=p.vehicle;h=G.mode==='race'?'Use the joystick to drive · push it all the way for turbo':v.kind==='plane'?('✈️ '+Math.round((v.speed||0)/4)+' mph · '+(v.fly?'stick: steer, up to climb, down to dive · let go: fly level · stick all the way up: loop · all the way to the side: barrel roll · BOOST: faster'+(G.mode==='airrace'?'':' · hold FIRE: machine guns · 💧: balloons'):'push the stick up to roll, and you take off by yourself')):v.kind==='catapult'?'🏰 Roll with the stick · aim at the fort and press FIRE to launch a foam boulder':v.kind==='heli'?'🚁 Stick: fly and turn · hold JUMP to go up, CROUCH to go down · hover by a roof, then land on the H':v.kind==='firetruck'?'🚒 Drive with the stick · aim at a fire and hold FIRE to spray':v.kind==='board'?'🛹 Steer with the stick · JUMP to jump, and again in the air for tricks · ride along a rail to grind':v.kind==='boat'?'⛵ Steer with the stick · FIRE for the foam cannon':v.kind==='mech'?(v.boss?'👑 BOSS MECH ':'🤖 MECH ')+Math.max(0,Math.round(v.hp))+'/'+v.maxHp+' · fire to blast · STOMP to jump':'';}else h=h.split('Press <kbd>Space</kbd> to jump out').join('Tap <b>JUMP OUT</b> to jump out').split('Press <kbd>Space</kbd>').join('Tap <b>GLIDE</b>');}
     if(h){pr.hidden=false;if(pr.dataset.t!==h){pr.dataset.t=h;pr.innerHTML=h;}}else{pr.hidden=true;pr.dataset.t='';}}
   if(G.feed.length&&G.time-G.feed[G.feed.length-1].t>7){G.feed.pop();renderFeed();}
   $('stormVig').style.opacity=st&&p.state==='alive'&&Math.hypot(p.x-st.x,p.y-st.y)>st.r?'1':'0';
@@ -4896,7 +5079,7 @@ function applyOpts(){[['len',opts.len],['diff',cap(opts.diff)],['map',cap(opts.m
 function syncMenu(){const mode=radioVal('mode'),map=radioVal('map'),stormOff=mode==='royale'&&radioVal('storm')==='off';
   $('modeDesc').textContent=stormOff?'Ride the battle bus in, then bash away with no storm. Everyone respawns until the timer runs out!':MODES[mode].desc;$('mapDesc').textContent=MAPS[map].desc;
   $('optStorm').hidden=mode!=='royale';$('optSquad').hidden=mode!=='royale';$('optRule').hidden=!stormOff;$('ruleDesc').textContent=RULES[radioVal('rule')].sub;
-  $('optLen').hidden=mode==='zombie'||mode==='race'||mode==='airrace'||mode==='siege';$('optBots').hidden=mode==='zombie';$('botsLabel').textContent=(mode==='team'||mode==='ctf'||mode==='siege')?'Bots (split into two teams)':'Bots';$('diffLabel').textContent=mode==='zombie'?'Zombie toughness':'Bot skill';
+  $('optLen').hidden=mode==='zombie'||mode==='race'||mode==='airrace'||mode==='siege'||mode==='rescue';$('optBots').hidden=mode==='zombie';$('botsLabel').textContent=(mode==='team'||mode==='ctf'||mode==='siege')?'Bots (split into two teams)':'Bots';$('diffLabel').textContent=mode==='zombie'?'Zombie toughness':'Bot skill';
   {const parts=[];if(!$('optStorm').hidden)parts.push(radioVal('storm')==='off'?'Storm off':'Storm on');if(!$('optSquad').hidden)parts.push(cap(radioVal('squad')));if(!$('optLen').hidden)parts.push(radioVal('len')+' min');if(!$('optBots').hidden)parts.push($('bots').value+' bots');parts.push(cap(radioVal('diff')));
     $('matchSum').textContent='⚙️ '+parts.join(' · ');$('matchFor').textContent='for '+(document.querySelector('label[for=mode'+cap(mode)+']').lastChild.textContent.trim());}
   if(map!==MAP_ID&&!G){genMap(map);buildWorld();}showBest();}
@@ -5071,13 +5254,13 @@ const HELP_PAGES=[
     :`<ul><li><b>Z</b> wall · <b>X</b> ramp · <b>C</b> floor · <b>V</b> roof. Click to place, hold to keep building.</li><li>Look up to build higher.</li><li><b>G</b> edits a wall into a door or window.</li><li><b>T</b> switches wood, stone and metal. Metal is strongest!</li><li>Swing your pickaxe at trees, rocks and walls to collect materials.</li></ul>`},
   {t:'🚌 Bus & storm',shots:['bus','storm'],body:()=>`<ul><li>Battle Royale starts on the <b>battle bus</b>. ${TOUCH.on?'Tap JUMP OUT':'Press Space'} over the spot you want to land.</li><li>Your glider opens by itself, or open it early.</li><li>The <b>purple storm</b> shrinks the island. It hurts while you are in it, so keep moving to the safe circle!</li><li>The white dashed circle on the minimap shows where the storm goes next.</li><li>🌐 <b>The edges loop!</b> Walk, drive or shoot off one side of the map and you come back in on the other side (the see-through curtain marks the edge). So nobody is safe hiding at the edge. Only the bridge to the Bonk Hospital goes on north.</li></ul>`},
   {t:'🚁 Getting bonked',shots:['drone'],body:()=>`<ul><li>When you run out of health you get knocked out, but a <b>rescue drone</b> flies you back in after a few seconds.</li><li>In Battle Royale, drones stop at the <b>final circle</b>. Then it's last one standing!</li><li>In <b>Squads</b> you get knocked down first. A teammate can revive you by holding ${TOUCH.on?'the green REVIVE button':'E'} next to you.</li><li>Heal up with bandages, med kits and shield potions.</li></ul>`},
-  {t:'🏆 How to win',shots:[],body:()=>`<p>Every game mode has its own way to win:</p><div class="hwin">${[['🪂 Battle Royale','Be the last one (or last squad) standing when the storm closes.'],['⚔️ Team Battle','Red team needs 20 knockouts before blue does.'],['🧟 Zombie Survival','Survive as many zombie waves as you can. Build walls!'],['🏎️ Car Race','Drive through the glowing gates in order. Finish 3 laps first.'],['✈️ Plane Race','Fly through the glowing rings in the sky in order. Finish 3 laps first.'],['🌋 Floor is Lava','Build up and stay above the rising lava the longest.'],['👑 Capture the Crown','Grab the crown and hold it to score points.'],['🚩 Capture the Flag','Steal the blue flag and bring it back to your base.'],['🏰 Fort Siege','Build a fort around your treasure, then steal theirs and carry it home. The fastest steal wins.'],['⛰️ King of the Hill','Stand in the golden circle to score. It moves around!'],['🏗️ Build Battle','Build the tallest tower before time runs out.'],['🤖 Mega Robot','Everyone teams up against one giant robot. Bonk it before time runs out!'],['🎯 Training Room','No winning here: practice your aim, building and every weapon.']].map(([a,b])=>`<div><b>${a}</b>${b}</div>`).join('')}</div>`},
+  {t:'🏆 How to win',shots:[],body:()=>`<p>Every game mode has its own way to win:</p><div class="hwin">${[['🪂 Battle Royale','Be the last one (or last squad) standing when the storm closes.'],['⚔️ Team Battle','Red team needs 20 knockouts before blue does.'],['🧟 Zombie Survival','Survive as many zombie waves as you can. Build walls!'],['🏎️ Car Race','Drive through the glowing gates in order. Finish 3 laps first.'],['✈️ Plane Race','Fly through the glowing rings in the sky in order. Finish 3 laps first.'],['🌋 Floor is Lava','Build up and stay above the rising lava the longest.'],['👑 Capture the Crown','Grab the crown and hold it to score points.'],['🚩 Capture the Flag','Steal the blue flag and bring it back to your base.'],['🏰 Fort Siege','Build a fort around your treasure, then steal theirs and carry it home. The fastest steal wins.'],['🚒 Rescue Squad','Everyone together: put out every fire and fly everyone off the rooftops to the H before time runs out.'],['⛰️ King of the Hill','Stand in the golden circle to score. It moves around!'],['🏗️ Build Battle','Build the tallest tower before time runs out.'],['🤖 Mega Robot','Everyone teams up against one giant robot. Bonk it before time runs out!'],['🎯 Training Room','No winning here: practice your aim, building and every weapon.']].map(([a,b])=>`<div><b>${a}</b>${b}</div>`).join('')}</div>`},
   {t:'🌐 Play with friends',shots:[],body:()=>`<ul><li>Tap <b>🌐 Multiplayer</b> on the welcome screen and type your <b>name</b>.</li><li><b>One player hosts:</b> tap <b>Host a game</b> and read out the 4-letter <b>room code</b>.</li><li><b>Everyone else joins:</b> tap <b>Join</b> and type the code. The host sees <b>🙋 wants to join</b> and taps <b>✅ Allow</b> (or <b>❌ Kick</b>).</li><li>The host picks the <b>game</b>, the <b>map</b> and the <b>teams</b>: <i>Host picks</i> (tap a player to move them), <i>🎲 Random</i>, <i>Pick your own</i> (tap Join Red/Blue…), or <i>Everyone vs everyone</i>.</li><li>Bots fill the empty spots. The host presses <b>START</b> and everyone drops into the same match!</li><li>Up to 8 real players, in every game mode: Battle Royale, Team Battle, Zombie Survival (team up against the waves), Car Race, Floor is Lava, Capture the Crown, Capture the Flag, King of the Hill, Build Battle and the Training Room.</li><li>Hold <b>Tab</b> (or tap <b>🏆</b>) for the <b>scoreboard</b>: everyone's knockouts and ping.</li><li>Out of the match? You <b>watch a teammate</b>. Press Space, click or tap JUMP to switch who you watch.</li><li>Friends who arrive late can <b>jump into a match that already started</b> by taking over a bot (the host can turn this off in Settings → 🌐 Multiplayer).</li><li>Need a break? Press <b>O</b> (or tap <b>🤖</b>) and autopilot plays for you. If you stop playing for a bit, a <b>💤 bot helper</b> plays for you until you're back. The host can turn either off in Settings → 🌐 Multiplayer.</li><li>After the match, <b>Play again</b> takes everyone back to the room.</li></ul>`},
   {t:'🔧 Connection trouble',shots:[],body:()=>`<ul><li>Everyone opens <b>the same Bonk Royale website</b> (or its app on the home screen). No account needed.</li><li>Everyone needs the <b>same version</b>: Stable, Beta and Alpha are separate websites, and players on different ones can't join each other.</li><li>At home, a <b>home server</b> is even faster (see 🏠 Home server).</li><li>Every device needs to be <b>online</b> during the match.</li><li>Run <b>Settings → 🌐 Multiplayer → Connection test</b>. Green checks mean you're ready.</li><li>Use <b>Test with a friend</b> to see how fast two devices talk. Under 150 ms feels smooth.</li><li>“No game found”: check the 4 letters, and make sure the host is still on the room screen.</li><li>If the host leaves, the match ends for everyone. If a player leaves, a bot takes over their character.</li></ul>`},
   {t:"🎤 Mr. Bonk's Show",shots:[],body:()=>`<p>A game show in five rounds. Win rounds to get points. The most points after round 5 wins <b>${SHOW_PRIZE} tickets</b>!</p><ol><li><b>Bonk Bat Brawl:</b> everyone gets a giant foam bat. ${TOUCH.on?'Tap FIRE':'Click'} to swing and bonk others out of the glowing circle. Knocked out? You're out, and your bat stops working. Everyone still in when time runs out wins <b>${SHOW_BRAWL_TK} tickets</b>!</li><li><b>Red Light, Green Light:</b> run to the finish on <b>🟢 GREEN</b>. On <b>🔴 RED</b>, freeze! Move and you go back to the start.</li><li><b>The Obstacle Course:</b> jump the pink hurdles and dodge the swinging foam hammers. The first three to the finish get points.</li><li><b>Hide and Seek:</b> hide inside the big ring. Seekers count to 15, then hunt. If a seeker touches you, you are out. Stay hidden until time runs out to win!</li><li><b>The Button Challenge:</b> one button wins the round. The others are traps (BOING!). Find the winner first!</li></ol><p>No real fighting in this mode (the foam bat only pushes), and it works in multiplayer too.</p>`},
   {t:'🛡️ Safety & chat',shots:[],body:()=>`<ul><li><b>Nobody gets in without the host's OK.</b> Anyone with the code can <i>ask</i> to join. The host sees their name and taps <b>✅ Allow</b> or <b>❌ Kick</b>. During a match, the request pops up at the top of the screen.</li><li>In the room, the host can tap <b>✖</b> next to a player to remove them.</li><li><b>Chat is off</b> unless the host turns it on (in the room, or in Settings → 🌐 Multiplayer).</li><li>When chat is on, press <b>Enter</b> or tap <b>💬</b> to type, or tap a quick message like <b>GG!</b>.</li><li><b>Swear words are hidden</b> in English, Spanish, French, Portuguese, German and Italian. They turn into ★★★. A player name with a swear word in it just shows as <b>Player</b>.</li><li>Only play with people you know, and never share your address, school or passwords in chat.</li></ul>`},
   {t:'🏠 Home server',shots:[],body:()=>`<p>Playing at home with family? A Windows PC can run the game for everyone on the same Wi-Fi. It's faster than going over the internet, and nobody needs an account.</p><ol><li>Put the whole <b>Bonk Royale</b> game folder on the PC (it has <b>Start Bonk Server.bat</b> in it).</li><li>Double-click <b>Start Bonk Server</b>. A window opens with an address like <b>http://192.168.1.20:8080</b>.</li><li>The first time, Windows may ask about the firewall: tick <b>Private networks</b> and click <b>Allow</b>.</li><li>On each iPad, phone or laptop on the same Wi-Fi, type that address into Safari or Chrome. Then use <b>🌐 Multiplayer</b> as usual: one player hosts and the others type the code.</li><li>Keep the server window open while you play. Close it when you're done.</li></ol><ul><li>The lobby says <b>🏠 Home server</b> when it's working.</li><li>Your locker, tickets and settings are saved separately for each address, so the home-server game starts fresh.</li><li>Only devices on your own Wi-Fi can reach the server, not the whole internet.</li></ul>`},
-  {t:'✈️ Planes, boats & hoverboards',shots:[],body:()=>`<p>Find a plane, a boat or a hoverboard and ${TOUCH.on?'tap <b>ACTION</b>':'press <b>F</b>'} to get in.</p><ul><li><b>✈️ Planes fly for real:</b> ${TOUCH.on?'push the stick up to race down open ground, and the plane takes off by itself when it is fast enough':'press <b>W</b> to open the throttle and race down open ground, then hold <b>Space</b> to pull up and take off'}. In the air: ${TOUCH.on?'the stick steers: left and right turn (the plane banks by itself), up climbs and down dives, and when you let go it flies level. Hold the stick all the way up to loop, or all the way to one side for a barrel roll. <b>BOOST</b> goes faster':'<b>W</b>/<b>S</b> throttle, <b>A</b>/<b>D</b> roll, <b>Space</b>/<b>Q</b> (or the arrow keys, or the mouse) nose up and down, <b>←</b>/<b>→</b> (or the mouse) the rudder'}. Do loops, rolls and barrel rolls! Bank to turn. Too slow and you stall. Fly off the edge of the map and you come back in on the other side. hold ${TOUCH.on?'<b>FIRE</b>':'<b>Click</b>'} to rattle off the twin foam <b>machine guns</b> straight ahead, and ${TOUCH.on?'the <b>💧 BALLOON</b> button':'<b>E</b>'} drops <b>water balloons</b> that splash whoever is below. To land: throttle off, nose a little down, and level off just above the ground (land too hard and it goes BONK!). Jump out in the air and you fall, then your glider opens (just like jumping off the battle bus), and the plane floats down on its own parachute. Bonked while flying? You stay in the cockpit until the rescue drone lifts you out.</li><li><b>🏁 Plane Race</b> is a whole game mode: everyone starts in the sky in a plane and flies through the glowing rings in order (the next ring is gold, and a <b>gold arrow</b> points to it). ${TOUCH.on?'Tap <b>RESET PLANE</b>':'Press <b>R</b>'} to go back to the last ring.</li><li><b>🛹 Hoverboards</b> are parked by the shiny <b>grind rails</b> beside the main roads. They are fast (${TOUCH.on?'push the stick all the way':'<b>Shift</b>'} to boost) and hover, so water does not slow them and lava cannot hurt you. ${TOUCH.on?'Tap <b>JUMP</b>':'Press <b>Space</b>'} to jump, and again in the air for a trick (360 spin, kickflip, backflip, superman). Land it for a little boost. Ride along a rail (or jump onto one) to <b>grind</b>, and launch off ramps for big air.</li><li><b>⛵ Boats</b> only go on water. ${TOUCH.on?'<b>FIRE</b>':'<b>Click</b>'} fires the <b>foam cannon</b>.</li></ul>`},
+  {t:'✈️ Planes, boats & hoverboards',shots:[],body:()=>`<p>Find a plane, a boat or a hoverboard and ${TOUCH.on?'tap <b>ACTION</b>':'press <b>F</b>'} to get in.</p><ul><li><b>🚁 Helicopters</b> (in Rescue Squad): ${TOUCH.on?'the stick flies and turns, hold JUMP to go up and CROUCH to go down':'<b>W</b>/<b>S</b> forward and back, <b>A</b>/<b>D</b> turn, <b>Space</b> up, <b>Q</b> down'}. Hover by a roof to pick people up, then land on the H. <b>🚒 Fire trucks</b>: aim at a fire and hold ${TOUCH.on?'FIRE':'Click'} to spray.</li><li><b>✈️ Planes fly for real:</b> ${TOUCH.on?'push the stick up to race down open ground, and the plane takes off by itself when it is fast enough':'press <b>W</b> to open the throttle and race down open ground, then hold <b>Space</b> to pull up and take off'}. In the air: ${TOUCH.on?'the stick steers: left and right turn (the plane banks by itself), up climbs and down dives, and when you let go it flies level. Hold the stick all the way up to loop, or all the way to one side for a barrel roll. <b>BOOST</b> goes faster':'<b>W</b>/<b>S</b> throttle, <b>A</b>/<b>D</b> roll, <b>Space</b>/<b>Q</b> (or the arrow keys, or the mouse) nose up and down, <b>←</b>/<b>→</b> (or the mouse) the rudder'}. Do loops, rolls and barrel rolls! Bank to turn. Too slow and you stall. Fly off the edge of the map and you come back in on the other side. hold ${TOUCH.on?'<b>FIRE</b>':'<b>Click</b>'} to rattle off the twin foam <b>machine guns</b> straight ahead, and ${TOUCH.on?'the <b>💧 BALLOON</b> button':'<b>E</b>'} drops <b>water balloons</b> that splash whoever is below. To land: throttle off, nose a little down, and level off just above the ground (land too hard and it goes BONK!). Jump out in the air and you fall, then your glider opens (just like jumping off the battle bus), and the plane floats down on its own parachute. Bonked while flying? You stay in the cockpit until the rescue drone lifts you out.</li><li><b>🏁 Plane Race</b> is a whole game mode: everyone starts in the sky in a plane and flies through the glowing rings in order (the next ring is gold, and a <b>gold arrow</b> points to it). ${TOUCH.on?'Tap <b>RESET PLANE</b>':'Press <b>R</b>'} to go back to the last ring.</li><li><b>🛹 Hoverboards</b> are parked by the shiny <b>grind rails</b> beside the main roads. They are fast (${TOUCH.on?'push the stick all the way':'<b>Shift</b>'} to boost) and hover, so water does not slow them and lava cannot hurt you. ${TOUCH.on?'Tap <b>JUMP</b>':'Press <b>Space</b>'} to jump, and again in the air for a trick (360 spin, kickflip, backflip, superman). Land it for a little boost. Ride along a rail (or jump onto one) to <b>grind</b>, and launch off ramps for big air.</li><li><b>⛵ Boats</b> only go on water. ${TOUCH.on?'<b>FIRE</b>':'<b>Click</b>'} fires the <b>foam cannon</b>.</li></ul>`},
   {t:'💾 Save codes',shots:[],body:()=>`<p>Want your tickets, levels and Locker on another version (Stable, Beta or Alpha) or on another device? Use a <b>save code</b>.</p><ol><li>Go to <b>Settings → 👤 Profile</b> and tap <b>📋 Copy my code</b> (or <b>💾 Save to a file</b>).</li><li>On the other version or device, open <b>Settings → 👤 Profile</b>, paste the code (or <b>📂 Load a file</b>) and tap <b>📥 Load this code</b>.</li><li>Check the summary and tap <b>✅ Replace my progress</b>. Changed your mind? <b>↩ Undo the last load</b>.</li></ol><p>Codes from older versions always keep working.</p>`},
   {t:'🚀 Gadgets',shots:[],body:()=>`<p>Gadgets are machines that give you super moves. Get them in the <b>Ticket Shop</b> or by levelling up, then pick which ones to bring in <b>Locker → 🚀 Gadgets</b>. You start every match with them.</p><ul><li><b>🦘 Spring Shoes</b> (level 4): jump much higher. Never wear out.</li><li><b>⚡ Speed Suit</b>: ${TOUCH.on?'tap <b>SPEED</b>':'press <b>U</b>'} for 10 seconds of super speed.</li><li><b>🎒 Jetpack</b>: hold ${TOUCH.on?'<b>JUMP</b>':'<b>Space</b>'} in the air to fly up, smooth and steady.</li><li><b>🔥 Rocket Boots</b>: hold ${TOUCH.on?'<b>JUMP</b>':'<b>Space</b>'} in the air to blast up. They wobble you around! (Bring the jetpack <i>or</i> the boots.)</li><li><b>🫧 Shield Bubble</b>: blocks hits. Each hit pops one charge.</li><li><b>🪝 Grappling Hook</b>: ${TOUCH.on?'tap <b>HOOK</b>':'press <b>H</b>'} to zip to the wall, roof or ground you aim at. Never wears out.</li></ul><p><b>⛽ Fuel:</b> the speed suit, jetpack, rocket boots and shield bubble wear out. Buy more fuel in the Ticket Shop, or find <b>fuel cans</b> and <b>shield bubbles</b> lying around in matches.</p>`},
   {t:'👕 Level up & style',shots:[],body:()=>`<ul><li>Every match gives you <b>XP</b>. Level up to unlock outfits, gliders, pickaxes, back bling and gun wraps in the <b>Locker</b>.</li><li>Finish <b>challenges</b> (shown in the lobby) for bonus XP and tickets.</li><li>Earn <b>🎟️ tickets</b> by playing, then spend them in the <b>Ticket Shop</b>. Tap an item to try it on first!</li><li><b>Gun wraps</b> change the colour of every gun you hold, and even your laser beams.</li><li>${TOUCH.on?'Want your buttons somewhere else? Settings → Controls → <b>Customize touch controls</b>.':'Playing on a tablet? Touch controls turn on by themselves.'}</li></ul>`}];
@@ -5371,10 +5554,10 @@ if(!(window.claude&&window.claude.use)&&!window.BONK_WS&&!/mplocal/.test(locatio
 // Main: NET, NET_TEAMS, NET_MODES, netTeamKind, myLook, lookFromNet, netMe
 // See also: net-lobby, safety
 const NET_TEAMS=[{id:'r',name:'Red',col:'#e2312b'},{id:'b',name:'Blue',col:'#1f6fd6'},{id:'g',name:'Green',col:'#3aa845'},{id:'y',name:'Yellow',col:'#e0a800'}];
-const NET_MODES=['royale','team','zombie','race','airrace','siege','floorlava','crown','ctf','koth','buildbattle','training','show','robot'];
+const NET_MODES=['royale','team','zombie','race','airrace','siege','rescue','floorlava','crown','ctf','koth','buildbattle','training','show','robot'];
 const NET_TEAMMODES={host:'Host picks',random:'🎲 Random',self:'Pick your own',ffa:'Everyone vs everyone'};
 // how teams work in each mode: 'free' (any teams or FFA), 'rb' (red vs blue only), 'coop' (everyone together)
-const netTeamKind=m=>m==='team'||m==='ctf'||m==='siege'?'rb':m==='zombie'||m==='training'||m==='robot'?'coop':'free';
+const netTeamKind=m=>m==='team'||m==='ctf'||m==='siege'?'rb':m==='zombie'||m==='training'||m==='robot'||m==='rescue'?'coop':'free';
 const NET={R:null,code:'',role:null,lob:null,offPeers:null,offChat:null,startId:null,hostPeer:null,maxPlayers:8};
 function myLook(){const L=PROG.locker;return{o:L.outfit,b:L.back,g:L.glider,p:L.pick,w:L.wrap,pt:L.pet};}
 function lookFromNet(l){l=l||{};const o=OUTFITS.find(x=>x.id===l.o)||OUTFITS[0];return Object.assign({},o,{back:l.b==='outfit'||!l.b?o.back:l.b,glider:l.g||'classic',pick:l.p||'classic',wrap:l.w||'none',pet:l.pt||'none',emblem:true});}
@@ -5569,6 +5752,7 @@ const XMNET={
   show:SHOW_NET, // Mr. Bonk's Challenge Show (defined with the mode, in its own module)
   robot:ROBOT_NET, // the Mega Robot (also in its own module)
   siege:SIEGE_NET, // Fort Siege (also in its own module)
+  rescue:RESCUE_NET, // Rescue Squad (also in its own module)
   ctf:{s:()=>({f:['red','blue'].map(t=>{const F=G.flags[t];return[ri(F.x),ri(F.y),ri(F.z),F.carrier?F.carrier.cid+1:0,F.home?1:0];})}),
     a:s=>{['red','blue'].forEach((t,i)=>{const F=G.flags&&G.flags[t],a=s.f[i];if(!F||!a)return;F.x=a[0];F.y=a[1];F.z=a[2];F.carrier=a[3]?byCid(a[3]-1):null;F.home=!!a[4];});}},
   crown:{s:()=>({c:[ri(G.crown.x),ri(G.crown.y),ri(G.crown.z),G.crown.carrier?G.crown.carrier.cid+1:0],p:netPts()}),
@@ -5755,7 +5939,7 @@ function netInterp(dt){const N=G.net,rt=G.time-(N.interpD||0.12);
     car.speed=Math.hypot(car.x-ox,car.y-oy)/Math.max(dt,1e-3)*Math.sign(Math.cos(car.ang)*(car.x-ox)+Math.sin(car.ang)*(car.y-oy)||1);car.onGround=true;}}
 function netClientProjs(dt){for(let i=G.projs.length-1;i>=0;i--){const p=G.projs[i];let dead;
   const ox=p.x,oy=p.y;if(p.t==='grenade'||p.t==='balloon'||p.t==='boulder'){p.t0+=dt;p.vz-=700*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;wrapProj(p,ox,oy);const g=groundAt(p.x,p.y,p.z+5);if(p.z<g){p.z=g;p.vz=Math.abs(p.vz)*0.35;p.vx*=0.6;p.vy*=0.6;}dead=p.t0>=p.fuse;}
-  else{p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;wrapProj(p,ox,oy);if(p.t==='bubble')p.vz+=40*dt;dead=p.life<=0||!!blocked3D(p.x,p.y,p.z);}
+  else{p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;wrapProj(p,ox,oy);if(p.t==='bubble')p.vz+=40*dt;else if(p.t==='water')p.vz-=420*dt;dead=p.life<=0||!!blocked3D(p.x,p.y,p.z);}
   if(dead){removeModel(p);G.projs.splice(i,1);}}}
 // what this player pressed, sent to the host
 function netClientKey(k){const N=G.net,p=G.player;if(k==='o'){netJoinerAuto();return true;}if(['r','=','+','-','o','escape','p','m'].includes(k)&&!(k==='r'&&(G.mode==='race'||G.mode==='airrace')))return k==='o';
