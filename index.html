@@ -436,6 +436,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
           <input type="radio" name="map" id="mapCity" value="city"><label for="mapCity"><i>🏙️</i>Big City</label>
           <input type="radio" name="map" id="mapSky" value="sky"><label for="mapSky"><i>☁️</i>Sky Islands</label>
           <input type="radio" name="map" id="mapPark" value="park"><label for="mapPark"><i>🎢</i>Theme Park</label>
+          <input type="radio" name="map" id="mapBuild" value="build"><label for="mapBuild"><i>🏗️</i>Construction Site</label>
         </div><p class="opt-desc" id="mapDesc"></p></div>
       <p class="opt-desc" id="matchSum"></p>
       <div class="btns"><button class="brick" id="playBtn" type="button">START ▶</button><button class="brick small" id="mOptions" type="button">⚙️ Match options</button><button class="brick small" id="mHome" type="button">🏠 Home</button><p class="note" id="bestNote"></p></div>
@@ -641,7 +642,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
       <h3>What's inside</h3>
       <ul>
         <li>🎮 15 game modes: Battle Royale, Team Battle, Zombie Survival, Car Race, Plane Race, Floor is Lava, Capture the Crown, Capture the Flag, Fort Siege, Rescue Squad, King of the Hill, Build Battle, the Training Room, Mr. Bonk's Challenge Show and the Mega Robot</li>
-        <li>🗺️ 12 maps, from Candy Land and a low-gravity Space Station to slippery Frozen Peaks and the Big City</li>
+        <li>🗺️ 13 maps, from Candy Land and a low-gravity Space Station to slippery Frozen Peaks and the Big City</li>
         <li>🔫 20+ weapons with Common to Legendary rarities, plus your very own Mythic Laser Blaster</li>
         <li>🔨 Building and editing, cars, loot llamas, vending machines and squads</li>
         <li>👕 A Locker, Ticket Shop, gun wraps, XP levels and daily challenges</li>
@@ -1465,6 +1466,65 @@ function rideHold(c,dt){const R=c.ride,t=G.time;if(R.oneway&&t-c.rideT0>=R.dur){
 // the water slide: step onto the top of it and off you go
 function rideAuto(c){if(c.vehicle||c.ride)return;for(const R of RIDES)if(R.kind==='slide'&&Math.hypot(c.x-R.x,c.y-R.y)<40&&c.z>R.z-20&&!(c.slideCd>G.time)){rideBoard(c,R);c.slideCd=G.time+5;}}
 function rideWaitTick(c){const R=c.rideWait;if(!R)return;if(Math.hypot(c.x-R.x,c.y-R.y)>160){c.rideWait=null;return;}if(R.ready(G.time))rideBoard(c,R);}
+// @module src/js/06f-construction.js: The Construction Site map: half-built steel towers with ramps to climb, tower cranes swinging their loads, cement mixer trucks to drive, and piles of bricks, pipes, planks and sand.
+// Main: SITE, CRANES, siteTower, siteCrane, sitePiles, mixerModel
+// See also: maps (MAP.gen), three-setup (MAP.build), visuals (MAP.tick), cars (mixer vehicles via MAP.cars)
+/* ================= Construction Site (map) =================
+   A big building site: half-built steel towers you can climb (ramps up inside, open floors to fight on), tower cranes
+   swinging their loads round overhead, cement mixer trucks to drive (kind 'mixer', the drum turns), and piles of building
+   materials everywhere: bricks, pipes, planks, sand. Positions are in design units (times K), like every map. */
+const SITE={towers:[[560,700,4],[1720,560,5],[1560,1700,3]],cranes:[[840,640,0.6],[1740,860,-0.4],[1280,1720,0.9]]};
+let CRANES=[];
+function siteZone(x,y){for(const[tx,ty]of SITE.towers)if(Math.abs(x-tx)<110&&Math.abs(y-ty)<110)return 1;for(const[cx,cy]of SITE.cranes)if(Math.hypot(x-cx,y-cy)<50)return 1; // (kept clear for the towers and cranes)
+  if(Math.hypot(x-1200,y-1180)<70||Math.abs(y-1180)<26&&x>300&&x<2100||Math.abs(x-1180)<26&&y>300&&y<2100)return 1;
+  for(const[cx,cy,r]of[[400,1500,90],[1950,1250,70],[1000,400,60],[700,2050,80]])if(Math.hypot(x-cx,y-cy)<r)return 2;return 0;}
+MAPS.build={name:'Construction Site',desc:'A busy building site: climb the half-built towers, dodge the swinging cranes, drive a cement mixer and hide behind piles of bricks, pipes and planks.',seed:8086,
+  tiles:['#c9a36b','#8a8580','#7a5a3a','#b9b4aa'],side:'#8a6a45',sky:['#8cc8f0','#fdf0d8'],outside:'#c9a36b',tree:'tree',rock:'rock',treeMul:0.25,slow:0.5,zone:siteZone,
+  b:[[3,3,3,3,'#ffcb1f'],[24,3,3,3,'#ff7b1c'],[3,24,3,3,'#43c6ff'],[23,23,3,3,'#9aa0aa'],[11,23,3,3,'#e2312b']],
+  gen(R){CRANES=[];for(const t of SITE.towers)siteTower(t[0]*K,t[1]*K,t[2]);for(const c of SITE.cranes)siteCrane(c[0]*K,c[1]*K,c[2]);sitePiles(R);},
+  build(){siteBuild();},
+  tick(dt,t){const tm=G?G.time:performance.now()/1000;for(const c of CRANES)if(c.jib){c.jib.rotation.y=c.a0+Math.sin(tm*0.12+c.a0)*1.4;c.hook.position.y=-120-Math.sin(tm*0.3+c.a0)*80;}
+    if(G)for(const v of G.cars)if(v.kind==='mixer'&&v.m.userData.drum)v.m.userData.drum.rotation.z+=dt*2;},
+  cars(){for(let k=0;k<2;k++){const s=freeSpot((1100+k*250)*K,1350*K,300,60,G.cars);G.cars.push(newVehicle(s.x,s.y,Math.random()*TAU,k?'#ff7b1c':'#ffcb1f','mixer'));}}};
+POI_NAMES.build=['Site Office','Tool Shed','Foreman Hut','Paint Store','Lunch Trailer'];
+EXTRA_NAMES.build=['Brick Yard','Pipe Depot','Lumber Shed','Sand Shack','Hard Hat Hut','Bolt Barn','Cone Corner','Ladder Lodge','Wheelbarrow Way','Drill Den','Scaffold Shack','Plank Place'];
+// a half-built tower: orange steel columns, open concrete floors, and a ramp up each floor along the west side
+function siteTower(cx,cy,floors){const s=240,x0=Math.round((cx-s/2)/T)*T,y0=Math.round((cy-s/2)/T)*T,H=90,col='#ff9a3c',slab='#b9b4aa';
+  for(let j=0;j<3;j++)for(let i=0;i<3;i++){const ti=x0/T+i,tj=y0/T+j;if(ti>=0&&tj>=0&&ti<N&&tj<N)TILE[ti+tj*N]=3;}
+  for(const[x,y]of[[x0,y0],[x0+s-14,y0],[x0,y0+s-14],[x0+s-14,y0+s-14],[x0+s/2-7,y0],[x0+s/2-7,y0+s-14]])addOb({t:'box',x,y,w:14,d:14,z0:0,h:floors*H+30,col,wall:true,steel:true});
+  for(let k=0;k<floors;k++){const z=k*H;
+    addOb({t:'ramp',x:x0+2,y:y0+20,w:58,d:200,z0:z+(k?8:0),h:H-(k?0:-8),dir:1,stairs:true,site:true});
+    addOb({t:'box',x:x0+60,y:y0,w:s-60,d:s,z0:z+H,h:8,col:slab,wall:true,slab:true});addOb({t:'box',x:x0,y:y0+220,w:60,d:20,z0:z+H,h:8,col:slab,wall:true,slab:true});}}
+// a tower crane: a tall yellow mast with a jib that swings round slowly, a trolley and a hook carrying a pallet of bricks
+function siteCrane(x,y,a0){const m=40,top=560;addOb({t:'box',x:x-m/2,y:y-m/2,w:m,d:m,z0:0,h:top,col:'#ffcb1f',wall:true,steel:true});
+  const i=Math.floor(x/T),j=Math.floor(y/T);if(i>=0&&j>=0&&i<N&&j<N)TILE[i+j*N]=3;CRANES.push({x,y,top,a0});}
+// piles of building materials (solid, so you can hide behind them or jump up on them)
+function sitePiles(R){const kinds=[['#b5452c',60,40,34],['#d9b26b',90,30,24],['#7d8796',80,36,30],['#c9a36b',70,70,26]];
+  for(let a=0,n=0;a<1500&&n<Math.round(26*K);a++){const x=R()*WORLD,y=R()*WORLD,k=kinds[Math.floor(R()*kinds.length)],w=k[1]+R()*30,d=k[2]+R()*20;
+    if(tileAt(x,y)!==0||pointBlocked(x,y,70)||inBuilding(x,y,60)||PADS.some(p=>Math.hypot(p.x-x,p.y-y)<90))continue;
+    addOb({t:'box',x:x-w/2,y:y-d/2,w,d,z0:0,h:k[3]+R()*14,col:k[0],wall:true,pile:k[0]});n++;}}
+function siteBuild(){
+  // the ramps inside the towers (drawn as tilted planks with rails)
+  for(const o of OB){if(o.site){const L=Math.hypot(o.d,o.h),pt=Math.atan2(o.h,o.d);S('boxC','#8a8580',o.x+o.w/2,o.y+o.d/2,o.z0+o.h/2,o.w,4,L,{rx:-pt});S('boxC','#ff9a3c',o.x+o.w-2,o.y+o.d/2,o.z0+o.h/2+14,3,3,L,{rx:-pt});}
+    else if(o.pile==='#b5452c')for(let q=8;q<o.h;q+=10)S('box','#8f3622',o.x+o.w/2,o.y+o.d/2,q,o.w+1,1.5,o.d+1);
+    else if(o.pile==='#7d8796')for(let q=0;q<3;q++)S('cyl','#9aa3ad',o.x+o.w/2,o.y+8+q*(o.d-16)/2,o.h-6,10,o.w,10,{rz:Math.PI/2});}
+  // traffic cones, here and there
+  const R=mulberry32(MAP.seed+3);for(let n=0,a=0;n<40&&a<400;a++){const x=R()*WORLD,y=R()*WORLD;if(tileAt(x,y)>1||blocked3D(x,y,5))continue;S('cone','#ff7b1c',x,y,0,14,26,14);S('cyl','#ffffff',x,y,8,11,4,11);n++;}
+  // the cranes' jibs (they swing round, so they are not part of the instanced world)
+  const g=new THREE.Group();for(const c of CRANES){const jib=new THREE.Group();jib.position.set(c.x,c.top,c.y);
+      const B=(col,x,y,z,w,h,d,par)=>{const m=new THREE.Mesh(GEO.boxC,mat(col));m.position.set(x,y,z);m.scale.set(w,h,d);m.castShadow=true;(par||jib).add(m);return m;};
+      B('#ffcb1f',150,10,0,420,16,16);B('#ffcb1f',-70,10,0,140,16,16);B('#7d8796',-120,-10,0,50,40,40);B('#43c6ff',0,30,0,30,26,30);B('#ffcb1f',0,40,0,6,60,6);
+      const hook=new THREE.Group();hook.position.set(260,-120,0);B('#2b2f3a',0,60,0,2,120,2,hook);B('#2b2f3a',0,0,0,10,8,10,hook);B('#8a5a2b',0,-14,0,50,6,40,hook);for(let q=0;q<3;q++)B('#b5452c',0,-4+q*8,0,44,8,34,hook);
+      jib.add(hook);c.jib=jib;c.hook=hook;g.add(jib);}
+  world.add(g);}
+// the cement mixer truck: a truck with a big striped drum that turns
+function mixerModel(col){const g=new THREE.Group(),B=(c,x,y,z,w,h,d,geo)=>{const m=new THREE.Mesh(GEO[geo||'boxC'],mat(c));m.position.set(x,y,z);m.scale.set(w,h,d);m.castShadow=true;g.add(m);return m;};
+  B('#2b2f3a',0,8,0,36,6,78);B(col,0,22,28,34,24,20);const glass=new THREE.Mesh(GEO.boxC,new THREE.MeshLambertMaterial({color:0xbfe8ff,transparent:true,opacity:0.55}));glass.position.set(0,27,38.5);glass.scale.set(28,10,1);g.add(glass);
+  const drum=new THREE.Group();drum.position.set(0,30,-10);drum.rotation.x=0.25;const d=new THREE.Mesh(GEO.sphC,mat('#e8e4dc'));d.scale.set(34,34,56);drum.add(d);
+  for(let k=0;k<3;k++){const s=new THREE.Mesh(GEO.boxC,mat(col));s.scale.set(35,6,6);s.rotation.y=k*1.05;s.position.z=-18+k*18;drum.add(s);}
+  const wrap=new THREE.Group();wrap.add(drum);g.add(wrap);
+  const wheels=[];for(const[x,z]of[[-18,26],[18,26],[-18,-14],[18,-14],[-18,-30],[18,-30]]){const w=new THREE.Group();w.rotation.order='YXZ';w.position.set(x,9,z);const t=new THREE.Mesh(GEO.cylC,mat('#2b2f3a'));t.scale.set(18,7,18);t.rotation.z=Math.PI/2;w.add(t);g.add(w);wheels.push(w);}
+  g.userData.wheels=wheels;g.userData.drum=drum;scene.add(g);return g;}
 // @module src/js/07-three-setup.js: three.js renderer, scene, camera, lights and shared geometry/material caches; building the 3D world; re-measuring the screen (iOS fixes).
 // Main: renderer, scene, camera, resize, viewportChanged, GEO, mat, mesh, buildWorld
 // See also: maps, visuals
@@ -1707,6 +1767,7 @@ const SKY_LOOK={
   ice:{land:'peaks',cols:['#e8f2fb','#cfe2f2','#b7d0e6'],cloud:'#ffffff',n:16,sun:'#ffffff'},
   pirate:{land:'islands',cols:['#4fae5a','#3e9a4c','#e9d39a'],cloud:'#ffffff',n:20,sun:'#fff3c0'},
   park:{land:'hills',cols:['#5aa860','#7cc47a','#ff9ad5','#ffd27a'],cloud:'#ffffff',n:22,sun:'#fff3c0'},
+  build:{land:'city',cols:['#a9b8d0','#c2cde0','#8fa3c2'],cloud:'#ffffff',n:16,sun:'#fff3c0'},
   sky:{land:null,cols:['#ffffff'],cloud:'#ffffff',n:40,sun:'#fff6d0'},
   city:{land:'city',cols:['#8fa3c2','#a9b8d0','#7a8fb0','#c2cde0'],cloud:'#ffffff',n:18,sun:'#fff3c0'},
 };
@@ -2199,7 +2260,7 @@ function updatePets(dt,t){for(const c of G.chars)if(c.m&&c.m.pet)movePet(c,dt,t,
    hurt them and they don't block anyone. Homes come from the map's seed and the wandering from the match clock (or the
    page clock in the lobby), so everyone in a multiplayer match sees them in the same places. buildAnimals() runs when
    the world is built; updateAnimals(dt,t) every frame from animateWorld. */
-const ANIMALS_BY_MAP={park:['gull','bunny','chick'],sky:['gull','gull'],city:['gull','bunny','gull'],meadow:['deer','deer','sheep','sheep','bunny','chick'],desert:['camel','lizard','lizard'],candy:['psheep','bunny','psheep'],
+const ANIMALS_BY_MAP={build:['gull','gull','bunny'],park:['gull','bunny','chick'],sky:['gull','gull'],city:['gull','bunny','gull'],meadow:['deer','deer','sheep','sheep','bunny','chick'],desert:['camel','lizard','lizard'],candy:['psheep','bunny','psheep'],
   oil:['gull','gull'],ice:['penguin','penguin','bear'],pirate:['crab','crab','parrot']};
 let ANIMALS=[];
 // the animals that aren't pets: simple toy shapes, facing +z like the pets
@@ -3198,7 +3259,7 @@ function spawnCars(){G.cars=[];
   for(let n=0,a=0;n<7&&a<500;a++){let x,y,ang;
     if(a<300){const along=Math.random()<0.5,t=rand(150,WORLD-150);if(along){x=t;y=15*T+T/2+rand(-12,12);ang=Math.random()<.5?0:Math.PI;}else{x=15*T+T/2+rand(-12,12);y=t;ang=Math.random()<.5?Math.PI/2:-Math.PI/2;}}
     else{const s=freeSpot(WORLD/2,WORLD/2,WORLD*0.45,0,null);x=s.x;y=s.y;ang=Math.random()*TAU;}
-    if(pointBlocked(x,y,36)||isBad(x,y)||inBuilding(x,y,40))continue;
+    if(pointBlocked(x,y,36)||isBad(x,y)||inBuilding(x,y,40)||tileAt(x,y)===3)continue; // (3: a building, or a Construction Site tower)
     if(G.cars.some(c=>Math.hypot(c.x-x,c.y-y)<260)||PADS.some(p=>Math.hypot(p.x-x,p.y-y)<90))continue;
     const col=CAR_COLS[n%CAR_COLS.length];
     G.cars.push(newVehicle(x,y,ang,col,'car'));n++;}
@@ -3295,8 +3356,8 @@ function mechModel(col,boss,scale){const g=new THREE.Group(),dark=shadeHex(col,0
   if(boss){const cr=piv(torso,0,52,-14);for(let k=0;k<5;k++){const a=(k-2)*0.32;B(cr,'#ffcb1f',Math.sin(a)*16,4,0,4,10,4,0.4,'cone');}B(cr,'#ffcb1f',0,-1,0,30,4,6,0.3);g.scale.setScalar(scale||BOSS.scale);}
   g.userData={legs,shins,arms,torso};scene.add(g);return g;}
 // the parts that make a vehicle a car, a mech or a boss mech (kind: 'car' | 'mech' | 'boss')
-function vehBits(kind,col){const mega=kind==='mega',mech=kind==='mech'||kind==='boss'||mega,boss=kind==='boss'||mega,s=mega?MEGA.scale:boss?BOSS.scale:1,plane=kind==='plane',boat=kind==='boat',board=kind==='board',cat=kind==='catapult',heli=kind==='heli',ft=kind==='firetruck',bump=kind==='bumper',hp=mega?MEGA.hp:boss?BOSS.hp:mech?MECH.hp:plane?300:board?250:400;
-  return{kind:mech?'mech':plane||boat||board||cat||heli||ft||bump?kind:'car',boss,mega,r:mech?MECH.r*s:plane?36:boat?32:board?16:cat?26:heli?34:ft?30:bump?22:24,h:mech?MECH.h*s:plane?30:boat?24:board?14:cat?40:heli?40:ft?40:bump?22:28,seat:mech?MECH.seat*s:cat?16:heli?10:ft?12:bump?6:5,hp,maxHp:hp,m:mech?mechModel(col,boss,s):plane?planeModel(col):boat?boatModel(col):board?boardModel(col):cat?catapultModel(col):heli?heliModel(col):ft?truckModel(col):bump?bumperModel(col):carModel(col)};} // (the helicopter and fire truck: Rescue Squad)
+function vehBits(kind,col){const mega=kind==='mega',mech=kind==='mech'||kind==='boss'||mega,boss=kind==='boss'||mega,s=mega?MEGA.scale:boss?BOSS.scale:1,plane=kind==='plane',boat=kind==='boat',board=kind==='board',cat=kind==='catapult',heli=kind==='heli',ft=kind==='firetruck',bump=kind==='bumper',mix=kind==='mixer',hp=mega?MEGA.hp:boss?BOSS.hp:mech?MECH.hp:plane?300:board?250:400;
+  return{kind:mech?'mech':plane||boat||board||cat||heli||ft||bump||mix?kind:'car',boss,mega,r:mech?MECH.r*s:plane?36:boat?32:board?16:cat?26:heli?34:ft?30:bump?22:mix?28:24,h:mech?MECH.h*s:plane?30:boat?24:board?14:cat?40:heli?40:ft?40:bump?22:mix?40:28,seat:mech?MECH.seat*s:cat?16:heli?10:ft?12:bump?6:5,hp,maxHp:hp,m:mech?mechModel(col,boss,s):plane?planeModel(col):boat?boatModel(col):board?boardModel(col):cat?catapultModel(col):heli?heliModel(col):ft?truckModel(col):bump?bumperModel(col):mix?mixerModel(col):carModel(col)};} // (the helicopter and fire truck: Rescue Squad)
 function newVehicle(x,y,ang,col,kind){return{x,y,z:groundAt(x,y,10),vz:0,ang,speed:0,vx:0,vy:0,steer:0,driver:null,col,home:{x,y,ang},dead:false,respawnAt:0,onGround:true,padCd:0,wheelRot:0,walkT:0,cd:0,...vehBits(kind,col)};}
 const MECH_COLS=['#7d8796','#ff7b1c','#1f6fd6','#3aa845'];
 function spawnMechs(){const want=Math.round(2*K);
@@ -5187,7 +5248,7 @@ function updateHUD(){updateNetHUD();gadgetHud();{const at=$('autoTag'),on=!!(G&&
     else if(p.vehicle&&p.vehicle.kind==='catapult')h='🏰 CATAPULT · <kbd>W</kbd><kbd>S</kbd> roll · <kbd>A</kbd><kbd>D</kbd> turn · aim at the fort and <kbd>Click</kbd> to launch a foam boulder · <kbd>F</kbd> get out';
     else if(p.vehicle&&p.vehicle.kind==='board')h='🛹 <kbd>W</kbd> go · <kbd>A</kbd><kbd>D</kbd> steer · <kbd>Shift</kbd> boost · <kbd>Space</kbd> jump, and in the air: tricks! · ride along a rail to grind · <kbd>F</kbd> get off';
     else if(p.vehicle&&p.vehicle.kind==='boat')h='⛵ <kbd>W</kbd> go · <kbd>A</kbd><kbd>D</kbd> steer · <kbd>Click</kbd> foam cannon · <kbd>F</kbd> get out';
-    else if(p.vehicle)h='Driving! <kbd>F</kbd> get out · <kbd>Space</kbd> honk · <kbd>Shift</kbd> turbo';else if(p.ride)h='🎢 Riding the '+p.ride.name+' · <kbd>E</kbd> or <kbd>Space</kbd> to get off';else if(reviveTarget(p))h='Hold <kbd>E</kbd> to revive '+esc(reviveTarget(p).name);else if(nearInteract(p)){const ni=nearInteract(p);h=ni.type==='ride'?'Press <kbd>E</kbd> to ride the '+ni.o.name+'!':ni.type==='llama'?'Press <kbd>E</kbd> to open the Loot Llama!':'Press <kbd>E</kbd> to buy '+esc(itemName(ni.o.id,ni.o.r))+' for '+ni.o.cost.n+' '+ni.o.cost.mat;}else if(p.state==='alive'&&nearestCar(p))h={mech:'Press <kbd>F</kbd> to climb into the MECH!',plane:'Press <kbd>F</kbd> to fly the PLANE!',board:'Press <kbd>F</kbd> to ride the HOVERBOARD!',catapult:'Press <kbd>F</kbd> to use the CATAPULT!',boat:'Press <kbd>F</kbd> to drive the BOAT!'}[nearestCar(p).kind]||'Press <kbd>F</kbd> to drive';
+    else if(p.vehicle)h='Driving! <kbd>F</kbd> get out · <kbd>Space</kbd> honk · <kbd>Shift</kbd> turbo';else if(p.ride)h='🎢 Riding the '+p.ride.name+' · <kbd>E</kbd> or <kbd>Space</kbd> to get off';else if(reviveTarget(p))h='Hold <kbd>E</kbd> to revive '+esc(reviveTarget(p).name);else if(nearInteract(p)){const ni=nearInteract(p);h=ni.type==='ride'?'Press <kbd>E</kbd> to ride the '+ni.o.name+'!':ni.type==='llama'?'Press <kbd>E</kbd> to open the Loot Llama!':'Press <kbd>E</kbd> to buy '+esc(itemName(ni.o.id,ni.o.r))+' for '+ni.o.cost.n+' '+ni.o.cost.mat;}else if(p.state==='alive'&&nearestCar(p))h={mech:'Press <kbd>F</kbd> to climb into the MECH!',plane:'Press <kbd>F</kbd> to fly the PLANE!',board:'Press <kbd>F</kbd> to ride the HOVERBOARD!',catapult:'Press <kbd>F</kbd> to use the CATAPULT!',mixer:'Press <kbd>F</kbd> to drive the CEMENT MIXER!',bumper:'Press <kbd>F</kbd> to drive a BUMPER CAR!',heli:'Press <kbd>F</kbd> to fly the HELICOPTER!',firetruck:'Press <kbd>F</kbd> to drive the FIRE TRUCK!',boat:'Press <kbd>F</kbd> to drive the BOAT!'}[nearestCar(p).kind]||'Press <kbd>F</kbd> to drive';
     else if(G.swap&&p.state==='alive')h='Press <kbd>E</kbd> to swap for '+esc(itemName(G.swap.id,G.swap.r??WEAPONS[G.swap.id].rar));
     if(TOUCH.on&&h){if(TOUCH.act)h='';else if(p.vehicle){const v=p.vehicle;h=G.mode==='race'?'Use the joystick to drive · push it all the way for turbo':v.kind==='plane'?('✈️ '+Math.round((v.speed||0)/4)+' mph · '+(v.fly?'stick: steer, up to climb, down to dive · let go: fly level · stick all the way up: loop · all the way to the side: barrel roll · BOOST: faster'+(G.mode==='airrace'?'':' · hold FIRE: machine guns · 💧: balloons'):'push the stick up to roll, and you take off by yourself')):v.kind==='catapult'?'🏰 Roll with the stick · aim at the fort and press FIRE to launch a foam boulder':v.kind==='heli'?'🚁 Stick: fly and turn · hold JUMP to go up, CROUCH to go down · hover by a roof, then land on the H':v.kind==='firetruck'?'🚒 Drive with the stick · aim at a fire and hold FIRE to spray':v.kind==='board'?'🛹 Steer with the stick · JUMP to jump, and again in the air for tricks · ride along a rail to grind':v.kind==='boat'?'⛵ Steer with the stick · FIRE for the foam cannon':v.kind==='mech'?(v.boss?'👑 BOSS MECH ':'🤖 MECH ')+Math.max(0,Math.round(v.hp))+'/'+v.maxHp+' · fire to blast · STOMP to jump':'';}else h=h.split('Press <kbd>Space</kbd> to jump out').join('Tap <b>JUMP OUT</b> to jump out').split('Press <kbd>Space</kbd>').join('Tap <b>GLIDE</b>');}
     if(h){pr.hidden=false;if(pr.dataset.t!==h){pr.dataset.t=h;pr.innerHTML=h;}}else{pr.hidden=true;pr.dataset.t='';}}
