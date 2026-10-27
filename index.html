@@ -434,6 +434,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
           <input type="radio" name="map" id="mapIce" value="ice"><label for="mapIce"><i>❄️</i>Frozen Peaks</label>
           <input type="radio" name="map" id="mapPirate" value="pirate"><label for="mapPirate"><i>🏴‍☠️</i>Pirate Cove</label>
           <input type="radio" name="map" id="mapCity" value="city"><label for="mapCity"><i>🏙️</i>Big City</label>
+          <input type="radio" name="map" id="mapSky" value="sky"><label for="mapSky"><i>☁️</i>Sky Islands</label>
         </div><p class="opt-desc" id="mapDesc"></p></div>
       <p class="opt-desc" id="matchSum"></p>
       <div class="btns"><button class="brick" id="playBtn" type="button">START ▶</button><button class="brick small" id="mOptions" type="button">⚙️ Match options</button><button class="brick small" id="mHome" type="button">🏠 Home</button><p class="note" id="bestNote"></p></div>
@@ -639,7 +640,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
       <h3>What's inside</h3>
       <ul>
         <li>🎮 15 game modes: Battle Royale, Team Battle, Zombie Survival, Car Race, Plane Race, Floor is Lava, Capture the Crown, Capture the Flag, Fort Siege, Rescue Squad, King of the Hill, Build Battle, the Training Room, Mr. Bonk's Challenge Show and the Mega Robot</li>
-        <li>🗺️ 10 maps, from Candy Land and a low-gravity Space Station to slippery Frozen Peaks and the Big City</li>
+        <li>🗺️ 11 maps, from Candy Land and a low-gravity Space Station to slippery Frozen Peaks and the Big City</li>
         <li>🔫 20+ weapons with Common to Legendary rarities, plus your very own Mythic Laser Blaster</li>
         <li>🔨 Building and editing, cars, loot llamas, vending machines and squads</li>
         <li>👕 A Locker, Ticket Shop, gun wraps, XP levels and daily challenges</li>
@@ -948,7 +949,7 @@ const tileCol=k=>MAP.tiles[k]||['','','#3d9be9','','#ff6a1a','#a8dcf5'][k];
 const tileKind=(x,y)=>{x/=K;y/=K;return MAP.zone?MAP.zone(x,y):MAP.wet(x,y)?2:0;};
 function tileAt(x,y){const i=Math.floor(x/T),j=Math.floor(y/T);if(i<0||j<0||i>=N||j>=N)return 0;return TILE[i+j*N];}
 const inWater=(x,y)=>tileAt(x,y)===2;
-const isBad=(x,y)=>{const k=tileAt(x,y);return k===2||k===4;};
+const isBad=(x,y)=>{const k=tileAt(x,y);return k===2||k===4||k===6;}; // (6: open sky between the Sky Islands)
 const hurtAt=(x,y)=>tileAt(x,y)===4;
 // ---- 3D-aware obstacles: box {x,y,w,d,z0,h} | cyl {x,y,r,z0,h} | ramp {x,y,w,d,z0,h,dir}
 function inFoot(o,x,y,pad){if(o.t==='cyl')return Math.hypot(x-o.x,y-o.y)<o.r+pad;return x>o.x-pad&&x<o.x+o.w+pad&&y>o.y-pad&&y<o.y+o.d+pad;}
@@ -962,17 +963,19 @@ function addOb(o){
 function removeOb(o){const k=OB.indexOf(o);if(k>=0)OB.splice(k,1);for(const c of o.cells){const L=GRID[c],n=L.indexOf(o);if(n>=0)L.splice(n,1);}}
 const cellOf=(x,y)=>GRID[clamp(Math.floor(x/T),0,N-1)+clamp(Math.floor(y/T),0,N-1)*N];
 function pointBlocked(x,y,pad){ // blocks walking at ground level
+  if(MAP.floaty&&tileAt(x,y)===6&&!inIsle(x,y,0))return true; // (open sky: you would fall)
   if((x<pad||y<pad||x>WORLD-pad||y>WORLD-pad)&&!inIsle(x,y,pad))return true;
   for(const o of cellOf(x,y)){if(o.z0>30)continue;if(!inFoot(o,x,y,pad))continue;if(o.t==='ramp'||surfAt(o,x,y)>20)return true;}return false;
 }
 function blocked3D(x,y,z){if(z<0)return true;if((x<0||y<0||x>WORLD||y>WORLD)&&!inIsle(x,y,-40))return false;for(const o of cellOf(x,y)){if(inFoot(o,x,y,0)&&z>=o.z0&&z<=surfAt(o,x,y))return o;}return false;}
-function groundAt(x,y,z){let g=0;for(const o of cellOf(x,y)){if(!inFoot(o,x,y,3))continue;const top=surfAt(o,x,y);if(top<=z+STEP&&top>g)g=top;}return g;}
+function groundAt(x,y,z){let g=MAP.floaty&&tileAt(x,y)===6&&!inIsle(x,y,0)?-4000:0; // (open sky between the Sky Islands: a long way down)
+  for(const o of cellOf(x,y)){if(!inFoot(o,x,y,3))continue;const top=surfAt(o,x,y);if(top<=z+STEP&&top>g)g=top;}return g;}
 function inBuilding(x,y,m){for(const b of BUILDINGS)if(x>b.x-m&&x<b.x+b.w+m&&y>b.y-m&&y<b.y+b.h+m)return true;return false;}
 function genMap(id){
   MAP=MAPS[id]||MAPS.meadow;MAP_ID=MAPS[id]?id:'meadow';
   OB.length=0;PADS.length=0;CHEST_SPOTS.length=0;BUILDINGS.length=0;BRICK_SPOTS.length=0;for(const c of GRID)c.length=0;
   const R=mulberry32(MAP.seed);
-  for(let j=0;j<N;j++)for(let i=0;i<N;i++){const cx=(i+.5)*T,cy=(j+.5)*T;let k=tileKind(cx,cy);if(i===N>>1||j===N>>1)k=1;if(MAP.grid&&k===0&&(i%MAP.grid===0||j%MAP.grid===0))k=1;TILE[i+j*N]=k;} // (the Big City has a whole grid of streets) // the two roads cross in the middle
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){const cx=(i+.5)*T,cy=(j+.5)*T;let k=tileKind(cx,cy);if((i===N>>1||j===N>>1)&&k!==6)k=1;if(MAP.grid&&k===0&&(i%MAP.grid===0||j%MAP.grid===0))k=1;TILE[i+j*N]=k;} // (the Big City has a whole grid of streets) // the two roads cross in the middle
   const S=40;
   // one building: walls with doorways, chests inside, and (small ones) stairs up to a walkable roof
   const placeBuilding=(bi,bj,bw,bh,col,big,name)=>{
@@ -1000,6 +1003,7 @@ function genMap(id){
   for(let a=0;a<4000&&made<EXTRA_BUILDINGS;a++){const bw=3+Math.floor(R()*2),bh=3+Math.floor(R()*2),bi=2+Math.floor(R()*(N-bw-4)),bj=2+Math.floor(R()*(N-bh-4));
     const gap=MAP.grid?1:2;let ok=true;for(let j=bj-gap;j<bj+bh+gap&&ok;j++)for(let i=bi-gap;i<bi+bw+gap;i++)if(TILE[i+j*N]!==0){ok=false;break;} // (the Big City's blocks are tight: a 1-tile gap there)
     if(ok){placeBuilding(bi,bj,bw,bh,cols[made%cols.length],false,names[made%names.length]);made++;}}
+  if(MAP.gen)MAP.gen(R); // a map's own things (the Sky Islands' fans, the Theme Park's rides, the Construction Site's cranes)
   const free=(x,y,r)=>{if(x<r+40||y<r+40||x>WORLD-r-40||y>WORLD-r-40)return false;if(tileAt(x,y)!==0)return false;if(inBuilding(x,y,50))return false;
     for(const o of OB)if(o.t==='cyl'&&Math.hypot(o.x-x,o.y-y)<o.r+r+44)return false;
     for(const p of PADS)if(Math.hypot(p.x-x,p.y-y)<r+60)return false;
@@ -1309,6 +1313,7 @@ function wrapProj(p,ox,oy){if(!WRAP)return;const W=PLANE_WRAP,inX=ox>=0&&ox<WORL
 // would walking be blocked at this point (which may be past an edge)? Like pointBlocked, but the edges loop
 function walkBlocked(x0,y0,pad){if(!WRAP)return pointBlocked(x0,y0,pad);const x=wpx(x0),y=wpy(x0,y0);
   if(y<pad&&!inIsle(x,y,pad)&&isleZone(x,-1))return true; // the hospital's stretch of the north edge is still a wall
+  if(MAP.floaty&&tileAt(x,y)===6&&!inIsle(x,y,0))return true; // (open sky between the Sky Islands)
   for(const o of cellOf(x,y)){if(o.z0>30)continue;if(!inFoot(o,x,y,pad))continue;if(o.t==='ramp'||surfAt(o,x,y)>20)return true;}return false;}
 // draw a moving thing at the copy of its spot nearest the camera, so someone just across an edge shows up right there
 // (pl: a plane, which wraps with the planes' box)
@@ -1322,6 +1327,52 @@ function wrapEdges(grp){if(!WRAP)return;const cv=document.createElement('canvas'
   const wall=(x0,y0,x1,y1)=>{const L=Math.hypot(x1-x0,y1-y0);if(L<1)return;const w=new THREE.Mesh(new THREE.PlaneGeometry(L,H),m);w.position.set((x0+x1)/2,H/2-20,(y0+y1)/2);w.rotation.y=-Math.atan2(y1-y0,x1-x0);w.renderOrder=2;grp.add(w);};
   wall(0,WORLD,WORLD,WORLD);wall(0,0,0,WORLD);wall(WORLD,0,WORLD,WORLD);
   if(I.cx){wall(0,0,I.bx0,0);wall(I.bx1,0,WORLD,0);}else wall(0,0,WORLD,0);}
+// @module src/js/06d-sky-islands.js: The Sky Islands map: floating islands joined by rope bridges over open sky; fans blow you up to glide across; fall off and the rescue drone catches you; bots walk round by the bridges.
+// Main: ISLES, ISLE_BRIDGES, FANS, fanLift, skyCatch, isleSteer
+// See also: maps (MAPS, genMap calls MAP.gen; isBad, pointBlocked and groundAt know the open sky), three-setup (buildWorld calls MAP.build), visuals (MAP.tick), update, bots
+/* ================= Sky Islands (map) =================
+   Floating islands high above the clouds, joined by rope bridges. Between them is open sky (tile 6): walk off an edge
+   and you fall, and the rescue drone catches you and puts you back on an island on your glider (skyCatch). Big fans blow
+   you up into the air (fanLift) so you can glide across to another island. Bots walk round by the bridges (isleSteer,
+   on the race bots' navPath grid). Islands and bridges are written in design units, like every map's zone. */
+const ISLES=[[1200,1200,430],[1200,330,250],[2010,470,280],[2080,1300,250],[1860,2030,300],[1120,2060,250],[400,1960,290],[330,1150,250],[440,420,270]];
+const ISLE_BRIDGES=[[0,1],[0,3],[0,5],[0,7],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,1]];
+const FANS=[];
+function isleZone2(x,y){for(const[cx,cy,r]of ISLES)if(Math.hypot(x-cx,y-cy)<r)return 0;
+  if(Math.abs(x-1200)<45&&y<120)return 1; // the bridge on to the hospital's bridge, off the north edge
+  for(const[a,b]of ISLE_BRIDGES){const[ax,ay]=ISLES[a],[bx,by]=ISLES[b],dx=bx-ax,dy=by-ay,t=clamp(((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy),0,1);if(Math.hypot(x-ax-dx*t,y-ay-dy*t)<40)return 1;}
+  return 6;}
+MAPS.sky={name:'Sky Islands',desc:'Floating islands high above the clouds, joined by rope bridges. Big fans blow you up so you can glide across. Fall off and the rescue drone catches you!',seed:3030,
+  tiles:['#6cc46a','#b98a52','#3d9be9','#e8f0f6','#ff6a1a','#a8dcf5','#d8f0ff'],side:'#8a7a6a',sky:['#6fc0f5','#eef9ff'],outside:'#ffffff',outsideY:-900,tree:'tree',rock:'rock',floaty:true,
+  zone:isleZone2,b:[[13,12,4,3,'#ff7b1c'],[24,5,3,3,'#43c6ff'],[4,23,3,3,'#9b6bff'],[22,24,3,3,'#ffcb1f'],[3,13,3,3,'#ff6fae']],
+  // the fans: one on each outer island, pointing the way across to the next one
+  gen(R){FANS.length=0;for(let k=1;k<ISLES.length;k++){const[cx,cy,r]=ISLES[k],a=Math.atan2(1200-cy,1200-cx)+(R()-0.5)*1.2;
+      const x=(cx+Math.cos(a)*r*0.55)*K,y=(cy+Math.sin(a)*r*0.55)*K;if(pointBlocked(x,y,50)||inBuilding(x,y,60))continue;FANS.push({x,y});const i=Math.floor(x/T),j=Math.floor(y/T);if(TILE[i+j*N]===0)TILE[i+j*N]=1;}},
+  // rocky undersides for the islands, rope rails along the bridges, the fans
+  build(){for(const[cx,cy,r]of ISLES){S('cone',MAP.side,cx*K,cy*K,-6,r*K*2,r*K*0.9,r*K*2,{rx:Math.PI});S('cone','#6b5d50',cx*K+r*K*0.2,cy*K,-6,r*K*1.1,r*K*1.3,r*K*1.1,{rx:Math.PI});}
+    for(const[a,b]of ISLE_BRIDGES){const[ax,ay]=ISLES[a],[bx,by]=ISLES[b],L=Math.hypot(bx-ax,by-ay),ux=(bx-ax)/L,uy=(by-ay)/L,ang=Math.atan2(uy,ux);
+      for(const s of[-1,1]){const ox=-uy*36*s,oy=ux*36*s;for(let d=0;d<=L;d+=70){const x=(ax+ux*d+ox)*K,y=(ay+uy*d+oy)*K;if(tileAt(x,y)!==1)continue;S('cyl','#7a5230',x,y,0,6,40,6);}
+        const x0=(ax+ox)*K,y0=(ay+oy)*K;S('box','#d9c08a',x0+ux*L*K/2,y0+uy*L*K/2,36,L*K,2,2,{ry:-ang});}}
+    for(const f of FANS){S('cyl','#3a3f4b',f.x,f.y,0,86,10,86);S('cyl','#ffcb1f',f.x,f.y,10,90,3,90,{em:0.3});S('cyl','#c5ccd6',f.x,f.y,10,70,4,70);}
+    const g=new THREE.Group();for(const f of FANS){const b=new THREE.Group();b.position.set(f.x,8,f.y);for(let k=0;k<4;k++){const m=new THREE.Mesh(GEO.boxC,mat('#2b2f3a'));m.scale.set(32,2,10);m.position.x=16;const p=new THREE.Group();p.rotation.y=k*Math.PI/2;p.add(m);b.add(p);}g.add(b);f.m=b;}
+    world.add(g);},
+  tick(dt,t){for(const f of FANS){if(f.m)f.m.rotation.y+=dt*14;if(Math.random()<dt*4)burst(f.x+(Math.random()-.5)*50,f.y+(Math.random()-.5)*50,14,1,'puff','#ffffff',30);}}};
+POI_NAMES.sky=['Cloud Castle','Breezy Barn','Sunbeam Lodge','Rainbow Roost','Windy Hut'];
+EXTRA_NAMES.sky=['Kite Shop','Balloon Barn','Feather Den','Puffy Pavilion','Sky Shack','Breeze Bakery','Nimbus Nook','Gusty Garage','Drizzle Diner','Cumulus Cabin','Updraft Inn','Starlight Shed'];
+// standing on a fan: WHOOSH, up into the air, and the glider opens on the way down
+function fanLift(c){if(!MAP.floaty||c.vehicle||c.z>40||c.state!=='alive')return;for(const f of FANS){if(Math.hypot(c.x-f.x,c.y-f.y)<44){
+  c.state='sky';c.glide=false;c.vz=1150;c.z+=4;c.onGround=false;c.landX=null;sfx('whoosh',c);addText(c.x,c.y,c.z+60,'WHOOSH!','#43c6ff',18);burst(c.x,c.y,c.z,14,'puff','#ffffff',120);
+  if(!c.isPlayer||autoOn(c)){const o=ISLES[1+Math.floor(Math.random()*(ISLES.length-1))],s=freeSpot(o[0]*K,o[1]*K,o[2]*K*0.5,0,null);c.landX=s.x;c.landY=s.y;}return;}}}
+// fell off an island: the rescue drone catches you and you glide back down onto the nearest island
+function skyCatch(c){const s=freeSpot(c.x,c.y,900,0,null);c.caughtT=G.time; // (a joiner's own catch: the host's older copy must not pull them back for a moment)
+  c.x=s.x;c.y=s.y;c.z=groundAt(s.x,s.y,10)+220;c.vx=c.vy=c.vz=0;c.kx=c.ky=0;c.air=null;c.onGround=false;
+  c.state='sky';c.glide=true;c.landX=s.x;c.landY=s.y;c.invuln=Math.max(c.invuln||0,1.5);burst(c.x,c.y,c.z+20,20,'confetti','#43c6ff',160);addText(c.x,c.y,c.z+70,'CAUGHT!','#43c6ff',18);sfx('pickup',c);
+  if(c===G.player)toast('🚁 Whoops! The rescue drone caught you and dropped you back on an island.');}
+// bots walk round by the bridges: a path on the race bots' grid (void is blocked), kept a few seconds
+let NAVF=null;
+function isleSteer(c,gx,gy){const ai=c.ai;if(Math.hypot(gx-c.x,gy-c.y)<200)return null;if(!NAVF||NAVF.id!==MAP_ID){NAVF=navBuild();NAVF.id=MAP_ID;}
+  if(!ai.np||ai.npG!==gx+','+gy||G.time>ai.npT){ai.np=navPath(NAVF,{x:c.x,y:c.y},{x:gx,y:gy})||[];ai.npG=gx+','+gy;ai.npT=G.time+4;}
+  while(ai.np.length>1&&Math.hypot(ai.np[0].x-c.x,ai.np[0].y-c.y)<60)ai.np.shift();const w=ai.np[0];if(!w)return null;const dx=w.x-c.x,dy=w.y-c.y,d=Math.hypot(dx,dy)||1;return[dx/d,dy/d];}
 // @module src/js/07-three-setup.js: three.js renderer, scene, camera, lights and shared geometry/material caches; building the 3D world; re-measuring the screen (iOS fixes).
 // Main: renderer, scene, camera, resize, viewportChanged, GEO, mat, mesh, buildWorld
 // See also: maps, visuals
@@ -1420,6 +1471,7 @@ function groundTextures(){
       else if(k===5){g.strokeStyle='rgba(255,255,255,.75)';g.lineWidth=2.5;g.beginPath();g.moveTo(x,y);g.lineTo(x+16,y-9);g.stroke();}
       else if(k===4){g.strokeStyle='rgba(40,10,0,.4)';g.lineWidth=2;g.beginPath();g.moveTo(x,y);g.lineTo(x+(R()-.5)*22,y+(R()-.5)*22);g.stroke();}}
     if(k===4){ge.fillStyle=MAP.hurt==='lava'?'#a83800':'#8a2a08';ge.fillRect(i*px/4,j*px/4,px/4,px/4);}}
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++)if(TILE[i+j*N]===6)g.clearRect(i*px,j*px,px,px); // open sky (Sky Islands): see-through
   const t=new THREE.CanvasTexture(c);t.anisotropy=renderer.capabilities.getMaxAnisotropy();
   const te=new THREE.CanvasTexture(e);return[t,te];
 }
@@ -1428,14 +1480,14 @@ function buildWorld(){
   disposeWorld();world=new THREE.Group();scene.add(world);SPECS.length=0;flames=[];crystals=[];
   // ground + baseplate + outside
   const[tex,emTex]=groundTextures();
-  const gm=new THREE.MeshLambertMaterial({map:tex,emissive:new THREE.Color(0xffffff),emissiveMap:emTex,emissiveIntensity:MAP.hurt?0.85:0});
+  const gm=new THREE.MeshLambertMaterial({map:tex,emissive:new THREE.Color(0xffffff),emissiveMap:emTex,emissiveIntensity:MAP.hurt?0.85:0,alphaTest:MAP.floaty?0.5:0}); // (the Sky Islands: the open sky is cut out of the ground)
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(WORLD,WORLD).rotateX(-Math.PI/2),gm);ground.position.set(WORLD/2,0,WORLD/2);ground.receiveShadow=true;world.add(ground);
-  const base=new THREE.Mesh(GEO.box,mat(MAP.side));base.scale.set(WORLD+8,40,WORLD+8);base.position.set(WORLD/2,-40.5,WORLD/2);world.add(base);
+  const base=new THREE.Mesh(GEO.box,mat(MAP.side));base.scale.set(WORLD+8,40,WORLD+8);base.position.set(WORLD/2,-40.5,WORLD/2);if(!MAP.floaty)world.add(base);
   {const I=HOSP_ISLE,L=(x0,x1,y0,y1,top)=>{const sd=new THREE.Mesh(GEO.box,mat(MAP.side));sd.scale.set(x1-x0,40,y1-y0);sd.position.set((x0+x1)/2,-41,(y0+y1)/2);world.add(sd);
       const tp=new THREE.Mesh(GEO.box,mat(top));tp.scale.set(x1-x0,1,y1-y0);tp.position.set((x0+x1)/2,-1,(y0+y1)/2);tp.receiveShadow=true;world.add(tp);};
     L(I.x0,I.x1,I.y0,I.y1,MAP.tiles[0]);L(I.bx0,I.bx1,I.y1-2,2,MAP.tiles[1]);} // the hospital island and its bridge (maps module)
   wrapEdges(world); // the see-through curtain along the looping edges (wrap module)
-  if(MAP.outside){const om=MAP.outsideGlow?basic(MAP.outside):new THREE.MeshLambertMaterial({color:MAP.outside});const out=new THREE.Mesh(new THREE.PlaneGeometry(14000,14000).rotateX(-Math.PI/2),om);out.position.set(WORLD/2,-28,WORLD/2);world.add(out);}
+  if(MAP.outside){const om=MAP.outsideGlow?basic(MAP.outside):new THREE.MeshLambertMaterial({color:MAP.outside});const out=new THREE.Mesh(new THREE.PlaneGeometry(14000,14000).rotateX(-Math.PI/2),om);out.position.set(WORLD/2,MAP.outsideY||-28,WORLD/2);world.add(out);}
   // smooth painted walls with a darker top trim
   for(const o of OB){SPEC_OB=o;if(o.t==='box'&&o.wall){S('box',o.col,o.x+o.w/2,o.y+o.d/2,0,o.w,o.h,o.d);S('box',shadeHex(o.col,0.75),o.x+o.w/2,o.y+o.d/2,o.h,o.w+2,5,o.d+2);S('box',shadeHex(o.col,0.85),o.x+o.w/2,o.y+o.d/2,0,o.w+1.5,8,o.d+1.5);}
     else if(o.kind==='tree')propTree(o);else if(o.kind==='rock')propRock(o);
@@ -1444,6 +1496,7 @@ function buildWorld(){
   // the Big City's traffic lights, at street crossings (just decoration)
   if(MAP.lights&&MAP.grid)for(let j=MAP.grid;j<N;j+=MAP.grid)for(let i=MAP.grid;i<N;i+=MAP.grid){const x=i*T+T-6,y=j*T+T-6;if(inBuilding(x,y,10))continue;
     S('cyl','#2b2f3a',x,y,0,6,96,6);S('box','#1b2235',x,y,96,14,40,12);for(const[c,h]of[['#ff3b3b',126],['#ffcb1f',114],['#2aff5a',102]])S('sph',c,x+7,y,h-6,9,9,9,{em:0.9});}
+  if(MAP.build)MAP.build(); // a map's own things (the Sky Islands' bridges and fans, the Theme Park's rides, the cranes)
   for(const p of PADS){S('cyl','#3a3f4b',p.x,p.y,0,56,5,56);S('cyl',MAP.lowG?'#43c6ff':'#ff7b1c',p.x,p.y,5,50,4,50);S('cyl','#ffcb1f',p.x,p.y,9,28,2,28,{em:0.4});}
   // roofs (see-through when you are inside) and indoor stairs
   for(const b of BUILDINGS){if(!b.roofs||!b.roofs.length)continue;const rm=new THREE.MeshLambertMaterial({color:shadeHex(b.col,0.7),transparent:true,opacity:1});b.roofMat=rm;
@@ -1561,6 +1614,7 @@ const SKY_LOOK={
   oil:{land:'hills',cols:['#3e3631','#4a403a','#2f2925'],cloud:'#4a3a30',n:18,smoke:true,sun:'#ff9a50'},
   ice:{land:'peaks',cols:['#e8f2fb','#cfe2f2','#b7d0e6'],cloud:'#ffffff',n:16,sun:'#ffffff'},
   pirate:{land:'islands',cols:['#4fae5a','#3e9a4c','#e9d39a'],cloud:'#ffffff',n:20,sun:'#fff3c0'},
+  sky:{land:null,cols:['#ffffff'],cloud:'#ffffff',n:40,sun:'#fff6d0'},
   city:{land:'city',cols:['#8fa3c2','#a9b8d0','#7a8fb0','#c2cde0'],cloud:'#ffffff',n:18,sun:'#fff3c0'},
 };
 let skyClouds=[],skySun=null;
@@ -2052,7 +2106,7 @@ function updatePets(dt,t){for(const c of G.chars)if(c.m&&c.m.pet)movePet(c,dt,t,
    hurt them and they don't block anyone. Homes come from the map's seed and the wandering from the match clock (or the
    page clock in the lobby), so everyone in a multiplayer match sees them in the same places. buildAnimals() runs when
    the world is built; updateAnimals(dt,t) every frame from animateWorld. */
-const ANIMALS_BY_MAP={city:['gull','bunny','gull'],meadow:['deer','deer','sheep','sheep','bunny','chick'],desert:['camel','lizard','lizard'],candy:['psheep','bunny','psheep'],
+const ANIMALS_BY_MAP={sky:['gull','gull'],city:['gull','bunny','gull'],meadow:['deer','deer','sheep','sheep','bunny','chick'],desert:['camel','lizard','lizard'],candy:['psheep','bunny','psheep'],
   oil:['gull','gull'],ice:['penguin','penguin','bear'],pirate:['crab','crab','parrot']};
 let ANIMALS=[];
 // the animals that aren't pets: simple toy shapes, facing +z like the pets
@@ -3013,7 +3067,7 @@ function botUpdate(c,dt){
   else if(ai.mode==='fight'&&tgt){const w=WEAPONS[c.slots[c.cur].id],dx=wdx(tgt.x-c.x),dy=wdy(c.y,tgt.y),d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;
     const dd=w.kind==='melee'||w.kind==='trap'?0:desiredRange(c.slots[c.cur].id);if(d>dd+30){mx=ux;my=uy;}else if(dd>0&&d<dd-50){mx=-ux;my=-uy;}
     if(dd>0){const s=Math.sin(G.time*1.4+ai.seed)*0.8;mx+=-uy*s;my+=ux*s;}}
-  else if(ai.gx!=null){const dx=wdx(ai.gx-c.x),dy=wdy(c.y,ai.gy),d=Math.hypot(dx,dy);if(ai.mode==='loot'&&lootProgress(ai,d))mx=my=0;else if(d>18){mx=dx/d;my=dy/d;}else if(ai.mode!=='storm')ai.gx=null;}
+  else if(ai.gx!=null){const dx=wdx(ai.gx-c.x),dy=wdy(c.y,ai.gy),d=Math.hypot(dx,dy);if(ai.mode==='loot'&&lootProgress(ai,d))mx=my=0;else if(d>18){const s=MAP.floaty&&isleSteer(c,ai.gx,ai.gy);if(s){mx=s[0];my=s[1];}else{mx=dx/d;my=dy/d;}}else if(ai.mode!=='storm')ai.gx=null;}
   const l=Math.hypot(mx,my);if(l){mx/=l;my/=l;}ai.wantMove=!!(mx||my);[mx,my]=steer(c,mx,my); // (boxed in still counts as wanting to move, so stuckCheck gets it out)
   if(tgt){c.face=Math.atan2(wdy(c.y,tgt.y),wdx(tgt.x-c.x));ai.reactT-=dt;const d=dist(c,tgt),s=c.slots[c.cur],w=WEAPONS[s.id];
     if(ai.reactT<=0&&c.cd<=0&&inRange(w,d)&&Math.abs(tgt.z-c.z)<(w.kind==='melee'?44:400)){fire(c,botAim(c,tgt));ai.aimErr=(Math.random()*2-1)*G.diff.aimErr;ai.aimErr2=(Math.random()*2-1)*G.diff.aimErr;}}
@@ -3103,6 +3157,7 @@ function updateCars(dt){
     car.padCd=Math.max(0,car.padCd-dt);
     if(car.onGround&&car.padCd<=0&&car.kind!=='heli')for(const pd of PADS)if(Math.hypot(car.x-pd.x,car.y-pd.y)<34){car.vz=MAP.lowG?560:700;car.onGround=false;car.padCd=1.5;sfx('boing',car);addText(car.x,car.y,car.z+50,'WHEEE!','#ff7b1c',17);break;}
     if(hurtAt(car.x,car.y)&&car.z<4&&car.kind!=='board')damageCar(car,30*dt,null);
+    if(MAP.floaty&&car.z<-300){if(car.driver)exitCar(car.driver);car.dead=true;car.m.visible=false;car.respawnAt=G.time+8;continue;} // fell off a Sky Island: it comes back at home
     if(car.dead)continue;
     const sp=Math.hypot(car.vx,car.vy);
     if(sp>110)for(const c of G.chars){if(c===d||c.state!=='alive'||c.vehicle)continue;if(d&&!isEnemy(d,c))continue;if((c.carHitT||0)>G.time)continue;
@@ -3554,7 +3609,7 @@ function climbBot(c,dt,active,rate){const ai=c.ai;if(!active)return null;
 // driving route-finding for race bots: a coarse grid of drivable cells, A* between gates, then straightened
 function segClearCar(a,b){const n=Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/15);for(let k=1;k<n;k++){const x=lerp(a.x,b.x,k/n),y=lerp(a.y,b.y,k/n);if(pointBlocked(x,y,26)||hurtAt(x,y)||inBuilding(x,y,12))return false;}return true;}
 function navBuild(){const S=40,M=Math.ceil(WORLD/S),free=new Uint8Array(M*M);
-  for(let j=0;j<M;j++)for(let i=0;i<M;i++){const x=(i+.5)*S,y=(j+.5)*S;free[i+j*M]=(x>50&&y>50&&x<WORLD-50&&y<WORLD-50&&!pointBlocked(x,y,26)&&!hurtAt(x,y)&&!inBuilding(x,y,12))?1:0;}
+  for(let j=0;j<M;j++)for(let i=0;i<M;i++){const x=(i+.5)*S,y=(j+.5)*S;free[i+j*M]=(x>50&&y>50&&x<WORLD-50&&y<WORLD-50&&!isBad(x,y)&&!pointBlocked(x,y,26)&&!hurtAt(x,y)&&!inBuilding(x,y,12))?1:0;}
   return{S,M,free};}
 function navPath(nav,a,b){const{S,M,free}=nav,idx=(x,y)=>clamp(Math.floor(x/S),0,M-1)+clamp(Math.floor(y/S),0,M-1)*M,s=idx(a.x,a.y),t=idx(b.x,b.y);
   const g=new Float32Array(M*M).fill(1e9),f=new Float32Array(M*M).fill(1e9),came=new Int32Array(M*M).fill(-1),inOpen=new Uint8Array(M*M),open=[s];
@@ -4688,7 +4743,8 @@ function collide(c){
 function updateSky(c,dt,ix,iy){
   if(isMate(c)&&G.player.state==='sky'){c.landX=G.player.x+(c.offX||0);c.landY=G.player.y+(c.offY||0);}
   if(!c.isPlayer||autoOn(c)){if(c.landX==null){const s=freeSpot(WORLD/2,WORLD/2,WORLD*0.4,0,null);c.landX=s.x;c.landY=s.y;}const dx=c.landX-c.x,dy=c.landY-c.y,d=Math.hypot(dx,dy);if(d>20){ix=dx/d;iy=dy/d;}else ix=iy=0;c.face=Math.atan2(iy||Math.sin(c.face),ix||Math.cos(c.face));}
-  const gnd=groundAt(c.x,c.y,c.z);if(!c.glide&&c.z-gnd<240){c.glide=true;if(c.isPlayer)sfx('glide');}
+  const gnd=groundAt(c.x,c.y,c.z);if(!c.glide&&(c.z-gnd<240||MAP.floaty&&c.vz<-60)){c.glide=true;if(c.isPlayer)sfx('glide');} // (over the open sky the glider opens on the way down)
+  if(MAP.floaty&&c.z<-300){skyCatch(c);return;}
   const sp=c.glide?400:325;c.x+=ix*sp*dt;c.y+=iy*sp*dt;wrapPos(c);if(c.y<14&&!inIsle(c.x,c.y,14))c.y=14; // gliding over an edge comes round the other side
   c.vz=c.glide?lerp(c.vz,-110,Math.min(1,dt*3)):Math.max(c.vz-GRAV()*dt,-380);c.z+=c.vz*dt;c.moving=false;
   if(c.z<=gnd){c.z=gnd;c.vz=0;c.state='alive';c.glide=false;c.onGround=true;sfx('land',c);burst(c.x,c.y,c.z+2,8,'puff','#ffffff',70);if(c.isPlayer)G.pitch=-0.12;}
@@ -4739,6 +4795,7 @@ function updateChar(c,dt){
     for(const o of cellOf(c.x,c.y)){if(c.vz>0&&inFoot(o,c.x,c.y,0)&&c.z+CH>o.z0&&c.z<o.z0){c.z=o.z0-CH;c.vz=0;}}}
   if(c.padCd<=0&&!c.zombie&&c.z<10)for(const pd of PADS){if(Math.hypot(c.x-pd.x,c.y-pd.y)<26){let dx=mx,dy=my;
     if(!dx&&!dy){dx=WORLD/2-c.x;dy=WORLD/2-c.y;const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;}const lg=MAP.lowG;c.air={vx:dx*(lg?360:420),vy:dy*(lg?360:420)};c.vz=lg?560:720;c.onGround=false;c.padCd=1.5;sfx('boing',c);addText(c.x,c.y,c.z+50,lg?'WHEEE!':'BOING!','#ff7b1c',16);break;}}
+  fanLift(c);if(MAP.floaty&&c.z<-300)skyCatch(c); // the Sky Islands: fans blow you up; fall off and the drone catches you
   if(!NETC())charTail(c,dt);
 }
 // hazards, loot, chests and the supply crate under a character (shared by local and remote players)
@@ -4924,6 +4981,7 @@ function syncVisuals(dt){
   animateWorld(dt,t,p.state==='gone'?(p.watch||{x:p.koX,y:p.koY}):p);
 }
 function animateWorld(dt,t,focus){
+  if(MAP.tick)MAP.tick(dt,t);
   for(const f of flames){if(f.lava){const ph=(t*0.7+f.ph)%1;f.b.scale.set(6+ph*14,3+ph*4,6+ph*14);f.b.material.opacity=1-ph;}else{const s=1+Math.sin(t*9+f.ph)*0.15+Math.sin(t*15+f.ph)*0.08;f.o.scale.y=34*f.s*s;f.i.scale.y=20*f.s*(2-s);}}
   if(skyMesh)skyMesh.position.copy(camera.position);if(starPts)starPts.position.copy(camera.position);updateSkyDecor(dt);updateAnimals(dt,t);
   if(ambPts){const a=ambPts.geometry.attributes.position,arr=a.array;ambPts.position.set(focus.x,0,focus.y);
@@ -5252,7 +5310,7 @@ const HELP_PAGES=[
   {t:'🔫 Weapons & loot',shots:['loot'],body:()=>`<ul><li>Walk over weapons to pick them up. You can carry 4 plus your pickaxe.</li><li>The <b>glow colour</b> is the rarity: <b style="color:${RAR_COL[0]}">Common</b>, <b style="color:${RAR_COL[1]}">Uncommon</b>, <b style="color:${RAR_COL[2]}">Rare</b>, <b style="color:${RAR_COL[3]}">Epic</b>, <b style="color:${RAR_COL[4]}">Legendary</b>. Rarer = stronger!</li><li><b>Loot Llamas</b> 🦙 are full of rare loot and materials.</li><li><b>Vending machines</b> 🛒 sell a weapon for materials.</li><li>Your <b>Mythic Laser Blaster</b> is always in slot 2.</li><li>Bandages, med kits and shield potions: hold ${TOUCH.on?'FIRE':'click'} to use them.</li></ul>`},
   {t:'🔨 Building',shots:['build'],body:()=>TOUCH.on?`<ul><li>Tap <b>🔨 BUILD</b> to show the building buttons.</li><li><b>WALL</b>, <b>RAMP</b>, <b>FLOOR</b>, <b>ROOF</b>: tap to place, hold to keep building.</li><li><b>EDIT</b> turns your wall into a door or window.</li><li>The material button switches between wood, stone and metal. Metal is strongest!</li><li>Swing your pickaxe at trees, rocks and walls to collect materials.</li><li>Tap <b>⚔️ COMBAT</b> to go back to fighting.</li></ul>`
     :`<ul><li><b>Z</b> wall · <b>X</b> ramp · <b>C</b> floor · <b>V</b> roof. Click to place, hold to keep building.</li><li>Look up to build higher.</li><li><b>G</b> edits a wall into a door or window.</li><li><b>T</b> switches wood, stone and metal. Metal is strongest!</li><li>Swing your pickaxe at trees, rocks and walls to collect materials.</li></ul>`},
-  {t:'🚌 Bus & storm',shots:['bus','storm'],body:()=>`<ul><li>Battle Royale starts on the <b>battle bus</b>. ${TOUCH.on?'Tap JUMP OUT':'Press Space'} over the spot you want to land.</li><li>Your glider opens by itself, or open it early.</li><li>The <b>purple storm</b> shrinks the island. It hurts while you are in it, so keep moving to the safe circle!</li><li>The white dashed circle on the minimap shows where the storm goes next.</li><li>🌐 <b>The edges loop!</b> Walk, drive or shoot off one side of the map and you come back in on the other side (the see-through curtain marks the edge). So nobody is safe hiding at the edge. Only the bridge to the Bonk Hospital goes on north.</li></ul>`},
+  {t:'🚌 Bus & storm',shots:['bus','storm'],body:()=>`<ul><li>Battle Royale starts on the <b>battle bus</b>. ${TOUCH.on?'Tap JUMP OUT':'Press Space'} over the spot you want to land.</li><li>Your glider opens by itself, or open it early.</li><li>The <b>purple storm</b> shrinks the island. It hurts while you are in it, so keep moving to the safe circle!</li><li>The white dashed circle on the minimap shows where the storm goes next.</li><li>🌐 <b>The edges loop!</b> Walk, drive or shoot off one side of the map and you come back in on the other side (the see-through curtain marks the edge). So nobody is safe hiding at the edge. Only the bridge to the Bonk Hospital goes on north.</li><li>☁️ <b>Sky Islands:</b> fall off an island and the rescue drone catches you. Stand on a big fan to fly up, then glide across to another island.</li></ul>`},
   {t:'🚁 Getting bonked',shots:['drone'],body:()=>`<ul><li>When you run out of health you get knocked out, but a <b>rescue drone</b> flies you back in after a few seconds.</li><li>In Battle Royale, drones stop at the <b>final circle</b>. Then it's last one standing!</li><li>In <b>Squads</b> you get knocked down first. A teammate can revive you by holding ${TOUCH.on?'the green REVIVE button':'E'} next to you.</li><li>Heal up with bandages, med kits and shield potions.</li></ul>`},
   {t:'🏆 How to win',shots:[],body:()=>`<p>Every game mode has its own way to win:</p><div class="hwin">${[['🪂 Battle Royale','Be the last one (or last squad) standing when the storm closes.'],['⚔️ Team Battle','Red team needs 20 knockouts before blue does.'],['🧟 Zombie Survival','Survive as many zombie waves as you can. Build walls!'],['🏎️ Car Race','Drive through the glowing gates in order. Finish 3 laps first.'],['✈️ Plane Race','Fly through the glowing rings in the sky in order. Finish 3 laps first.'],['🌋 Floor is Lava','Build up and stay above the rising lava the longest.'],['👑 Capture the Crown','Grab the crown and hold it to score points.'],['🚩 Capture the Flag','Steal the blue flag and bring it back to your base.'],['🏰 Fort Siege','Build a fort around your treasure, then steal theirs and carry it home. The fastest steal wins.'],['🚒 Rescue Squad','Everyone together: put out every fire and fly everyone off the rooftops to the H before time runs out.'],['⛰️ King of the Hill','Stand in the golden circle to score. It moves around!'],['🏗️ Build Battle','Build the tallest tower before time runs out.'],['🤖 Mega Robot','Everyone teams up against one giant robot. Bonk it before time runs out!'],['🎯 Training Room','No winning here: practice your aim, building and every weapon.']].map(([a,b])=>`<div><b>${a}</b>${b}</div>`).join('')}</div>`},
   {t:'🌐 Play with friends',shots:[],body:()=>`<ul><li>Tap <b>🌐 Multiplayer</b> on the welcome screen and type your <b>name</b>.</li><li><b>One player hosts:</b> tap <b>Host a game</b> and read out the 4-letter <b>room code</b>.</li><li><b>Everyone else joins:</b> tap <b>Join</b> and type the code. The host sees <b>🙋 wants to join</b> and taps <b>✅ Allow</b> (or <b>❌ Kick</b>).</li><li>The host picks the <b>game</b>, the <b>map</b> and the <b>teams</b>: <i>Host picks</i> (tap a player to move them), <i>🎲 Random</i>, <i>Pick your own</i> (tap Join Red/Blue…), or <i>Everyone vs everyone</i>.</li><li>Bots fill the empty spots. The host presses <b>START</b> and everyone drops into the same match!</li><li>Up to 8 real players, in every game mode: Battle Royale, Team Battle, Zombie Survival (team up against the waves), Car Race, Floor is Lava, Capture the Crown, Capture the Flag, King of the Hill, Build Battle and the Training Room.</li><li>Hold <b>Tab</b> (or tap <b>🏆</b>) for the <b>scoreboard</b>: everyone's knockouts and ping.</li><li>Out of the match? You <b>watch a teammate</b>. Press Space, click or tap JUMP to switch who you watch.</li><li>Friends who arrive late can <b>jump into a match that already started</b> by taking over a bot (the host can turn this off in Settings → 🌐 Multiplayer).</li><li>Need a break? Press <b>O</b> (or tap <b>🤖</b>) and autopilot plays for you. If you stop playing for a bit, a <b>💤 bot helper</b> plays for you until you're back. The host can turn either off in Settings → 🌐 Multiplayer.</li><li>After the match, <b>Play again</b> takes everyone back to the room.</li></ul>`},
@@ -5914,7 +5972,7 @@ function netOwnFromSnap(c,a){const st=NST[a[4]],f=a[8],loc=c.state;c.hp=a[5];c.s
   if(G.hostDriven&&(st==='alive'||st==='sky')){c.state=st;c.x=a[0];c.y=a[1];c.z=a[2];c.face=a[3];c.glide=!!(f&4);G.yaw+=angDiff(G.yaw,c.face)*0.2;G.net.lastOwnSt=st;return;} // the host is playing for us
   if(st==='alive'||st==='sky'){if(loc!=='alive'&&loc!=='sky'){c.state=st;c.x=a[0];c.y=a[1];c.z=a[2];c.vx=c.vy=c.vz=0;c.onGround=st==='alive';c.glide=!!(f&4);}
     else if(st==='sky'&&loc==='alive'&&G.net.lastOwnSt!=='sky'){c.state='sky';c.x=a[0];c.y=a[1];c.z=a[2];c.glide=false;}
-    else if(st==='alive'&&Math.hypot(wdx(a[0]-c.x),wdy(c.y,a[1]))>450){c.x=a[0];c.y=a[1];c.z=a[2];}}
+    else if(st==='alive'&&Math.hypot(wdx(a[0]-c.x),wdy(c.y,a[1]))>450&&!(G.time-(c.caughtT??-9)<3)){c.x=a[0];c.y=a[1];c.z=a[2];}}
   else{c.state=st;c.x=a[0];c.y=a[1];c.z=a[2];c.glide=!!(f&4);}
   G.net.lastOwnSt=st;}
 function netApplyPriv(P){const p=G.player;p.slots=P.sl.map((s,i)=>s?{id:NWC[s[0]],ammo:s[1]<0?undefined:s[1],r:s[2]<0?undefined:s[2]}:(i===0?{id:'fists'}:null));
