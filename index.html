@@ -31,6 +31,7 @@ body{margin:0;background:var(--sky);color:var(--ink);font-family:var(--body);ove
 #game{position:fixed;inset:0;display:block;width:100%;height:100%;touch-action:none}
 .screen{position:fixed;inset:0;display:flex;padding:16px;overflow-y:auto;background:rgba(27,34,53,.32);z-index:10}
 /* @module src/css/02-lobby-hud.css: The lobby layout, cards and buttons, and the in-game HUD. */
+/* @module src/css/02-lobby-hud.css: The lobby layout, cards and buttons, and the in-game HUD. */
 /* Fortnite-style lobby: your character on the left, settings card on the right */
 #menu,#locker,#shop{background:linear-gradient(90deg,transparent 40%,rgba(27,34,53,.35))}
 #menu .card,#locker .card,#shop .card{margin:auto 2vw auto auto;max-width:540px}
@@ -194,6 +195,7 @@ body:not(.touch) #prompt:not([hidden])~#autoTag{bottom:calc(262px + env(safe-are
 /* gadgets you brought, with their fuel (30b-gadgets) */
 #gadBar{display:flex;gap:6px;padding:4px 6px}#gadBar .gad{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}#gadBar .gad.on{color:#43c6ff}#gadBar .gad.empty{opacity:.45}#gadBar kbd{font-size:11px}
 /* @module src/css/03-layers-touch.css: Layer order while playing, and the touch controls (buttons stay inside the safe area). */
+/* @module src/css/03-layers-touch.css: Layer order while playing, and the touch controls (buttons stay inside the safe area). */
 /* layer order while playing (bottom → top): world · screen effects 2 · touch move/look area 3 · messages 4 · HUD 5 · touch buttons 6 · editor 7 · menus 10+ */
 #scope,#stormVig{z-index:2}
 #announce,#prompt,#elim,#poi,#respawn,#useBar,#lockHint{z-index:4;pointer-events:none}
@@ -269,6 +271,7 @@ body.touch #prompt{bottom:auto;top:74px;white-space:normal;max-width:min(420px,4
 #matchSum{font-weight:900}
 .card.wide{max-width:860px}.card-top.green{background:var(--green)}
 #menu .card{max-width:620px}
+/* @module src/css/06-settings.css: The settings screen. */
 /* @module src/css/06-settings.css: The settings screen. */
 /* ---------- settings ---------- */
 #settings .card{display:flex;flex-direction:column;max-height:calc(100vh - 32px)}
@@ -701,7 +704,7 @@ const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const lerp=(a,b,t)=>a+(b-a)*t;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
-const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const dist=(a,b)=>Math.hypot(wdx(a.x-b.x),wdy(b.y,a.y)); // the short way round: the map edges loop (wrap module)
 const angDiff=(a,b)=>{let d=(b-a)%TAU;if(d>Math.PI)d-=TAU;if(d<-Math.PI)d+=TAU;return d;};
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
@@ -1023,7 +1026,8 @@ function hospIsle(){const cx=(N>>1)*T+T/2,I=HOSP_ISLE,S=40,bw=400,bh=280,x0=cx-b
   for(let k=0;k<bw/S;k++){W(x0+k*S,y0);if(k!==bw/S/2-1&&k!==bw/S/2)W(x0+k*S,y0+bh-S);} // the front door faces the map
   for(let k=1;k<bh/S-1;k++){W(x0,y0+k*S);W(x0+bw-S,y0+k*S);}}
 // keep a character on solid ground: the map, the hospital island or its bridge (the nearest one, so each edge works like a wall)
-function keepIn(c,r){if(c.x>=r&&c.x<=WORLD-r&&c.y>=r&&c.y<=WORLD-r)return;if(inIsle(c.x,c.y,r))return;const I=HOSP_ISLE,boxes=[[r,WORLD-r,r,WORLD-r]];
+function keepIn(c,r){if(wrapPos(c)||WRAP&&c.y>=0)return; // the map edges loop (wrap module)
+  if(c.x>=r&&c.x<=WORLD-r&&c.y>=r&&c.y<=WORLD-r)return;if(inIsle(c.x,c.y,r))return;const I=HOSP_ISLE,boxes=[[r,WORLD-r,r,WORLD-r]];
   if(I.cx)boxes.push([I.x0+r+1,I.x1-r-1,I.y0+r+1,I.y1-r-1],[I.bx0+r+1,I.bx1-r-1,I.y1-79,79]);let bx=0,by=0,bd=1e18;
   for(const[x0,x1,y0,y1]of boxes){const x=clamp(c.x,x0,x1),y=clamp(c.y,y0,y1),d=(x-c.x)**2+(y-c.y)**2;if(d<bd){bd=d;bx=x;by=y;}}c.x=bx;c.y=by;}
 // is (x,y) on the hospital island or its bridge (pad: room to keep from the edge)
@@ -1272,6 +1276,49 @@ function interiorMerge(parts){let nv=0,ni=0;for(const p of parts){const g=IGEO[p
   bg.setIndex(new THREE.BufferAttribute(idx,1));bg.computeBoundingSphere();return bg;}
 // every frame: only the rooms near the camera are drawn (the rest are hidden by walls or far away anyway)
 function interiorsTick(){const cx=camera.position.x,cy=camera.position.z;for(const e of PROPS){const on=Math.hypot(e.cx-cx,e.cy-cy)<e.r+1100;if(e.mesh)e.mesh.visible=on;if(e.glow)e.glow.visible=on;}}
+// @module src/js/06c-wrap.js: World wrap: every map edge loops for people, vehicles and projectiles (not the hospital island and its bridge); the short way round for distances and directions; drawing things just across an edge beside you; the see-through edge curtain.
+// Main: WRAP, wdx, wdy, wrapPos, wrapProj, walkBlocked, wrapView, wrapEdges, isleZone
+// See also: maps (keepIn), update (projectiles), cars (carCollide, exitCar, PLANE_WRAP, pvec), bots, autopilot, combat, aiming, visuals, net-sync
+/* ================= world wrap =================
+   Every map edge loops (0.4, the parent's request): walk, drive or shoot off one side and you come back in on the opposite
+   side, going the same way, like the planes' Pac-Man wrap. So nobody is safe camping at the edge. The Bonk Hospital's island
+   and its bridge, off the north edge, don't wrap: along that stretch the north edge is still a wall and only the bridge goes on.
+   Flying planes keep their own, bigger wrap box (PLANE_WRAP in cars). Bots measure distances and directions the short way
+   round (wdx, wdy, dist), and things just across an edge are drawn beside you (wrapView), seen through a shimmering
+   curtain along the edge (wrapEdges). The storm does not wrap. */
+const WRAP=true;
+// the strip off the north edge that holds the hospital island and its bridge (no wrapping there)
+function isleZone(x,y){const I=HOSP_ISLE;return!!I.cx&&y<0&&y>I.y0-80&&x>I.x0-60&&x<I.x1+60;}
+const wrapC=v=>v<0?v+WORLD:v>=WORLD?v-WORLD:v;
+// the short way across: the difference of two x (or two y) coordinates on the looping map
+const wdx=d=>!WRAP?d:d>WORLD/2?d-WORLD:d<-WORLD/2?d+WORLD:d;
+// y from ay to by: straight when either end is off the north edge (the hospital island, a plane up there)
+const wdy=(ay,by)=>ay<0||by<0?by-ay:wdx(by-ay);
+// a point that may be past an edge, back on the map (x, then y); points in the hospital's strip keep their y
+const wpx=x=>WRAP?wrapC(x):x;
+const wpy=(x,y)=>!WRAP||(y<0&&isleZone(x,y))?y:wrapC(y);
+// a character or vehicle past an edge goes round to the other side; true if it moved
+function wrapPos(o){if(!WRAP)return false;const x=wpx(o.x),y=wpy(o.x,o.y);if(x===o.x&&y===o.y)return false;o.x=x;o.y=y;return true;}
+// a projectile: it wraps when it crosses a map edge; one fired from a plane beyond the edge wraps with the planes' box
+function wrapProj(p,ox,oy){if(!WRAP)return;const W=PLANE_WRAP,inX=ox>=0&&ox<WORLD,inY=oy>=0&&oy<WORLD;
+  if(inX&&(p.x<0||p.x>=WORLD))p.x=wrapC(p.x);else if(p.x<W.x0)p.x+=W.x1-W.x0;else if(p.x>W.x1)p.x-=W.x1-W.x0;
+  if(inY&&p.y>=WORLD)p.y-=WORLD;else if(inY&&p.y<0){if(!isleZone(p.x,p.y))p.y+=WORLD;}else if(p.y<W.y0)p.y+=W.y1-W.y0;else if(p.y>W.y1)p.y-=W.y1-W.y0;}
+// would walking be blocked at this point (which may be past an edge)? Like pointBlocked, but the edges loop
+function walkBlocked(x0,y0,pad){if(!WRAP)return pointBlocked(x0,y0,pad);const x=wpx(x0),y=wpy(x0,y0);
+  if(y<pad&&!inIsle(x,y,pad)&&isleZone(x,-1))return true; // the hospital's stretch of the north edge is still a wall
+  for(const o of cellOf(x,y)){if(o.z0>30)continue;if(!inFoot(o,x,y,pad))continue;if(o.t==='ramp'||surfAt(o,x,y)>20)return true;}return false;}
+// draw a moving thing at the copy of its spot nearest the camera, so someone just across an edge shows up right there
+// (pl: a plane, which wraps with the planes' box)
+function wrapView(m,pl){if(!WRAP||!m)return;const p=m.position,cx=camera.position.x,cz=camera.position.z,W=PLANE_WRAP,X=pl?W.x1-W.x0:WORLD,Y=pl?W.y1-W.y0:WORLD;
+  const dx=p.x-cx;if(dx>X/2)p.x-=X;else if(dx<-X/2)p.x+=X;
+  if(pl||(p.z>=0&&cz>=0)){const dz=p.z-cz;if(dz>Y/2)p.z-=Y;else if(dz<-Y/2)p.z+=Y;}}
+// a soft, shimmering see-through curtain along the map edges, so you can tell the edge loops round (not across the hospital bridge)
+function wrapEdges(grp){if(!WRAP)return;const cv=document.createElement('canvas');cv.width=4;cv.height=64;const g=cv.getContext('2d'),gr=g.createLinearGradient(0,0,0,64);
+  gr.addColorStop(0,'rgba(140,240,255,0)');gr.addColorStop(0.7,'rgba(140,240,255,0.35)');gr.addColorStop(1,'rgba(255,255,255,0.6)');g.fillStyle=gr;g.fillRect(0,0,4,64);
+  const tex=new THREE.CanvasTexture(cv),m=new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending}),H=220,I=HOSP_ISLE;
+  const wall=(x0,y0,x1,y1)=>{const L=Math.hypot(x1-x0,y1-y0);if(L<1)return;const w=new THREE.Mesh(new THREE.PlaneGeometry(L,H),m);w.position.set((x0+x1)/2,H/2-20,(y0+y1)/2);w.rotation.y=-Math.atan2(y1-y0,x1-x0);w.renderOrder=2;grp.add(w);};
+  wall(0,WORLD,WORLD,WORLD);wall(0,0,0,WORLD);wall(WORLD,0,WORLD,WORLD);
+  if(I.cx){wall(0,0,I.bx0,0);wall(I.bx1,0,WORLD,0);}else wall(0,0,WORLD,0);}
 // @module src/js/07-three-setup.js: three.js renderer, scene, camera, lights and shared geometry/material caches; building the 3D world; re-measuring the screen (iOS fixes).
 // Main: renderer, scene, camera, resize, viewportChanged, GEO, mat, mesh, buildWorld
 // See also: maps, visuals
@@ -1384,6 +1431,7 @@ function buildWorld(){
   {const I=HOSP_ISLE,L=(x0,x1,y0,y1,top)=>{const sd=new THREE.Mesh(GEO.box,mat(MAP.side));sd.scale.set(x1-x0,40,y1-y0);sd.position.set((x0+x1)/2,-41,(y0+y1)/2);world.add(sd);
       const tp=new THREE.Mesh(GEO.box,mat(top));tp.scale.set(x1-x0,1,y1-y0);tp.position.set((x0+x1)/2,-1,(y0+y1)/2);tp.receiveShadow=true;world.add(tp);};
     L(I.x0,I.x1,I.y0,I.y1,MAP.tiles[0]);L(I.bx0,I.bx1,I.y1-2,2,MAP.tiles[1]);} // the hospital island and its bridge (maps module)
+  wrapEdges(world); // the see-through curtain along the looping edges (wrap module)
   if(MAP.outside){const om=MAP.outsideGlow?basic(MAP.outside):new THREE.MeshLambertMaterial({color:MAP.outside});const out=new THREE.Mesh(new THREE.PlaneGeometry(14000,14000).rotateX(-Math.PI/2),om);out.position.set(WORLD/2,-28,WORLD/2);world.add(out);}
   // smooth painted walls with a darker top trim
   for(const o of OB){SPEC_OB=o;if(o.t==='box'&&o.wall){S('box',o.col,o.x+o.w/2,o.y+o.d/2,0,o.w,o.h,o.d);S('box',shadeHex(o.col,0.75),o.x+o.w/2,o.y+o.d/2,o.h,o.w+2,5,o.d+2);S('box',shadeHex(o.col,0.85),o.x+o.w/2,o.y+o.d/2,0,o.w+1.5,8,o.d+1.5);}
@@ -1492,7 +1540,7 @@ function drawTag(c){const cv2=c.tagCanvas,g=cv2.getContext('2d');g.clearRect(0,0
   if(HBARS||c.hp<c.maxHp){const f=Math.max(0,c.hp/c.maxHp);g.fillStyle='rgba(27,34,53,.85)';rr(g,bx-3,38,bw+6,24,6);g.fill();g.fillStyle=f>.6?'#4cd05a':f>.3?'#ffcb1f':'#ff4d4d';rr(g,bx,41,Math.max(4,bw*f),18,4);g.fill();
     g.font='900 16px Nunito, sans-serif';g.lineWidth=4;g.strokeText(String(Math.ceil(c.hp)),128,56);g.fillStyle='#fff';g.fillText(String(Math.ceil(c.hp)),128,56);}
   c.tagTex.needsUpdate=true;}
-// @module src/js/08-sky.js: The sky: the sun, drifting clouds, and faraway scenery around the island (hills, mesas, peaks, volcanoes, islands), different for each map; day and night; weather.
+// @module src/js/08-sky.js: The sky: the sun, drifting clouds, and faraway scenery around the island (hills, mesas, peaks, volcanoes, islands), different for each map.
 // Main: SKY_LOOK, buildSkyDecor, updateSkyDecor, skyTexture, nightAmount, updateTimeWeather, matchWeather
 // See also: three-setup (buildWorld calls it), visuals (animateWorld calls updateSkyDecor)
 /* ================= sky: the sun, drifting clouds, and faraway scenery around the island =================
@@ -1950,7 +1998,7 @@ function busModel(){const g=new THREE.Group(),B=(geo,col,x,y,z,w,h,d)=>{const m=
   // two fans at the back
   const props=[];for(const s of[-1,1]){B('cylC','#2b2f3a',-74,-80,s*30,22,14,22).rotation.z=Math.PI/2;const p=new THREE.Group();p.position.set(-82,-80,s*30);for(const r of[0,Math.PI/2]){const bl=mesh('boxC','#ffcb1f',0,0,0,2,30,5);bl.rotation.x=r;p.add(bl);}g.add(p);props.push(p);}
   g.userData.prop=props[0];g.userData.props=props;scene.add(g);return g;}
-// @module src/js/13-pets.js: Pets: a little buddy (puppy, kitty, chick, bunny, penguin, robo pup, baby dragon, unicorn) that follows its owner, hops, flies, and cheers on bonks; and the friendly animals that roam each map.
+// @module src/js/13-pets.js: Pets: a little buddy (puppy, kitty, chick, bunny, penguin, robo pup, baby dragon, unicorn) that follows its owner, hops, flies, and cheers on bonks.
 // Main: petModel, attachPet, movePet, updatePets, PET_FLY, ANIMALS_BY_MAP, animalModel, buildAnimals, updateAnimals, ANIMALS
 // See also: cosmetics (PETS list), models (buildCharModel calls attachPet), fun (petCheer)
 /* ================= pets: a little buddy that follows you around =================
@@ -1990,7 +2038,7 @@ function movePet(c,dt,t,show,spot){const m=c.m,g=m&&m.pet;if(!g)return;if(!show)
   const sp=Math.hypot(S.x-px,S.y-py)/Math.max(dt,1e-4);if(sp>8)S.face=Math.atan2(S.y-py,S.x-px);else S.face+=angDiff(S.face,c.face)*Math.min(1,dt*3);
   const cheer=G&&c.petCheer!=null&&G.time-c.petCheer<1.2;let y=S.z;
   if(fly)y+=24+Math.sin(t*2.4+c.x)*4;else if(cheer)y+=Math.abs(Math.sin(t*10))*14;else if(sp>8)y+=Math.abs(Math.sin(t*14))*4;
-  g.visible=true;g.position.set(S.x,y,S.y);g.rotation.set(0,Math.PI/2-S.face+(cheer?t*9:0),0);
+  g.visible=true;g.position.set(S.x,y,S.y);wrapView(g);g.rotation.set(0,Math.PI/2-S.face+(cheer?t*9:0),0);
   if(g.userData.wings)g.userData.wings.forEach((w,i)=>w.rotation.z=(i?-1:1)*Math.sin(t*(fly?9:4))*0.5);}
 // every character's pet, each frame (called from syncVisuals)
 function updatePets(dt,t){for(const c of G.chars)if(c.m&&c.m.pet)movePet(c,dt,t,c.m.g.visible&&(c.state==='alive'||c.state==='dbno')&&!c.vehicle);}
@@ -2041,7 +2089,7 @@ function updateAnimals(dt,t){if(!ANIMALS.length)return;const T=G&&G.time!=null?G
     if(a.m.userData.wings)for(const[wing,sx]of a.m.userData.wings)wing.rotation.z=sx*Math.sin(T*9+a.ph)*0.6;
     a.m.visible=Math.abs(a.x-camera.position.x)<2400&&Math.abs(a.y-camera.position.z)<2400;}}
 // @module src/js/14-game-state.js: Match options and the match itself: modes, rules, teams, creating characters, and newGame() which builds G.
-// Main: MODES, RULES, opts, G, newGame, makeChar, makeZombie, freeSpot, openFace, isEnemy
+// Main: MODES, RULES, opts, G, newGame, makeChar, makeZombie, freeSpot, isEnemy
 // See also: update, screens, modes-extra
 /* ================= game state ================= */
 const DIFFS={easy:{aimErr:0.12,react:0.75,dmgMul:0.55,speed:148,cdMul:1.7,vision:420,zSpeed:76,zDmg:6},medium:{aimErr:0.06,react:0.42,dmgMul:0.8,speed:166,cdMul:1.25,vision:480,zSpeed:90,zDmg:9},hard:{aimErr:0.025,react:0.22,dmgMul:1,speed:180,cdMul:1.0,vision:540,zSpeed:104,zDmg:12}};
@@ -2229,7 +2277,7 @@ function fireInner(c,dir){
 }
 function meleeHit(c,w,wid,ang,mul){
   let any=false;
-  for(const o of G.chars){if(!isEnemy(c,o)||(o.state!=='alive'&&o.state!=='dbno'))continue;const dx=o.x-c.x,dy=o.y-c.y,d=Math.hypot(dx,dy)||1;if(d>w.range+14||Math.abs(o.z-c.z)>44)continue;
+  for(const o of G.chars){if(!isEnemy(c,o)||(o.state!=='alive'&&o.state!=='dbno'))continue;const dx=wdx(o.x-c.x),dy=wdy(c.y,o.y),d=Math.hypot(dx,dy)||1;if(d>w.range+14||Math.abs(o.z-c.z)>44)continue;
     if(d>20&&Math.abs(angDiff(ang,Math.atan2(dy,dx)))>w.arc/2)continue;if(w.word)addText(o.x,o.y,o.z+58,w.word,'#ffffff',16);damage(o,w.dmg*mul,c,wid,dx/d*w.kb,dy/d*w.kb);any=true;}
   for(const p of G.pieces.slice()){const px=p.cx,py=p.cy;const d=Math.hypot(px-c.x,py-c.y);if(d<w.range+44&&Math.abs(angDiff(ang,Math.atan2(py-c.y,px-c.x)))<1.0&&Math.abs(p.ob.z0-c.z)<80){damagePiece(p,w.dmg*(wid==='fists'?2:1.5));any=true;}}
   if(c.isPlayer&&!any){ // harvest: trees → wood, rocks → stone, building walls → metal
@@ -2244,9 +2292,9 @@ function meleeHit(c,w,wid,ang,mul){
 }
 function ultraShot(c,h,dir){
   const L=1100;let hitP=new Set();
-  for(const o of G.chars){if(!isEnemy(c,o)||o.state!=='alive')continue;const rx=o.x-h.x,ry=o.y-h.y,rz=o.z+23-h.z,t=rx*dir.x+ry*dir.y+rz*dir.z;if(t<0||t>L)continue;
-    const px=h.x+dir.x*t-o.x,py=h.y+dir.y*t-o.y,pz=h.z+dir.z*t-(o.z+23);if(Math.hypot(px,py,pz)<26){addText(o.x,o.y,o.z+64,'ZAP!','#43f6ff',20);damage(o,100,c,'ultra',dir.x*500,dir.y*500);if(c.isPlayer)G.crossHit=0.2;}}
-  for(let t=0;t<L;t+=20){const ob=blocked3D(h.x+dir.x*t,h.y+dir.y*t,h.z+dir.z*t);if(ob&&ob.built&&!hitP.has(ob)){hitP.add(ob);damagePiece(ob.piece,200);}}
+  for(const o of G.chars){if(!isEnemy(c,o)||o.state!=='alive')continue;const rx=wdx(o.x-h.x),ry=wdy(h.y,o.y),rz=o.z+23-h.z,t=rx*dir.x+ry*dir.y+rz*dir.z;if(t<0||t>L)continue;
+    const px=dir.x*t-rx,py=dir.y*t-ry,pz=h.z+dir.z*t-(o.z+23);if(Math.hypot(px,py,pz)<26){addText(o.x,o.y,o.z+64,'ZAP!','#43f6ff',20);damage(o,100,c,'ultra',dir.x*500,dir.y*500);if(c.isPlayer)G.crossHit=0.2;}}
+  for(let t=0;t<L;t+=20){const x0=h.x+dir.x*t,ob=blocked3D(wpx(x0),wpy(x0,h.y+dir.y*t),h.z+dir.z*t);if(ob&&ob.built&&!hitP.has(ob)){hitP.add(ob);damagePiece(ob.piece,200);}}
   addBeam(h.x,h.y,h.z,h.x+dir.x*L,h.y+dir.y*L,h.z+dir.z*L);sfx('ultra',c);if(Math.hypot(c.x-G.player.x,c.y-G.player.y)<700)G.shake=Math.max(G.shake,8);
 }
 // Mythic Laser Blaster: fast rainbow lasers that zip through enemies and builds
@@ -2256,16 +2304,16 @@ function laserShot(c,h,dir,mul){const yaw=Math.atan2(dir.y,dir.x),fl=Math.hypot(
   sfx('laser',c);if(c.isPlayer)G.shake=Math.max(G.shake,2.5);}
 function laserBeam(c,h,dir,mul,main,hit){const L=1600,sp=0.01;dir=norm3({x:dir.x+(Math.random()-.5)*sp,y:dir.y+(Math.random()-.5)*sp,z:dir.z+(Math.random()-.5)*sp});
   let stop=L;const hitP=new Set();
-  for(let t=10;t<L;t+=14){const x=h.x+dir.x*t,y=h.y+dir.y*t,z=h.z+dir.z*t;if(z<groundAt(x,y,z+1)-2){stop=t;break;}const ob=blocked3D(x,y,z);
+  for(let t=10;t<L;t+=14){const x0=h.x+dir.x*t,x=wpx(x0),y=wpy(x0,h.y+dir.y*t),z=h.z+dir.z*t;if(z<groundAt(x,y,z+1)-2){stop=t;break;}const ob=blocked3D(x,y,z);
     if(ob){if(ob.built){if(!hitP.has(ob.piece)){hitP.add(ob.piece);damagePiece(ob.piece,400);}}else{stop=t;break;}}}
-  for(const o of G.chars){if(hit.has(o)||!isEnemy(c,o)||(o.state!=='alive'&&o.state!=='dbno'))continue;const rx=o.x-h.x,ry=o.y-h.y,rz=o.z+23-h.z,t=rx*dir.x+ry*dir.y+rz*dir.z;if(t<0||t>stop)continue;
-    const px=h.x+dir.x*t-o.x,py=h.y+dir.y*t-o.y,pz=h.z+dir.z*t-(o.z+23);if(Math.hypot(px,py,pz)<34){hit.add(o);damage(o,WEAPONS.laser.dmg*mul,c,'laser',dir.x*420,dir.y*420);
+  for(const o of G.chars){if(hit.has(o)||!isEnemy(c,o)||(o.state!=='alive'&&o.state!=='dbno'))continue;const rx=wdx(o.x-h.x),ry=wdy(h.y,o.y),rz=o.z+23-h.z,t=rx*dir.x+ry*dir.y+rz*dir.z;if(t<0||t>stop)continue;
+    const px=dir.x*t-rx,py=dir.y*t-ry,pz=h.z+dir.z*t-(o.z+23);if(Math.hypot(px,py,pz)<34){hit.add(o);damage(o,WEAPONS.laser.dmg*mul,c,'laser',dir.x*420,dir.y*420);
       burst(o.x,o.y,o.z+30,10,'star',pick(LASER_COLS),140);if(Math.random()<0.5)addText(o.x,o.y,o.z+62,pick(['ZAP!','PEW!','ZING!','BZZT!','KA-ZAP!']),pick(LASER_COLS),18);if(c.isPlayer)G.crossHit=0.15;}}
   const LC=laserCols(c),col=LC[(c.laserN=(c.laserN||0)+1)%LC.length];const ex=h.x+dir.x*stop,ey=h.y+dir.y*stop,ez=h.z+dir.z*stop;
   addBeam(h.x+dir.x*20,h.y+dir.y*20,h.z+dir.z*20,ex,ey,ez,col,col,main?20:13,0.25);
   // rainbow blast where the laser lands
   burst(ex,ey,ez,main?26:12,'confetti',null,200);burst(ex,ey,ez,6,'star',col,120);
-  for(const o of G.chars){if(hit.has(o)||!isEnemy(c,o)||o.state!=='alive')continue;const dx=o.x-ex,dy=o.y-ey,dz=o.z+20-ez,d=Math.hypot(dx,dy,dz)||1;if(d<80){hit.add(o);damage(o,50*mul,c,'laser',dx/d*300,dy/d*300);}}}
+  for(const o of G.chars){if(hit.has(o)||!isEnemy(c,o)||o.state!=='alive')continue;const dx=wdx(o.x-ex),dy=wdy(ey,o.y),dz=o.z+20-ez,d=Math.hypot(dx,dy,dz)||1;if(d<80){hit.add(o);damage(o,50*mul,c,'laser',dx/d*300,dy/d*300);}}}
 function addBeam(x0,y0,z0,x1,y1,z1,c1='#ffc21a',c2='#e9feff',w=14,life=0.35){if(NETH()&&netNear(x0,y0))netEv(['m',ri(x0),ri(y0),ri(z0),ri(x1),ri(y1),ri(z1),c1,c2,w,life],1);const a=W3(x0,y0,z0),b=W3(x1,y1,z1),len=a.distanceTo(b);
   const g=new THREE.Group();const m1=new THREE.Mesh(GEO.cylC,basic(c1,{transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false}));m1.scale.set(w,len,w);
   const m2=new THREE.Mesh(GEO.cylC,basic(c2,{transparent:true,opacity:1,depthWrite:false}));m2.scale.set(w*0.3,len,w*0.3);g.add(m1,m2);g.position.copy(a.clone().add(b).multiplyScalar(0.5));
@@ -2273,7 +2321,7 @@ function addBeam(x0,y0,z0,x1,y1,z1,c1='#ffc21a',c2='#e9feff',w=14,life=0.35){if(
 function explode(p){
   const wb=p.t==='balloon'; // a water balloon from a plane: a blue SPLASH instead of a confetti POP
   burst(p.x,p.y,p.z+10,wb?50:90,'confetti',wb?'#43c6ff':null,300);burst(p.x,p.y,p.z+10,12,'puff','#ffffff',100);addText(p.x,p.y,p.z+50,wb?'SPLASH!':p.t==='boulder'?'SPLAT!':'POP!',wb?'#43c6ff':p.t==='boulder'?'#ff7b1c':'#ff4fa3',p.t==='boulder'?30:24);sfx(wb?'blub':'boom',p);
-  for(const o of G.chars){if(!isEnemy(p.owner,o)||o.state!=='alive')continue;const dx=o.x-p.x,dy=o.y-p.y,dz=o.z+20-p.z,d=Math.hypot(dx,dy,dz)||1;if(d<130)damage(o,p.dmg*(1-d/260),p.owner,p.wid||'grenade',dx/d*380,dy/d*380);}
+  for(const o of G.chars){if(!isEnemy(p.owner,o)||o.state!=='alive')continue;const dx=wdx(o.x-p.x),dy=wdy(p.y,o.y),dz=o.z+20-p.z,d=Math.hypot(dx,dy,dz)||1;if(d<130)damage(o,p.dmg*(1-d/260),p.owner,p.wid||'grenade',dx/d*380,dy/d*380);}
   for(const q of G.pieces.slice()){if(Math.hypot(q.cx-p.x,q.cy-p.y,q.ob.z0+40-p.z)<(p.prad||130))damagePiece(q,p.pdmg||70);} // (Fort Siege's foam cannon and catapult boulders smash walls harder)
   for(const car of G.cars){if(!car.dead&&car.driver!==p.owner&&Math.hypot(car.x-p.x,car.y-p.y,car.z+(car.h||28)/2-p.z)<116+(car.r||24))damageCar(car,p.vdmg||90,p.owner);} // (a bot's mech rockets hit vehicles softer, so a boss is a fair fight)
   if(Math.hypot(p.x-G.player.x,p.y-G.player.y)<500)G.shake=Math.max(G.shake,6);
@@ -2394,7 +2442,7 @@ function applyWallEdit(best){for(const o of best.parts)removeOb(o);const B=best.
   scene.add(m);best.mesh=m;}
 function damagePiece(p,amt){if(!p||p.dead||NETC())return;p.hp-=amt;p.mesh.position.y+=(Math.random()-.5)*1.5;if(p.hp<=0){p.dead=true;for(const o of p.parts)removeOb(o);scene.remove(p.mesh);G.pieces.splice(G.pieces.indexOf(p),1);
   burst(p.cx,p.cy,p.ob.z0+30,26,'confetti','#a0632e',200);sfx('crack',{x:p.cx,y:p.cy});}}
-// @module src/js/18-drones.js: Friendly rescue drones that carry bonked players to the Bonk Hospital and drop them back in.
+// @module src/js/18-drones.js: Friendly rescue drones that carry bonked players away and drop them back in.
 // Main: pickupDrone, deliverDrone, updateDrones, HOSP, buildHospital, hospitalWatch
 // See also: update, squads
 /* ================= drones ================= */
@@ -2597,11 +2645,11 @@ function setAutopilot(on){if(!G||G.ended||(G.net&&G.net.role==='client'))return;
 function autoCam(c,dt){const d=Math.atan2(Math.sin(c.face-G.yaw),Math.cos(c.face-G.yaw));G.yaw+=d*Math.min(1,dt*3.5);G.pitch=lerp(G.pitch,-0.12,Math.min(1,dt*2));}
 // simple car autopilot: head for the safe zone (or a wander point), back up when stuck
 function carAuto(car,dt){const A=car.auto||(car.auto={gx:null,gy:null,t:0,stuck:0,rev:0});const sc=safeCircle();A.t-=dt;
-  if(A.gx==null||A.t<=0||Math.hypot(A.gx-car.x,A.gy-car.y)<120){const s=freeSpot(sc.x,sc.y,Math.max(150,sc.r*0.6),0,null);A.gx=s.x;A.gy=s.y;A.t=10;}
+  if(A.gx==null||A.t<=0||Math.hypot(wdx(A.gx-car.x),wdy(car.y,A.gy))<120){const s=freeSpot(sc.x,sc.y,Math.max(150,sc.r*0.6),0,null);A.gx=s.x;A.gy=s.y;A.t=10;}
   if(A.rev>0){A.rev-=dt;return{thr:-1,str:A.rs};}
-  const want=Math.atan2(A.gy-car.y,A.gx-car.x),da=Math.atan2(Math.sin(want-car.ang),Math.cos(want-car.ang));const str=clamp(da*1.8,-1,1);
+  const want=Math.atan2(wdy(car.y,A.gy),wdx(A.gx-car.x)),da=Math.atan2(Math.sin(want-car.ang),Math.cos(want-car.ang));const str=clamp(da*1.8,-1,1);
   if(Math.abs(car.speed)<35){A.stuck+=dt;if(A.stuck>1.2){A.stuck=0;A.rev=0.9;A.rs=-Math.sign(da||1);A.gx=null;}}else A.stuck=0;
-  const ahead=pointBlocked(car.x+Math.cos(car.ang)*55,car.y+Math.sin(car.ang)*55,22)||hurtAt(car.x+Math.cos(car.ang)*55,car.y+Math.sin(car.ang)*55);
+  const ax=car.x+Math.cos(car.ang)*55,ay=car.y+Math.sin(car.ang)*55,ahead=walkBlocked(ax,ay,22)||hurtAt(wpx(ax),wpy(ax,ay));
   return{thr:ahead?0.3:Math.abs(da)>1.4?0.55:1,str:ahead?(str>=0?1:-1):str};}
 // @module src/js/23-input.js: Keyboard and mouse: held keys, one-off key actions (shared by touch buttons and remote players), pointer lock, pause keys.
 // Main: keys, keyAction, cycleWeapon, requestLock, jumpFromBus
@@ -2861,7 +2909,7 @@ function autoGfxTick(){const now=performance.now(),ft=now-GFXW.last;GFXW.last=no
   const fps=GFXW.n*1000/GFXW.t;GFXW.t=GFXW.n=0;GFXW.slow=fps<26?GFXW.slow+1:0;if(GFXW.slow<3)return;
   GFXW.slow=0;GFXW.warm=0;GFX_DROP++;store.set('bonk-gfx-drop',GFX_DROP);applyGfx();toast('🐢 Graphics turned down to keep the game smooth (Settings → Video)');}
 // @module src/js/25-aiming.js: Camera position, aim point, and turning player input into movement each frame.
-// Main: camPos, aimPoint, playerInput, autoAimOnLand
+// Main: camPos, aimPoint, playerInput
 // See also: input, touch-controls, update
 /* ================= aiming ================= */
 const camPos=new THREE.Vector3();
@@ -2870,13 +2918,13 @@ function aimPoint(maxD=1700){
   const d=lookDir(),o={x:camPos.x,y:camPos.z,z:camPos.y},p=G.player;
   const t0=Math.max(0,(p.x-o.x)*d.x+(p.y-o.y)*d.y+(p.z+40-o.z)*d.z);
   let hit=null;
-  for(let t=t0+10;t<maxD;t+=9){const x=o.x+d.x*t,y=o.y+d.y*t,z=o.z+d.z*t;if(x<-200||y<-200||x>WORLD+200||y>WORLD+200)break;
-    if(blocked3D(x,y,z)){hit={x,y,z,ob:true};break;}
-    for(const c of G.chars){if(!isEnemy(p,c)||c.state!=='alive')continue;if(Math.abs(c.x-x)<15&&Math.abs(c.y-y)<15&&z>=c.z&&z<=c.z+CH){return{x,y,z,c};}}}
+  for(let t=t0+10;t<maxD;t+=9){const x=o.x+d.x*t,y=o.y+d.y*t,z=o.z+d.z*t,wx=wpx(x),wy=wpy(x,y);if(!WRAP&&(x<-200||y<-200||x>WORLD+200||y>WORLD+200))break; // (the edges loop: look on round the other side)
+    if(blocked3D(wx,wy,z)){hit={x,y,z,ob:true};break;}
+    for(const c of G.chars){if(!isEnemy(p,c)||c.state!=='alive')continue;if(Math.abs(wdx(c.x-wx))<15&&Math.abs(wdy(wy,c.y))<15&&z>=c.z&&z<=c.z+CH){return{x,y,z,c};}}}
   // gentle aim assist
-  let best=null,ba=TOUCH.on?0.05+0.25*TL().g.assist:0.13;for(const c of G.chars){if(!isEnemy(p,c)||c.state!=='alive')continue;const vx=c.x-o.x,vy=c.y-o.y,vz=c.z+24-o.z,L=Math.hypot(vx,vy,vz);if(L>900||L<t0)continue;
+  let best=null,ba=TOUCH.on?0.05+0.25*TL().g.assist:0.13;for(const c of G.chars){if(!isEnemy(p,c)||c.state!=='alive')continue;const vx=wdx(c.x-o.x),vy=wdy(o.y,c.y),vz=c.z+24-o.z,L=Math.hypot(vx,vy,vz);if(L>900||L<t0)continue;
     const a=Math.acos(clamp((vx*d.x+vy*d.y+vz*d.z)/L,-1,1));if(a<ba&&(!hit||L<Math.hypot(hit.x-o.x,hit.y-o.y,hit.z-o.z))){ba=a;best=c;}}
-  if(best)return{x:best.x,y:best.y,z:best.z+24,c:best,assist:true};
+  if(best)return{x:o.x+wdx(best.x-o.x),y:o.y+wdy(o.y,best.y),z:best.z+24,c:best,assist:true}; // (where it is seen: maybe just across an edge)
   return hit||{x:o.x+d.x*maxD,y:o.y+d.y*maxD,z:o.z+d.z*maxD};
 }
 function playerInput(c,dt){if(G.victory||(G.show&&G.show.dance))return[0,0,false];
@@ -2908,7 +2956,7 @@ function autoAimOnLand(dt){const p=G.player,s=p.state;
 // See also: update, combat
 /* ================= bots ================= */
 // (F33: up and down it samples every 4, finer than a roof is thick, so one bot right above another is checked through the roof too)
-function los(a,b){const dx=b.x-a.x,dy=b.y-a.y,n=Math.ceil(Math.max(Math.hypot(dx,dy)/24,Math.abs(b.z-a.z)/4));for(let k=1;k<n;k++){if(blocked3D(a.x+dx*k/n,a.y+dy*k/n,lerp(a.z,b.z,k/n)+26))return false;}return true;}
+function los(a,b){const dx=wdx(b.x-a.x),dy=wdy(a.y,b.y),n=Math.ceil(Math.max(Math.hypot(dx,dy)/24,Math.abs(b.z-a.z)/4));for(let k=1;k<n;k++){const x=a.x+dx*k/n;if(blocked3D(wpx(x),wpy(x,a.y+dy*k/n),lerp(a.z,b.z,k/n)+26))return false;}return true;} // (the short way round: the map edges loop)
 function wScore(id,d){const w=WEAPONS[id],r=RATING[id];switch(w.kind){case 'melee':return d<w.range+60?r*1.2:r*0.45;case 'shot':return d<w.speed*w.life*0.75?r:r*0.3;case 'chicken':return d<600?r:r*0.3;case 'grenade':return d>110&&d<380?r:0.5;case 'trap':return d<140?3.5:0.2;case 'heal':return 0;case 'rocket':return d>140&&d<800?r:r*0.3;default:return 10;}}
 function inRange(w,d){switch(w.kind){case 'melee':return d<w.range+8;case 'shot':return d<w.speed*w.life*0.8;case 'chicken':return d<600;case 'grenade':return d>90&&d<420;case 'trap':return d<150;case 'heal':return false;case 'rocket':return d>120&&d<800;default:return d<950;}}
 // would tryPickup (pickups module) take this item? The same rules, so a bot never stands on an item it can't pick up
@@ -2937,8 +2985,8 @@ function decide(c){const ai=c.ai,D=G.diff;stuckCheck(c,0.25);
   else if(ai.target)ai.mode='fight';
   else if(G.crate&&!G.crate.taken&&G.crate.z<G.crate.gz+350&&Math.hypot(c.x-G.crate.x,c.y-G.crate.y)<1300){ai.mode='crate';ai.gx=G.crate.x;ai.gy=G.crate.y;}
   else{let tg=null,td=800;
-    for(const it of G.items){if(it.delay>0)continue;const d=Math.hypot(it.x-c.x,it.y-c.y);if(d<td&&it.id!=='laser'&&wants(c,it.id,it.r)&&!gaveUp(ai,it)&&!below(c,it)){tg=it;td=d;}}
-    for(const ch of G.chests){if(ch.open||gaveUp(ai,ch)||below(c,ch))continue;const d=Math.hypot(ch.x-c.x,ch.y-c.y);if(d<td){tg=ch;td=d;}}
+    for(const it of G.items){if(it.delay>0)continue;const d=dist(it,c);if(d<td&&it.id!=='laser'&&wants(c,it.id,it.r)&&!gaveUp(ai,it)&&!below(c,it)){tg=it;td=d;}}
+    for(const ch of G.chests){if(ch.open||gaveUp(ai,ch)||below(c,ch))continue;const d=dist(ch,c);if(d<td){tg=ch;td=d;}}
     if(tg){ai.mode='loot';ai.gx=tg.x;ai.gy=tg.y;}
     else if(ai.mode!=='wander'||ai.gx==null){ai.mode='wander';let s;if(G.mode==='team'){const eb=BASES[c.team==='red'?'blue':'red'];s=freeSpot(lerp(WORLD/2,eb.x,Math.random()*0.7),lerp(WORLD/2,eb.y,Math.random()*0.7),400,0,null);}
       else s=freeSpot(sc.x,sc.y,sc.r*0.7,0,null);ai.gx=s.x;ai.gy=s.y;}}
@@ -2946,11 +2994,11 @@ function decide(c){const ai=c.ai,D=G.diff;stuckCheck(c,0.25);
   if(botVehiclePlan(c))return; // an enemy in a mech: go and get a mech or a plane to fight back (fightback module)
   if(isMate(c)&&!ai.target&&ai.mode!=='storm'&&G.player.state==='alive'&&dist(c,G.player)>240){ai.mode='obj';ai.gx=G.player.x+(c.offX||0);ai.gy=G.player.y+(c.offY||0);}}
 function steer(c,mx,my){if(!mx&&!my)return[0,0];
-  const inHurt=hurtAt(c.x,c.y),high=c.z>12,bl=(x,y)=>(high?!!blocked3D(x,y,c.z+20):pointBlocked(x,y,12))||(!inHurt&&(hurtAt(x,y)||hurtAt((x+c.x)/2,(y+c.y)/2))); // up on a roof: what is in the way at that height (walking off the edge is fine)
+  const inHurt=hurtAt(c.x,c.y),high=c.z>12,bl=(x0,y0)=>{const x=wpx(x0),y=wpy(x0,y0),hx=(x0+c.x)/2,hy=(y0+c.y)/2;return(high?!!blocked3D(x,y,c.z+20):walkBlocked(x0,y0,12))||(!inHurt&&(hurtAt(x,y)||hurtAt(wpx(hx),wpy(hx,hy))));}; // (a step over a map edge is fine: it loops round) // up on a roof: what is in the way at that height (walking off the edge is fine)
   if(!bl(c.x+mx*30,c.y+my*30))return[mx,my];const base=Math.atan2(my,mx),t=c.ai.turn;
   for(const o of[0.6,1.2,1.8,2.4,3.0]){for(const s of[t,-t]){const a=base+o*s,ux=Math.cos(a),uy=Math.sin(a);if(!bl(c.x+ux*30,c.y+uy*30)){c.ai.turn=s;return[ux,uy];}}}return[0,0];}
 const desiredRange=id=>({laser:420,shotgun:140,chicken:300,grenade:250,ultra:420,sniper:520,rocket:380,minigun:240,freeze:280,bubble:240,burst:300})[id]||260;
-function botAim(c,tgt){const h=handPos(c);const dx=tgt.x-h.x,dy=tgt.y-h.y,dz=tgt.z+24-h.z;const yaw=Math.atan2(dy,dx)+c.ai.aimErr,pitch=Math.atan2(dz,Math.hypot(dx,dy))+c.ai.aimErr2;
+function botAim(c,tgt){const h=handPos(c);const dx=wdx(tgt.x-h.x),dy=wdy(h.y,tgt.y),dz=tgt.z+24-h.z;const yaw=Math.atan2(dy,dx)+c.ai.aimErr,pitch=Math.atan2(dz,Math.hypot(dx,dy))+c.ai.aimErr2;
   return{x:Math.cos(pitch)*Math.cos(yaw),y:Math.cos(pitch)*Math.sin(yaw),z:Math.sin(pitch)};}
 function botUpdate(c,dt){
   const ai=c.ai;ai.think-=dt;if(ai.think<=0){ai.think=0.25+Math.random()*0.08;decide(c);}
@@ -2958,12 +3006,12 @@ function botUpdate(c,dt){
   {const rv=botRevive(c,dt);if(rv)return rv;}
   let mx=0,my=0;const tgt=ai.target&&ai.target.state==='alive'?ai.target:null;
   if(ai.unstuckT>0){ai.unstuckT-=dt;mx=ai.ux;my=ai.uy;if(ai.breakP&&!ai.breakP.dead&&c.cd<=0){const p=ai.breakP;fire(c,norm3({x:p.cx-c.x,y:p.cy-c.y,z:0}));}}
-  else if(ai.mode==='fight'&&tgt){const w=WEAPONS[c.slots[c.cur].id],dx=tgt.x-c.x,dy=tgt.y-c.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;
+  else if(ai.mode==='fight'&&tgt){const w=WEAPONS[c.slots[c.cur].id],dx=wdx(tgt.x-c.x),dy=wdy(c.y,tgt.y),d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;
     const dd=w.kind==='melee'||w.kind==='trap'?0:desiredRange(c.slots[c.cur].id);if(d>dd+30){mx=ux;my=uy;}else if(dd>0&&d<dd-50){mx=-ux;my=-uy;}
     if(dd>0){const s=Math.sin(G.time*1.4+ai.seed)*0.8;mx+=-uy*s;my+=ux*s;}}
-  else if(ai.gx!=null){const dx=ai.gx-c.x,dy=ai.gy-c.y,d=Math.hypot(dx,dy);if(ai.mode==='loot'&&lootProgress(ai,d))mx=my=0;else if(d>18){mx=dx/d;my=dy/d;}else if(ai.mode!=='storm')ai.gx=null;}
+  else if(ai.gx!=null){const dx=wdx(ai.gx-c.x),dy=wdy(c.y,ai.gy),d=Math.hypot(dx,dy);if(ai.mode==='loot'&&lootProgress(ai,d))mx=my=0;else if(d>18){mx=dx/d;my=dy/d;}else if(ai.mode!=='storm')ai.gx=null;}
   const l=Math.hypot(mx,my);if(l){mx/=l;my/=l;}ai.wantMove=!!(mx||my);[mx,my]=steer(c,mx,my); // (boxed in still counts as wanting to move, so stuckCheck gets it out)
-  if(tgt){c.face=Math.atan2(tgt.y-c.y,tgt.x-c.x);ai.reactT-=dt;const d=dist(c,tgt),s=c.slots[c.cur],w=WEAPONS[s.id];
+  if(tgt){c.face=Math.atan2(wdy(c.y,tgt.y),wdx(tgt.x-c.x));ai.reactT-=dt;const d=dist(c,tgt),s=c.slots[c.cur],w=WEAPONS[s.id];
     if(ai.reactT<=0&&c.cd<=0&&inRange(w,d)&&Math.abs(tgt.z-c.z)<(w.kind==='melee'?44:400)){fire(c,botAim(c,tgt));ai.aimErr=(Math.random()*2-1)*G.diff.aimErr;ai.aimErr2=(Math.random()*2-1)*G.diff.aimErr;}}
   if(!tgt&&ai.unstuckT<=0&&ai.mode!=='storm'){const hi=c.slots.findIndex((s,i)=>i>0&&s&&WEAPONS[s.id].kind==='heal'&&needsItem(c,WEAPONS[s.id])&&(WEAPONS[s.id].hp?c.hp<70:true));
     if(hi>0){c.cur=hi;useItem(c,dt);return[0,0,false];}}
@@ -2972,13 +3020,13 @@ function botUpdate(c,dt){
 function zombieUpdate(c,dt){const ai=c.ai;ai.think-=dt;if(c.frozen>0||c.bubbled>0)return[0,0];
   if(ai.think<=0){ai.think=0.4;stuckCheck(c,0.4);let best=null,bd=1e9;for(const o of G.chars){if(o.zombie||o.state!=='alive')continue;const d=dist(c,o);if(d<bd){bd=d;best=o;}}ai.target=best;}
   const t=ai.target;if(!t||t.state!=='alive'){ai.wantMove=false;ai.progT=G.time;return[0,0];}
-  const dx=t.x-c.x,dy=t.y-c.y,d=Math.hypot(dx,dy)||1;c.face=Math.atan2(dy,dx);
+  const dx=wdx(t.x-c.x),dy=wdy(c.y,t.y),d=Math.hypot(dx,dy)||1;c.face=Math.atan2(dy,dx);
   if(ai.bestD===undefined||ai.bestT!==t){ai.bestD=d;ai.bestT=t;ai.progT=G.time;}if(d<ai.bestD-25){ai.bestD=d;ai.progT=G.time;}
   if(d>70&&G.time-ai.progT>6){const s=freeSpot(t.x,t.y,380,0,null);if(Math.hypot(s.x-t.x,s.y-t.y)>140){burst(c.x,c.y,c.z+5,10,'puff','#b59a72',80);c.x=s.x;c.y=s.y;c.z=groundAt(s.x,s.y,400);burst(c.x,c.y,c.z+5,10,'puff','#b59a72',80);addText(c.x,c.y,c.z+50,'POP UP!','#b6ff3b',14);}ai.bestD=Math.hypot(t.x-c.x,t.y-c.y);ai.progT=G.time;}
   if(d<30&&Math.abs(t.z-c.z)<40){ai.wantMove=false;if(c.cd<=0){c.cd=0.9;c.swingT=0.25;addText(t.x,t.y,t.z+56,'CHOMP!','#b6ff3b',15);sfx('chomp',c);damage(t,G.diff.zDmg,c,'zombie',dx/d*120,dy/d*120);}return[0,0];}
   if(ai.breakP&&!ai.breakP.dead&&Math.hypot(ai.breakP.cx-c.x,ai.breakP.cy-c.y)<70&&c.cd<=0){c.cd=0.9;c.swingT=0.25;damagePiece(ai.breakP,25);sfx('chomp',c);}
   let mx=dx/d,my=dy/d;if(ai.unstuckT>0){ai.unstuckT-=dt;mx=ai.ux;my=ai.uy;}[mx,my]=steer(c,mx,my);ai.wantMove=!!(mx||my);return[mx,my];}
-// @module src/js/27-cars.js: Vehicles: cars, mechs (and the boss), planes and boats: models, driving physics, collisions, getting in and out, engine sound.
+// @module src/js/27-cars.js: Cars: models, driving physics, collisions, getting in and out, engine sound.
 // Main: spawnCars, updateCars, enterCar, exitCar, damageCar, planeModel, boatModel, spawnCraft, planeDrive, boatDrive, animCraft, MEGA
 // See also: update, autopilot
 /* ================= cars ================= */
@@ -3013,16 +3061,16 @@ function carCollide(car){const r=car.r||24,mech=car.kind==='mech',ci=Math.floor(
       if(d2>0.0001){const d=Math.sqrt(d2);car.x=nx+dx/d*r;car.y=ny+dy/d*r;}
       else{const l=car.x-o.x,rt=o.x+o.w-car.x,t=car.y-o.y,b=o.y+o.d-car.y,m=Math.min(l,rt,t,b);if(m===l)car.x=o.x-r;else if(m===rt)car.x=o.x+o.w+r;else if(m===t)car.y=o.y-r;else car.y=o.y+o.d+r;}
       hit=true;}}
-  if(!(car.kind==='plane'&&car.fly)){const cx=clamp(car.x,r,WORLD-r),cy=clamp(car.y,r,WORLD-r);if(cx!==car.x||cy!==car.y){car.x=cx;car.y=cy;hit=true;}} // (a flying plane goes past the edge and wraps around: planeWrap)
-  for(const c2 of G.cars){if(c2===car||c2.dead)continue;const dx=car.x-c2.x,dy=car.y-c2.y,d=Math.hypot(dx,dy),rr=r+(c2.r||24)-2;if(d<rr&&d>0&&Math.abs(car.z-c2.z)<24){const push=(rr-d)/2;car.x+=dx/d*push;car.y+=dy/d*push;c2.x-=dx/d*push;c2.y-=dy/d*push;const rel=(car.vx-c2.vx)*(-dx/d)+(car.vy-c2.vy)*(-dy/d);if(rel>0){c2.vx-=dx/d*rel*0.7;c2.vy-=dy/d*rel*0.7;car.vx+=dx/d*rel*0.5;car.vy+=dy/d*rel*0.5;if(rel>150)sfx('bonk',car);}}}
+  if(!(car.kind==='plane'&&car.fly)){wrapPos(car);const cx=WRAP?car.x:clamp(car.x,r,WORLD-r),cy=WRAP&&car.y>=0?car.y:clamp(car.y,r,WORLD-r);if(cx!==car.x||cy!==car.y){car.x=cx;car.y=cy;hit=true;}} // (the edges loop round; the hospital's stretch of the north edge is a wall) // (a flying plane goes past the edge and wraps around: planeWrap)
+  for(const c2 of G.cars){if(c2===car||c2.dead)continue;const dx=wdx(car.x-c2.x),dy=wdy(c2.y,car.y),d=Math.hypot(dx,dy),rr=r+(c2.r||24)-2;if(d<rr&&d>0&&Math.abs(car.z-c2.z)<24){const push=(rr-d)/2;car.x+=dx/d*push;car.y+=dy/d*push;c2.x-=dx/d*push;c2.y-=dy/d*push;const rel=(car.vx-c2.vx)*(-dx/d)+(car.vy-c2.vy)*(-dy/d);if(rel>0){c2.vx-=dx/d*rel*0.7;c2.vy-=dy/d*rel*0.7;car.vx+=dx/d*rel*0.5;car.vy+=dy/d*rel*0.5;if(rel>150)sfx('bonk',car);}}}
   return hit;}
 function damageCar(car,amt,src){if(car.dead||G.mode==='race'||NETC())return;car.hp-=amt;if(amt>=5)addText(car.x,car.y,car.z+44,String(Math.round(amt)),'#c5ccd6',12);
   if(car.hp<=0){car.dead=true;car.m.visible=false;car.respawnAt=car.boss?Infinity:G.time+(car.kind==='mech'?40:25);burst(car.x,car.y,car.z+20,60,'confetti',null,260);burst(car.x,car.y,car.z+20,14,'puff','#ffffff',120);
     sfx('boom',car);addText(car.x,car.y,car.z+64,'KABOOM!','#ff7b1c',22);const d=car.driver;if(car.boss&&d)tellOrAnnounce(d,'💥 BOSS DOWN!','Your boss mech was beaten! Keep bonking!',3);if(d){exitCar(d);d.vz=380;d.onGround=false;damage(d,20,src,'car');}}}
-function nearestCar(c){let b=null,bd=62;const near=car=>38+(car.r||24);for(const car of G.cars){if(car.dead||car.driver)continue;const d=Math.hypot(car.x-c.x,car.y-c.y)-near(car)+62;if(d<bd&&Math.abs(car.z-c.z)<40){bd=d;b=car;}}return b;}
+function nearestCar(c){let b=null,bd=62;const near=car=>38+(car.r||24);for(const car of G.cars){if(car.dead||car.driver)continue;const d=Math.hypot(wdx(car.x-c.x),wdy(c.y,car.y))-near(car)+62;if(d<bd&&Math.abs(car.z-c.z)<40){bd=d;b=car;}}return b;}
 function enterCar(c,car){car.driver=c;c.vehicle=car;c.useT=0;c.emote=null;c.burstQ=0;if(c.isPlayer){G.buildMode=null;sfx('honk');engineStart();G.yaw=car.ang;}}
 function exitCar(c){const car=c.vehicle;if(!car)return;car.driver=null;c.vehicle=null;const a=car.ang+Math.PI/2,o=(car.r||24)+18;let x=car.x+Math.cos(a)*o,y=car.y+Math.sin(a)*o;
-  if(pointBlocked(x,y,14)){x=car.x-Math.cos(a)*o;y=car.y-Math.sin(a)*o;}c.x=clamp(x,20,WORLD-20);c.y=clamp(y,20,WORLD-20);c.z=car.z;c.onGround=false;c.vz=120;if(c.isPlayer)engineStop();
+  if(pointBlocked(x,y,14)){x=car.x-Math.cos(a)*o;y=car.y-Math.sin(a)*o;}c.x=WRAP?x:clamp(x,20,WORLD-20);c.y=WRAP?y:clamp(y,20,WORLD-20);if(!wrapPos(c)&&c.y<20&&!inIsle(c.x,c.y,14))c.y=20;c.z=car.z;c.onGround=false;c.vz=120;if(c.isPlayer)engineStop();
   if(car.fly){c.state='sky';c.glide=false;c.vz=0;c.z=car.z-10;car.chute=true;if(c.isPlayer){sfx('glide');G.pitch=-0.5;toast(TOUCH.on?'🪂 You jumped out! Tap GLIDE to open your glider (it opens by itself near the ground)':'🪂 You jumped out! Press Space to open your glider (it opens by itself near the ground)');}}} // out of a flying plane: just like jumping off the battle bus, and the plane's own parachute opens
 function updateCars(dt){
   for(const car of G.cars){
@@ -3054,7 +3102,7 @@ function updateCars(dt){
     if(car.dead)continue;
     const sp=Math.hypot(car.vx,car.vy);
     if(sp>110)for(const c of G.chars){if(c===d||c.state!=='alive'||c.vehicle)continue;if(d&&!isEnemy(d,c))continue;if((c.carHitT||0)>G.time)continue;
-      const dx=c.x-car.x,dy=c.y-car.y,dd=Math.hypot(dx,dy)||1;if(dd<(car.r||24)+10&&Math.abs(c.z-car.z)<Math.max(30,car.h||0)){c.carHitT=G.time+0.8;c.vz=330;c.onGround=false;
+      const dx=wdx(c.x-car.x),dy=wdy(car.y,c.y),dd=Math.hypot(dx,dy)||1;if(dd<(car.r||24)+10&&Math.abs(c.z-car.z)<Math.max(30,car.h||0)){c.carHitT=G.time+0.8;c.vz=330;c.onGround=false;
         addText(c.x,c.y,c.z+62,pick(car.kind==='mech'?['STOMP!','CRUNCH!','BONK!']:['HONK!','BONK!','BEEP BEEP!']),'#ffcb1f',17);sfx('bonk',c);damage(c,12+sp*0.07,d,'car',dx/dd*480+car.vx*0.4,dy/dd*480+car.vy*0.4);}}
     if(d){if(d.state!=='alive'){car.driver=null;d.vehicle=null;if(d.isPlayer)engineStop();}
       else{d.x=car.x;d.y=car.y;d.z=car.z+6;d.face=car.ang;d.onGround=true;d.vz=0;d.vx=d.vy=0;
@@ -3275,6 +3323,8 @@ function planeAssist(car,dt,s){
 function planeGuns(car,d){car.cd=0.07;car.gun=car.gun?0:1;const F=planeAxis(car,0,0,1),Lf=planeAxis(car,1,0,0),s=car.gun?1:-1,sp=1400+Math.max(0,car.speed||0),j=()=>(Math.random()-0.5)*0.03;
   G.projs.push({t:'bolt',x:car.x+F.x*30+Lf.x*38*s,y:car.y+F.y*30+Lf.y*38*s,z:car.z+16+F.z*30+Lf.z*38*s,vx:(F.x+j())*sp,vy:(F.y+j())*sp,vz:(F.z+j())*sp,life:0.75,dmg:6,owner:d,wid:'rapid'});if(car.gun)sfx('pew2',car);}
 const PLANE_WRAP={x0:-150,x1:WORLD+150,y0:-720,y1:WORLD+150};
+// from a to b the short way round the planes' wrap box (for bot pilots)
+function pvec(a,b){const W=PLANE_WRAP,X=W.x1-W.x0,Y=W.y1-W.y0;let dx=b.x-a.x,dy=b.y-a.y;if(dx>X/2)dx-=X;else if(dx<-X/2)dx+=X;if(dy>Y/2)dy-=Y;else if(dy<-Y/2)dy+=Y;return[dx,dy];}
 function planeWrap(car){const W=PLANE_WRAP,ox=car.x,oy=car.y;
   if(car.x<W.x0)car.x+=W.x1-W.x0;else if(car.x>W.x1)car.x-=W.x1-W.x0;if(car.y<W.y0)car.y+=W.y1-W.y0;else if(car.y>W.y1)car.y-=W.y1-W.y0;
   if(car.x!==ox||car.y!==oy){car.wrapped=G.time;burst(ox,oy,car.z,10,'puff','#ffffff',90);burst(car.x,car.y,car.z,10,'puff','#ffffff',90);if(car.driver)for(const c of[car.driver]){c.x=car.x;c.y=car.y;}}}
@@ -3421,22 +3471,22 @@ function wreckWorld(x,y,z,r,fx,ani){const found=new Set();let n=0;
    attack runs (fire the foam blasters when the nose is on it), fly past and come round again, and stay clear of the ground.
    A bot plane with nothing to fight for a while: the bot jumps out (the plane floats down on its parachute). */
 // the nearest mech driven by an enemy of c
-function fightFoe(c){let best=null,bd=3000;for(const v of G.cars){if(v.kind!=='mech'||v.dead||!v.driver||!isEnemy(c,v.driver))continue;const d=Math.hypot(v.x-c.x,v.y-c.y);if(d<bd){bd=d;best=v;}}return best;}
+function fightFoe(c){let best=null,bd=3000;for(const v of G.cars){if(v.kind!=='mech'||v.dead||!v.driver||!isEnemy(c,v.driver))continue;const d=dist(v,c);if(d<bd){bd=d;best=v;}}return best;}
 // called from decide: true when the bot is busy getting a vehicle (it walks to it and climbs in)
 function botVehiclePlan(c){const ai=c.ai;if(c.vehicle||c.zombie||MODE().noCombat||G.mode==='siege')return false;
-  const foe=fightFoe(c);if(!foe||Math.hypot(foe.x-c.x,foe.y-c.y)>2600){ai.wantCar=null;return false;}
+  const foe=fightFoe(c);if(!foe||dist(foe,c)>2600){ai.wantCar=null;return false;}
   let v=ai.wantCar;
   if(!v||v.dead||v.driver||(v.kind==='plane'&&(v.fly||v.chute))){v=null;let bd=1500;
     for(const o of G.cars){if(o.dead||o.driver||o.boss||(o.kind!=='mech'&&o.kind!=='plane')||(o.kind==='plane'&&(o.fly||o.chute)))continue;if(G.chars.some(x=>x!==c&&x.ai&&x.ai.wantCar===o))continue;
-      const d=Math.hypot(o.x-c.x,o.y-c.y);if(d<bd){bd=d;v=o;}}ai.wantCar=v;}
+      const d=dist(o,c);if(d<bd){bd=d;v=o;}}ai.wantCar=v;}
   if(!v)return false;
-  if(Math.hypot(v.x-c.x,v.y-c.y)<(v.r||24)+46&&Math.abs(v.z-c.z)<40){enterCar(c,v);if(v.kind==='mech'&&!v.mega)v.brain=botMechBrain;v.idleT=0;ai.wantCar=null;return true;}
+  if(dist(v,c)<(v.r||24)+46&&Math.abs(v.z-c.z)<40){enterCar(c,v);if(v.kind==='mech'&&!v.mega)v.brain=botMechBrain;v.idleT=0;ai.wantCar=null;return true;}
   ai.mode='obj';ai.target=null;ai.gx=v.x;ai.gy=v.y;return true;}
 // a bot driving a mech: go after the enemy mech (or the nearest enemy), keep a good distance, fire when facing it
 function botMechBrain(car,dt){const c=car.driver;if(!c||c.isPlayer||c.remote)return{f:0,yaw:car.ang};let T=fightFoe(c);
-  if(!T){let bd=1000;for(const o of G.chars){if(o.state!=='alive'||!isEnemy(c,o))continue;const d=Math.hypot(o.x-car.x,o.y-car.y);if(d<bd){bd=d;T=o;}}}
+  if(!T){let bd=1000;for(const o of G.chars){if(o.state!=='alive'||!isEnemy(c,o))continue;const d=dist(o,car);if(d<bd){bd=d;T=o;}}}
   if(!T){car.aimAt=null;return{f:0,yaw:car.ang};}
-  const dx=T.x-car.x,dy=T.y-car.y,d=Math.hypot(dx,dy),yaw=Math.atan2(dy,dx),f=d>420?1:d<220?-0.6:0;car.aimAt={x:T.x,y:T.y,z:T.z+(T.h?T.h*0.5:30)};
+  const dx=wdx(T.x-car.x),dy=wdy(car.y,T.y),d=Math.hypot(dx,dy),yaw=Math.atan2(dy,dx),f=d>420?1:d<220?-0.6:0;car.aimAt={x:car.x+dx,y:car.y+dy,z:T.z+(T.h?T.h*0.5:30)};
   // stuck against something while walking: jump it
   car.stuckT=f>0&&car.speed<30?(car.stuckT||0)+dt:0;if(car.stuckT>0.8){mechJump(car);car.stuckT=0;}
   // a bot fires more slowly than a player can (how slowly depends on how hard the bots are), so a boss is a fair fight
@@ -3448,10 +3498,10 @@ function botPlaneFly(car,dt){const d=car.driver,foe=d&&fightFoe(d);
   if(!foe){car.idleT=(car.idleT||0)+dt;if(car.idleT>12)return{t:0,p:0,r:0,y:0,bail:true};}else car.idleT=0;
   _pe.setFromQuaternion(car.q,'YXZ');const bank=_pe.z,nose=-_pe.x,gz=Math.max(groundAt(car.x,car.y,car.z+20),groundAt(car.x+car.vx*0.8,car.y+car.vy*0.8,5000)),low=car.z-gz<200;
   let tx,ty,tz,fire=false;
-  if(foe){const fz=foe.z+(foe.h||60)*0.8,hd0=Math.hypot(foe.x-car.x,foe.y-car.y);
+  if(foe){const fz=foe.z+(foe.h||60)*0.8,[fdx,fdy]=pvec(car,foe),hd0=Math.hypot(fdx,fdy); // (the planes' wrap: the short way round)
     if(car.pass){if(hd0>950)car.pass=false;}else if(hd0<380)car.pass=true; // too close: fly on past it, then come round for another run
-    if(car.pass){tx=car.x+Math.cos(car.ang)*500;ty=car.y+Math.sin(car.ang)*500;tz=gz+380;}else{tx=foe.x;ty=foe.y;tz=hd0>900?fz+300:fz;}
-    const F=planeAxis(car,0,0,1),to=norm3({x:foe.x-car.x,y:foe.y-car.y,z:fz-car.z});fire=!car.pass&&hd0<850&&F.x*to.x+F.y*to.y+F.z*to.z>0.985&&(G.time+car.home.x*0.001)%2<0.8;} // (a bot fires in short bursts)
+    if(car.pass){tx=car.x+Math.cos(car.ang)*500;ty=car.y+Math.sin(car.ang)*500;tz=gz+380;}else{tx=car.x+fdx;ty=car.y+fdy;tz=hd0>900?fz+300:fz;}
+    const F=planeAxis(car,0,0,1),to=norm3({x:fdx,y:fdy,z:fz-car.z});fire=!car.pass&&hd0<850&&F.x*to.x+F.y*to.y+F.z*to.z>0.985&&(G.time+car.home.x*0.001)%2<0.8;} // (a bot fires in short bursts)
   else{const a=G.time*0.3;tx=WORLD/2+Math.cos(a)*900;ty=WORLD/2+Math.sin(a)*900;tz=gz+400;}
   const hd=Math.hypot(tx-car.x,ty-car.y),h=angDiff(car.ang,Math.atan2(ty-car.y,tx-car.x));
   let el=clamp(Math.atan2(tz-car.z,Math.max(hd,1)),-0.6,0.5);if(low)el=Math.max(el,car.z-gz<100?0.6:0.4);
@@ -3697,8 +3747,8 @@ XM.race={name:'Car Race',laps:3,
     if(car.detour&&car.detour.length&&Math.hypot(car.detour[0].x-car.x,car.detour[0].y-car.y)<60)car.detour.shift();
     let cp=car.detour&&car.detour.length?car.detour[0]:P[car.wp];
     car.pT=(car.pT||0)+dt;if(car.pT>2.5){const dn=Math.hypot(cp.x-car.x,cp.y-car.y);if(car.pD!==undefined&&dn>car.pD-40){const r=navPath(G.nav,{x:car.x,y:car.y},G.cps[car.next]);if(r){car.detour=r;cp=r[0];}else{this.reset(car);return{thr:0,str:0};}}car.pD=dn;car.pT=0;}
-    const look=75;let diff=angDiff(car.ang,Math.atan2(cp.y-car.y,cp.x-car.x));
-    const probe=a=>pointBlocked(car.x+Math.cos(car.ang+a)*look,car.y+Math.sin(car.ang+a)*look,10)||hurtAt(car.x+Math.cos(car.ang+a)*look,car.y+Math.sin(car.ang+a)*look);
+    const look=75;let diff=angDiff(car.ang,Math.atan2(wdy(car.y,cp.y),wdx(cp.x-car.x))); // (the short way round: the edges loop)
+    const probe=a=>{const x=car.x+Math.cos(car.ang+a)*look,y=car.y+Math.sin(car.ang+a)*look;return walkBlocked(x,y,10)||hurtAt(wpx(x),wpy(x,y));};
     if(probe(0)){const l=probe(-0.6),r=probe(0.6);diff=l&&!r?1:!l&&r?-1:(diff>=0?1:-1);}
     if(car.revT>0){car.revT-=dt;return{thr:-1,str:-Math.sign(diff)};}
     if(Math.abs(car.speed)<40){car.stuckT+=dt;if(car.stuckT>1.2){car.revT=0.8;car.stuckT=0;car.stuck2=(car.stuck2||0)+1;if(car.stuck2>3){this.reset(car);car.stuck2=0;}}}else{car.stuckT=0;car.stuck2=0;}
@@ -4067,9 +4117,9 @@ XM.airrace={name:'Plane Race',laps:3,
   // It lines up a little behind the ring first (it aims at a point before the ring, along the course, that slides into the ring as it gets close).
   // Too close to the ring and too far off to one side to make the turn? It goes around, like a real pilot: out to a point well before the
   // ring on the course line, then it turns in and lines up from there.
-  fly(car,dt){const g=G.cps[car.next],hg=Math.hypot(g.x-car.x,g.y-car.y),hc=Math.abs(angDiff(car.ang,Math.atan2(g.y-car.y,g.x-car.x))),d=car.driver;
+  fly(car,dt){const g=G.cps[car.next],[gdx,gdy]=pvec(car,g),hg=Math.hypot(gdx,gdy),hc=Math.abs(angDiff(car.ang,Math.atan2(gdy,gdx))),d=car.driver; // (the planes' wrap: the short way round)
     if(!car.around&&hg<450&&hc>0.6)car.around=true;
-    const lead=car.around?650:clamp(hg*0.3,0,200),dx=g.x-g.tx*lead-car.x,dy=g.y-g.ty*lead-car.y;if(car.around&&Math.hypot(dx,dy)<220)car.around=false;
+    const lead=car.around?650:clamp(hg*0.3,0,200),dx=gdx-g.tx*lead,dy=gdy-g.ty*lead;if(car.around&&Math.hypot(dx,dy)<220)car.around=false;
     // the ground and anything tall (roofs, towers, hills) under the plane and where it will be in a moment
     const gz=Math.max(groundAt(car.x,car.y,car.z+20),groundAt(car.x+car.vx*0.6,car.y+car.vy*0.6,5000),groundAt(car.x+car.vx*1.2,car.y+car.vy*1.2,5000));
     const h=angDiff(car.ang,Math.atan2(dy,dx));
@@ -4136,13 +4186,13 @@ function catapultModel(col){const g=new THREE.Group(),B=(c,x,y,z,w,h,d,geo)=>{co
   const wheels=[];for(const[x,z]of[[-19,-18],[19,-18],[-19,18],[19,18]]){const w=B('#2b2f3a',x,9,z,4,18,18,'cylC');w.rotation.z=Math.PI/2;wheels.push(w);}
   const arm=new THREE.Group();arm.position.set(0,34,-6);const a=new THREE.Mesh(GEO.boxC,mat('#a0632e'));a.scale.set(4,4,46);a.position.z=20;arm.add(a);const cup=new THREE.Mesh(GEO.sphC,mat(col));cup.scale.set(14,7,14);cup.position.set(0,3,42);arm.add(cup);
   arm.rotation.x=0.5;g.add(arm);g.userData.arm=arm;g.userData.wheels=wheels;scene.add(g);return g;}
-function catapultFire(car,d,tx,ty){const dx=tx-car.x,dy=ty-car.y,R=clamp(Math.hypot(dx,dy),150,1300),a=Math.atan2(dy,dx),s=Math.sqrt(R*700)*Math.SQRT1_2;car.ang=a;car.cd=3;car.armT=0.6;
+function catapultFire(car,d,tx,ty){const dx=wdx(tx-car.x),dy=wdy(car.y,ty),R=clamp(Math.hypot(dx,dy),150,1300),a=Math.atan2(dy,dx),s=Math.sqrt(R*700)*Math.SQRT1_2;car.ang=a;car.cd=3;car.armT=0.6;
   G.projs.push({t:'boulder',x:car.x+Math.cos(a)*24,y:car.y+Math.sin(a)*24,z:car.z+40,vx:Math.cos(a)*s,vy:Math.sin(a)*s,vz:s,t0:0,fuse:2*s/700+0.6,dmg:30,pdmg:160,prad:110,owner:d,wid:'foamcannon'});sfx('toss',car);}
 function catapultDrive(car,d,me,K,dt){car.cd=Math.max(0,(car.cd||0)-dt);car.armT=Math.max(0,(car.armT||0)-dt);let thr=0,str=0;
   if(me&&!autoOn(d)){thr=(K('w')||K('arrowup')?1:0)-(K('s')||K('arrowdown')?1:0);str=(K('d')||K('arrowright')?1:0)-(K('a')||K('arrowleft')?1:0);
     if(craftFiring(car,d,me)){if(d.remote){const yaw=d.rin.yaw||car.ang,R=clamp(250+Math.max(0,(d.rin.pitch||0)+0.35)*1500,200,1300);catapultFire(car,d,car.x+Math.cos(yaw)*R,car.y+Math.sin(yaw)*R);}else{const P=aimPoint();catapultFire(car,d,P.x,P.y);}}}
-  else if(d&&G.sg&&G.sg.phase==='siege'){const s=G.sg.site,dist0=Math.hypot(s.x-car.x,s.y-car.y),want=Math.atan2(s.y-car.y,s.x-car.x);
-    if(dist0>620){let a=want;const free=b=>!pointBlocked(car.x+Math.cos(b)*60,car.y+Math.sin(b)*60,28)&&!isBad(car.x+Math.cos(b)*60,car.y+Math.sin(b)*60);
+  else if(d&&G.sg&&G.sg.phase==='siege'){const s=G.sg.site,dist0=dist(s,car),want=Math.atan2(wdy(car.y,s.y),wdx(s.x-car.x));
+    if(dist0>620){let a=want;const free=b=>{const x=car.x+Math.cos(b)*60,y=car.y+Math.sin(b)*60;return!walkBlocked(x,y,28)&&!isBad(wpx(x),wpy(x,y));};
       if(!free(want))for(const o of[0.5,-0.5,1,-1,1.5,-1.5,2.2,-2.2]){if(free(want+o)){a=want+o;break;}}thr=1;str=clamp(angDiff(car.ang,a)*2,-1,1);}else if(car.cd<=0)catapultFire(car,d,s.x+rand(-40,40),s.y+rand(-40,40));}
   car.speed=thr>0?Math.min(100,car.speed+120*dt):thr<0?Math.max(-60,car.speed-160*dt):car.speed*Math.exp(-2*dt);car.ang+=str*1.1*dt;
   car.vx=Math.cos(car.ang)*car.speed;car.vy=Math.sin(car.ang)*car.speed;car.wheelRot+=car.speed*dt/9;
@@ -4452,14 +4502,14 @@ function collide(c){
       const dx=c.x-nx,dy=c.y-ny,d2=dx*dx+dy*dy;
       if(d2<r*r){if(d2>0.0001){const d=Math.sqrt(d2);c.x=nx+dx/d*r;c.y=ny+dy/d*r;}
         else{const l=c.x-o.x,rt=o.x+o.w-c.x,t=c.y-o.y,b=o.y+o.d-c.y,m=Math.min(l,rt,t,b);if(m===l)c.x=o.x-r;else if(m===rt)c.x=o.x+o.w+r;else if(m===t)c.y=o.y-r;else c.y=o.y+o.d+r;}}}}
-  if(G&&G.cars)for(const car of G.cars){if(car.dead||car===c.vehicle)continue;if(c.z>=car.z+(car.h||24)||c.z+CH<=car.z)continue;const dx=c.x-car.x,dy=c.y-car.y,d=Math.hypot(dx,dy),R=(car.r||24)+12;if(d<R){const k=d||1;c.x=car.x+dx/k*R;c.y=car.y+dy/k*R;}}
+  if(G&&G.cars)for(const car of G.cars){if(car.dead||car===c.vehicle)continue;if(c.z>=car.z+(car.h||24)||c.z+CH<=car.z)continue;const dx=wdx(c.x-car.x),dy=wdy(car.y,c.y),d=Math.hypot(dx,dy),R=(car.r||24)+12;if(d<R){const k=d||1;c.x=car.x+dx/k*R;c.y=car.y+dy/k*R;}}
   keepIn(c,r);
 }
 function updateSky(c,dt,ix,iy){
   if(isMate(c)&&G.player.state==='sky'){c.landX=G.player.x+(c.offX||0);c.landY=G.player.y+(c.offY||0);}
   if(!c.isPlayer||autoOn(c)){if(c.landX==null){const s=freeSpot(WORLD/2,WORLD/2,WORLD*0.4,0,null);c.landX=s.x;c.landY=s.y;}const dx=c.landX-c.x,dy=c.landY-c.y,d=Math.hypot(dx,dy);if(d>20){ix=dx/d;iy=dy/d;}else ix=iy=0;c.face=Math.atan2(iy||Math.sin(c.face),ix||Math.cos(c.face));}
   const gnd=groundAt(c.x,c.y,c.z);if(!c.glide&&c.z-gnd<240){c.glide=true;if(c.isPlayer)sfx('glide');}
-  const sp=c.glide?400:325;c.x=clamp(c.x+ix*sp*dt,14,WORLD-14);c.y=clamp(c.y+iy*sp*dt,14,WORLD-14);
+  const sp=c.glide?400:325;c.x+=ix*sp*dt;c.y+=iy*sp*dt;wrapPos(c);if(c.y<14&&!inIsle(c.x,c.y,14))c.y=14; // gliding over an edge comes round the other side
   c.vz=c.glide?lerp(c.vz,-110,Math.min(1,dt*3)):Math.max(c.vz-GRAV()*dt,-380);c.z+=c.vz*dt;c.moving=false;
   if(c.z<=gnd){c.z=gnd;c.vz=0;c.state='alive';c.glide=false;c.onGround=true;sfx('land',c);burst(c.x,c.y,c.z+2,8,'puff','#ffffff',70);if(c.isPlayer)G.pitch=-0.12;}
 }
@@ -4544,21 +4594,21 @@ function update(dt){
   for(const c of G.chars)updateChar(c,dt);
   updateCars(dt);engineUpdate();bossCheck();
   for(let i=G.projs.length-1;i>=0;i--){const p=G.projs[i];
-    if(p.t==='boulder'){p.t0+=dt;p.vz-=700*dt;const nx=p.x+p.vx*dt,ny=p.y+p.vy*dt,nz=p.z+p.vz*dt;p.x=nx;p.y=ny;p.z=nz;
+    if(p.t==='boulder'){p.t0+=dt;p.vz-=700*dt;const ox=p.x,oy=p.y,nz=p.z+p.vz*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z=nz;wrapProj(p,ox,oy);const nx=p.x,ny=p.y;
       if(blocked3D(nx,ny,nz)||nz<=groundAt(nx,ny,nz+20)||p.t0>p.fuse+2){p.z=Math.max(p.z,2);explode(p);removeModel(p);G.projs.splice(i,1);}continue;}
     if(p.t==='grenade'||p.t==='balloon'){p.t0+=dt;p.vz-=700*dt;const nx=p.x+p.vx*dt,ny=p.y+p.vy*dt,nz=p.z+p.vz*dt;const ob=blocked3D(nx,ny,nz);
-      if(ob){if(nz<0||(ob&&p.z>=surfAt(ob,p.x,p.y)-2)){p.vz=Math.abs(p.vz)*0.35;p.vx*=0.6;p.vy*=0.6;if(nz<0)p.z=0.5;}else{p.vx*=-0.4;p.vy*=-0.4;}}else{p.x=nx;p.y=ny;p.z=nz;}
+      if(ob){if(nz<0||(ob&&p.z>=surfAt(ob,p.x,p.y)-2)){p.vz=Math.abs(p.vz)*0.35;p.vx*=0.6;p.vy*=0.6;if(nz<0)p.z=0.5;}else{p.vx*=-0.4;p.vy*=-0.4;}}else{const ox=p.x,oy=p.y;p.x=nx;p.y=ny;p.z=nz;wrapProj(p,ox,oy);}
       if(p.t0>=p.fuse){explode(p);removeModel(p);G.projs.splice(i,1);}continue;}
-    p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;
+    {const ox=p.x,oy=p.y;p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;wrapProj(p,ox,oy);}
     if(p.t==='rocket'&&Math.random()<dt*30)burst(p.x-p.vx*0.02,p.y-p.vy*0.02,p.z,1,'puff','#ffffff',20);
     if(p.t==='bubble'){p.vz+=40*dt;}
     {const stepLen=Math.hypot(p.vx,p.vy,p.vz)*dt;if(stepLen>20){const n=Math.ceil(stepLen/10);
-      for(let k=1;k<=n;k++){const f=1-k/n,x=p.x-p.vx*dt*f,y=p.y-p.vy*dt*f,z=p.z-p.vz*dt*f;
-        if(blocked3D(x,y,z)||G.chars.some(o=>isEnemy(p.owner,o)&&o.state==='alive'&&Math.hypot(o.x-x,o.y-y)<15&&z>o.z-4&&z<o.z+CH+4)){p.x=x;p.y=y;p.z=z;break;}}}}
+      for(let k=1;k<=n;k++){const f=1-k/n,x0=p.x-p.vx*dt*f,y0=p.y-p.vy*dt*f,x=wpx(x0),y=wpy(x0,y0),z=p.z-p.vz*dt*f;
+        if(blocked3D(x,y,z)||G.chars.some(o=>isEnemy(p.owner,o)&&o.state==='alive'&&Math.hypot(wdx(o.x-x),wdy(y,o.y))<15&&z>o.z-4&&z<o.z+CH+4)){p.x=x;p.y=y;p.z=z;break;}}}}
     let dead=p.life<=0;const ob=!dead&&blocked3D(p.x,p.y,p.z);
-    if(!ob&&!dead)for(const car of G.cars){if(car.dead||car.driver===p.owner)continue;if(Math.hypot(car.x-p.x,car.y-p.y)<(car.r||24)+4&&p.z>car.z&&p.z<car.z+(car.h||28)){dead=true;if(p.t!=='rocket')damageCar(car,p.dmg,p.owner);burst(p.x,p.y,p.z,4,'confetti','#c5ccd6',60);break;}}
+    if(!ob&&!dead)for(const car of G.cars){if(car.dead||car.driver===p.owner)continue;if(Math.hypot(wdx(car.x-p.x),wdy(p.y,car.y))<(car.r||24)+4&&p.z>car.z&&p.z<car.z+(car.h||28)){dead=true;if(p.t!=='rocket')damageCar(car,p.dmg,p.owner);burst(p.x,p.y,p.z,4,'confetti','#c5ccd6',60);break;}}
     if(ob){dead=true;if(ob.built)damagePiece(ob.piece,p.dmg*(p.t==='pellet'?1:1.4));burst(p.x,p.y,Math.max(p.z,2),p.t==='pellet'?5:3,'confetti',p.t==='pellet'?'#b6ff3b':'#ffffff',60);}
-    if(!dead)for(const o of G.chars){if(!isEnemy(p.owner,o)||(o.state!=='alive'&&o.state!=='dbno')||(p.hit&&p.hit.has(o)))continue;const dx=o.x-p.x,dy=o.y-p.y,rr2=p.t==='chicken'?20:p.t==='bubble'?22:p.t==='rocket'?18:15;
+    if(!dead)for(const o of G.chars){if(!isEnemy(p.owner,o)||(o.state!=='alive'&&o.state!=='dbno')||(p.hit&&p.hit.has(o)))continue;const dx=wdx(o.x-p.x),dy=wdy(p.y,o.y),rr2=p.t==='chicken'?20:p.t==='bubble'?22:p.t==='rocket'?18:15;
       if(dx*dx+dy*dy<rr2*rr2&&p.z>o.z-4&&p.z<o.z+CH+4){if(p.t==='rocket'){dead=true;break;}const sp=Math.hypot(p.vx,p.vy)||1,kb=p.t==='pellet'?140:p.t==='chicken'?260:p.t==='snipe'?300:90;
         if(p.t==='ice'&&o.invuln<=0){o.frozen=1.6;addText(o.x,o.y,o.z+64,'FROZEN!','#9fe4ff',16);sfx('freeze',o);burst(o.x,o.y,o.z+24,10,'confetti','#bfe8ff',90);}
         if(p.t==='bubble'&&o.invuln<=0){o.bubbled=2.2;addText(o.x,o.y,o.z+64,'BUBBLED!','#ff9ad5',16);sfx('blub',o);}
@@ -4566,7 +4616,7 @@ function update(dt){
         if(p.t==='pellet')burst(o.x,o.y,p.z,5,'confetti','#b6ff3b',80);if(p.t==='chicken'){p.hit.add(o);addText(o.x,o.y,o.z+62,'SQUAWK!','#ffe14d',16);sfx('squawk',o);}
         const head=p.z>o.z+35&&p.t!=='bubble'&&p.t!=='ice';if(head&&p.owner.isPlayer){addText(o.x,o.y,o.z+78,'HEADSHOT!','#ffd84a',13);xpEvent('headshot');}damage(o,p.dmg,p.owner,p.wid,p.vx/sp*kb,p.vy/sp*kb,head);dead=true;
         if(p.t==='chicken'&&p.bounces>0){let nb=null,nd=300;for(const q of G.chars){if(!isEnemy(p.owner,q)||q.state!=='alive'||p.hit.has(q))continue;const d=dist(q,o);if(d<nd){nd=d;nb=q;}}
-          if(nb){p.bounces--;const v=norm3({x:nb.x-p.x,y:nb.y-p.y,z:nb.z+24-p.z});p.vx=v.x*560;p.vy=v.y*560;p.vz=v.z*560;p.life=1.0;dead=false;}}
+          if(nb){p.bounces--;const v=norm3({x:wdx(nb.x-p.x),y:wdy(p.y,nb.y),z:nb.z+24-p.z});p.vx=v.x*560;p.vy=v.y*560;p.vz=v.z*560;p.life=1.0;dead=false;}}
         break;}}
     if(dead){if(p.t==='rocket'){p.z=Math.max(p.z,2);explode(p);}removeModel(p);G.projs.splice(i,1);}}
   for(let i=G.traps.length-1;i>=0;i--){const t=G.traps[i];t.life-=dt;t.arm-=dt;if(t.life<=0){removeModel(t);G.traps.splice(i,1);continue;}if(t.arm>0)continue;
@@ -4619,8 +4669,9 @@ function syncVisuals(dt){
   // characters
   for(const car of G.cars){if(car.dead)continue;if(car.kind==='mech'){animMech(car,dt);continue;}if(car.kind==='plane'||car.kind==='boat'){animCraft(car,dt);continue;}if(car.kind==='board'){animBoard(car,dt);continue;}const cm=car.m;cm.position.set(car.x,car.z,car.y);cm.rotation.set(car.onGround?0:-clamp(car.vz/1500,-0.35,0.35),Math.PI/2-car.ang,0,'YXZ');
     cm.userData.wheels.forEach((w,i)=>{w.rotation.x=car.wheelRot;w.rotation.y=i<2?-car.steer*0.5:0;});}
+  for(const car of G.cars)if(!car.dead&&car.m)wrapView(car.m,car.kind==='plane'&&car.fly); // drawn on the side of an edge nearest the camera (wrap module)
   for(const c of G.chars){if(!c.m)buildCharModel(c);const m=c.m,g=m.g;g.scale.setScalar(c.vehicle&&c.vehicle.boss&&c.state==='alive'?BOSS.scale:1);
-    g.visible=!((c.state==='gone'&&!(c===p&&p.watch))||c.state==='bus')&&!(c.invuln>0&&Math.floor(t*12)%2)&&(c===p||Math.hypot(c.x-camera.position.x,c.y-camera.position.z)<3200);
+    g.visible=!((c.state==='gone'&&!(c===p&&p.watch))||c.state==='bus')&&!(c.invuln>0&&Math.floor(t*12)%2)&&(c===p||Math.hypot(wdx(c.x-camera.position.x),wdy(camera.position.z,c.y))<3200);
     if(!g.visible)continue;
     g.position.set(c.x,c.z-(c.wet?5:0),c.y);g.rotation.set(0,Math.PI/2-c.face,0);
     setHeld(c);gadgetVisual(c,g,t);
@@ -4647,6 +4698,7 @@ function syncVisuals(dt){
     else if(c.state==='carried'||c.state==='delivering'){g.rotation.z=Math.sin(t*4)*0.2;}
     else if(c.state==='sky'&&!c.glide){g.rotation.x=0.9;}
     if(c===p&&c.state==='gone'&&p.watch&&HOSP_ISLE.bed){const B=HOSP_ISLE.bed;g.position.set(B.x,B.mz+9,B.pillow+37);g.rotation.set(-Math.PI/2+0.35,0,0);m.armL.rotation.set(0,0,0);m.armR.rotation.set(0,0,0);m.legL.rotation.x=m.legR.rotation.x=0;} // in the hospital you lie in the patient bed, propped up on the pillow
+    {const pv=c.state==='down'?c.koPlane:c.vehicle;wrapView(g,!!(pv&&pv.kind==='plane'&&pv.fly));}
     if(c.stun>0)g.rotation.y+=c.spin;
     m.glider.visible=c.state==='sky'&&c.glide;
     m.ice.visible=c.frozen>0&&c.state==='alive';m.bub.visible=c.bubbled>0&&c.state==='alive';if(m.bub.visible)m.bub.scale.setScalar(62+Math.sin(t*6)*3);
@@ -4655,7 +4707,7 @@ function syncVisuals(dt){
     m.face.material.map=makeFace(c.zombie?'zombie':(c.state==='down'||c.state==='carried')?'ko':'smile');
     m.body.scale.setScalar(c.hitFlash>0?1.08:1);
     if(m.tag){if(c.zombie){m.tag.visible=(HBARS||c.hp<c.maxHp)&&c.state==='alive';if(m.tag.visible&&c.tagHp!==c.hp){c.tagHp=c.hp;c.name='';drawTag(c);}}
-      else{m.tag.visible=(c.state==='alive'||c.state==='dbno')&&(isMate(c)||Math.hypot(c.x-p.x,c.y-p.y)<(HBARS?750:420));{const tk=c.hp+c.shield*1000+(c.state==='dbno'?1e6+Math.round(c.bleed):0)+(HBARS?0.5:0);if(m.tag.visible&&c.tagHp!==tk){c.tagHp=tk;drawTag(c);}}}}
+      else{m.tag.visible=(c.state==='alive'||c.state==='dbno')&&(isMate(c)||dist(c,p)<(HBARS?750:420));{const tk=c.hp+c.shield*1000+(c.state==='dbno'?1e6+Math.round(c.bleed):0)+(HBARS?0.5:0);if(m.tag.visible&&c.tagHp!==tk){c.tagHp=tk;drawTag(c);}}}}
     if(m.ring)m.ring.visible=c.state==='alive';}
   updatePets(dt,t);
   // far-away small things are not drawn (they would be lost in the haze anyway, and the big island has many); checked 5 times a second
@@ -4666,7 +4718,7 @@ function syncVisuals(dt){
     for(const V of G.vends||[])if(V.m)V.m.visible=near(V.x,V.y,2200);}
   // items
   for(const it of G.items){if(!it.mesh)it.mesh=itemMesh(it);it.mesh.position.set(it.x,it.z+18+Math.sin(t*3+it.bob)*3,it.y);it.mesh.userData.inner.rotation.y=t*1.6+it.bob;if(it.mesh.userData.mythic)it.mesh.userData.mythic.material.color.setHSL((t*0.25)%1,1,0.6);}
-  for(const pr of G.projs){if(!pr.mesh)pr.mesh=projMesh(pr);pr.mesh.position.set(pr.x,pr.z,pr.y);
+  for(const pr of G.projs){if(!pr.mesh)pr.mesh=projMesh(pr);pr.mesh.position.set(pr.x,pr.z,pr.y);wrapView(pr.mesh);
     if(pr.t==='chicken'||pr.t==='grenade'||pr.t==='balloon'||pr.t==='boulder'){pr.mesh.rotation.x+=dt*12;}else{tmpV.set(pr.x+pr.vx,pr.z+pr.vz,pr.y+pr.vy);pr.mesh.lookAt(tmpV);}}
   for(const tr of G.traps){if(!tr.mesh)tr.mesh=trapMesh();tr.mesh.position.set(tr.x,tr.z,tr.y);}
   for(const d of G.drones){const u=d.m.userData,vx=d.x-(d.px??d.x),vy=d.y-(d.py??d.y),sp=Math.hypot(vx,vy)/Math.max(dt,1e-4);d.px=d.x;d.py=d.y;
@@ -5017,7 +5069,7 @@ const HELP_PAGES=[
   {t:'🔫 Weapons & loot',shots:['loot'],body:()=>`<ul><li>Walk over weapons to pick them up. You can carry 4 plus your pickaxe.</li><li>The <b>glow colour</b> is the rarity: <b style="color:${RAR_COL[0]}">Common</b>, <b style="color:${RAR_COL[1]}">Uncommon</b>, <b style="color:${RAR_COL[2]}">Rare</b>, <b style="color:${RAR_COL[3]}">Epic</b>, <b style="color:${RAR_COL[4]}">Legendary</b>. Rarer = stronger!</li><li><b>Loot Llamas</b> 🦙 are full of rare loot and materials.</li><li><b>Vending machines</b> 🛒 sell a weapon for materials.</li><li>Your <b>Mythic Laser Blaster</b> is always in slot 2.</li><li>Bandages, med kits and shield potions: hold ${TOUCH.on?'FIRE':'click'} to use them.</li></ul>`},
   {t:'🔨 Building',shots:['build'],body:()=>TOUCH.on?`<ul><li>Tap <b>🔨 BUILD</b> to show the building buttons.</li><li><b>WALL</b>, <b>RAMP</b>, <b>FLOOR</b>, <b>ROOF</b>: tap to place, hold to keep building.</li><li><b>EDIT</b> turns your wall into a door or window.</li><li>The material button switches between wood, stone and metal. Metal is strongest!</li><li>Swing your pickaxe at trees, rocks and walls to collect materials.</li><li>Tap <b>⚔️ COMBAT</b> to go back to fighting.</li></ul>`
     :`<ul><li><b>Z</b> wall · <b>X</b> ramp · <b>C</b> floor · <b>V</b> roof. Click to place, hold to keep building.</li><li>Look up to build higher.</li><li><b>G</b> edits a wall into a door or window.</li><li><b>T</b> switches wood, stone and metal. Metal is strongest!</li><li>Swing your pickaxe at trees, rocks and walls to collect materials.</li></ul>`},
-  {t:'🚌 Bus & storm',shots:['bus','storm'],body:()=>`<ul><li>Battle Royale starts on the <b>battle bus</b>. ${TOUCH.on?'Tap JUMP OUT':'Press Space'} over the spot you want to land.</li><li>Your glider opens by itself, or open it early.</li><li>The <b>purple storm</b> shrinks the island. It hurts while you are in it, so keep moving to the safe circle!</li><li>The white dashed circle on the minimap shows where the storm goes next.</li></ul>`},
+  {t:'🚌 Bus & storm',shots:['bus','storm'],body:()=>`<ul><li>Battle Royale starts on the <b>battle bus</b>. ${TOUCH.on?'Tap JUMP OUT':'Press Space'} over the spot you want to land.</li><li>Your glider opens by itself, or open it early.</li><li>The <b>purple storm</b> shrinks the island. It hurts while you are in it, so keep moving to the safe circle!</li><li>The white dashed circle on the minimap shows where the storm goes next.</li><li>🌐 <b>The edges loop!</b> Walk, drive or shoot off one side of the map and you come back in on the other side (the see-through curtain marks the edge). So nobody is safe hiding at the edge. Only the bridge to the Bonk Hospital goes on north.</li></ul>`},
   {t:'🚁 Getting bonked',shots:['drone'],body:()=>`<ul><li>When you run out of health you get knocked out, but a <b>rescue drone</b> flies you back in after a few seconds.</li><li>In Battle Royale, drones stop at the <b>final circle</b>. Then it's last one standing!</li><li>In <b>Squads</b> you get knocked down first. A teammate can revive you by holding ${TOUCH.on?'the green REVIVE button':'E'} next to you.</li><li>Heal up with bandages, med kits and shield potions.</li></ul>`},
   {t:'🏆 How to win',shots:[],body:()=>`<p>Every game mode has its own way to win:</p><div class="hwin">${[['🪂 Battle Royale','Be the last one (or last squad) standing when the storm closes.'],['⚔️ Team Battle','Red team needs 20 knockouts before blue does.'],['🧟 Zombie Survival','Survive as many zombie waves as you can. Build walls!'],['🏎️ Car Race','Drive through the glowing gates in order. Finish 3 laps first.'],['✈️ Plane Race','Fly through the glowing rings in the sky in order. Finish 3 laps first.'],['🌋 Floor is Lava','Build up and stay above the rising lava the longest.'],['👑 Capture the Crown','Grab the crown and hold it to score points.'],['🚩 Capture the Flag','Steal the blue flag and bring it back to your base.'],['🏰 Fort Siege','Build a fort around your treasure, then steal theirs and carry it home. The fastest steal wins.'],['⛰️ King of the Hill','Stand in the golden circle to score. It moves around!'],['🏗️ Build Battle','Build the tallest tower before time runs out.'],['🤖 Mega Robot','Everyone teams up against one giant robot. Bonk it before time runs out!'],['🎯 Training Room','No winning here: practice your aim, building and every weapon.']].map(([a,b])=>`<div><b>${a}</b>${b}</div>`).join('')}</div>`},
   {t:'🌐 Play with friends',shots:[],body:()=>`<ul><li>Tap <b>🌐 Multiplayer</b> on the welcome screen and type your <b>name</b>.</li><li><b>One player hosts:</b> tap <b>Host a game</b> and read out the 4-letter <b>room code</b>.</li><li><b>Everyone else joins:</b> tap <b>Join</b> and type the code. The host sees <b>🙋 wants to join</b> and taps <b>✅ Allow</b> (or <b>❌ Kick</b>).</li><li>The host picks the <b>game</b>, the <b>map</b> and the <b>teams</b>: <i>Host picks</i> (tap a player to move them), <i>🎲 Random</i>, <i>Pick your own</i> (tap Join Red/Blue…), or <i>Everyone vs everyone</i>.</li><li>Bots fill the empty spots. The host presses <b>START</b> and everyone drops into the same match!</li><li>Up to 8 real players, in every game mode: Battle Royale, Team Battle, Zombie Survival (team up against the waves), Car Race, Floor is Lava, Capture the Crown, Capture the Flag, King of the Hill, Build Battle and the Training Room.</li><li>Hold <b>Tab</b> (or tap <b>🏆</b>) for the <b>scoreboard</b>: everyone's knockouts and ping.</li><li>Out of the match? You <b>watch a teammate</b>. Press Space, click or tap JUMP to switch who you watch.</li><li>Friends who arrive late can <b>jump into a match that already started</b> by taking over a bot (the host can turn this off in Settings → 🌐 Multiplayer).</li><li>Need a break? Press <b>O</b> (or tap <b>🤖</b>) and autopilot plays for you. If you stop playing for a bit, a <b>💤 bot helper</b> plays for you until you're back. The host can turn either off in Settings → 🌐 Multiplayer.</li><li>After the match, <b>Play again</b> takes everyone back to the room.</li></ul>`},
@@ -5678,7 +5730,7 @@ function netOwnFromSnap(c,a){const st=NST[a[4]],f=a[8],loc=c.state;c.hp=a[5];c.s
   if(G.hostDriven&&(st==='alive'||st==='sky')){c.state=st;c.x=a[0];c.y=a[1];c.z=a[2];c.face=a[3];c.glide=!!(f&4);G.yaw+=angDiff(G.yaw,c.face)*0.2;G.net.lastOwnSt=st;return;} // the host is playing for us
   if(st==='alive'||st==='sky'){if(loc!=='alive'&&loc!=='sky'){c.state=st;c.x=a[0];c.y=a[1];c.z=a[2];c.vx=c.vy=c.vz=0;c.onGround=st==='alive';c.glide=!!(f&4);}
     else if(st==='sky'&&loc==='alive'&&G.net.lastOwnSt!=='sky'){c.state='sky';c.x=a[0];c.y=a[1];c.z=a[2];c.glide=false;}
-    else if(st==='alive'&&Math.hypot(a[0]-c.x,a[1]-c.y)>450){c.x=a[0];c.y=a[1];c.z=a[2];}}
+    else if(st==='alive'&&Math.hypot(wdx(a[0]-c.x),wdy(c.y,a[1]))>450){c.x=a[0];c.y=a[1];c.z=a[2];}}
   else{c.state=st;c.x=a[0];c.y=a[1];c.z=a[2];c.glide=!!(f&4);}
   G.net.lastOwnSt=st;}
 function netApplyPriv(P){const p=G.player;p.slots=P.sl.map((s,i)=>s?{id:NWC[s[0]],ammo:s[1]<0?undefined:s[1],r:s[2]<0?undefined:s[2]}:(i===0?{id:'fists'}:null));
@@ -5688,7 +5740,7 @@ function netLerpAng(a,b,t){const d=Math.atan2(Math.sin(b-a),Math.cos(b-a));retur
 function netInterp(dt){const N=G.net,rt=G.time-(N.interpD||0.12);
   for(const[i,b]of N.buf){const c=N.byId.get(i);if(!c||!b.length)continue;let A=b[0],B=b[b.length-1];
     for(let k=0;k<b.length-1;k++)if(b[k][0]<=rt&&b[k+1][0]>=rt){A=b[k];B=b[k+1];break;}
-    const span=B[0]-A[0],t=span>0?clamp((rt-A[0])/span,0,1):1,a=A[1],z=B[1];
+    const span=B[0]-A[0],a=A[1],z=B[1],t=Math.abs(z[0]-a[0])>WORLD/2||Math.abs(z[1]-a[1])>WORLD/2?1:span>0?clamp((rt-A[0])/span,0,1):1; // (half the map apart: they went round an edge, so jump)
     c.x=lerp(a[0],z[0],t);c.y=lerp(a[1],z[1],t);c.z=lerp(a[2],z[2],t);c.face=netLerpAng(a[3],z[3],t);
     const f=z[8];c.state=NST[z[4]]||'alive';c.hp=z[5];c.shield=z[6];c.slots=[{id:NWC[z[7]]||'fists'},null,null,null,null];c.cur=0;
     c.moving=!!(f&1);c.crouch=!!(f&2);c.glide=!!(f&4);c.slideT=f&8?0.3:0;c.swingT=f&16?0.2:Math.max(0,(c.swingT||0)-dt);if(f&32)c.hitFlash=0.12;c.frozen=f&64?0.2:0;c.bubbled=f&128?0.2:0;c.stun=f&256?0.2:0;c.invuln=f&512?0.2:0;
@@ -5702,8 +5754,8 @@ function netInterp(dt){const N=G.net,rt=G.time-(N.interpD||0.12);
     else if(z[6]!=null){if(!car.q)car.q=new THREE.Quaternion();const qa=new THREE.Quaternion(a[6]??z[6],a[7]??z[7],a[8]??z[8],a[9]??z[9]).normalize(),qb=new THREE.Quaternion(z[6],z[7],z[8],z[9]).normalize();car.q.slerpQuaternions(qa,qb,t);car.fly=!!z[10];car.chute=!!z[11];} // a plane: its full orientation
     car.speed=Math.hypot(car.x-ox,car.y-oy)/Math.max(dt,1e-3)*Math.sign(Math.cos(car.ang)*(car.x-ox)+Math.sin(car.ang)*(car.y-oy)||1);car.onGround=true;}}
 function netClientProjs(dt){for(let i=G.projs.length-1;i>=0;i--){const p=G.projs[i];let dead;
-  if(p.t==='grenade'||p.t==='balloon'||p.t==='boulder'){p.t0+=dt;p.vz-=700*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;const g=groundAt(p.x,p.y,p.z+5);if(p.z<g){p.z=g;p.vz=Math.abs(p.vz)*0.35;p.vx*=0.6;p.vy*=0.6;}dead=p.t0>=p.fuse;}
-  else{p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;if(p.t==='bubble')p.vz+=40*dt;dead=p.life<=0||!!blocked3D(p.x,p.y,p.z);}
+  const ox=p.x,oy=p.y;if(p.t==='grenade'||p.t==='balloon'||p.t==='boulder'){p.t0+=dt;p.vz-=700*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;wrapProj(p,ox,oy);const g=groundAt(p.x,p.y,p.z+5);if(p.z<g){p.z=g;p.vz=Math.abs(p.vz)*0.35;p.vx*=0.6;p.vy*=0.6;}dead=p.t0>=p.fuse;}
+  else{p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;wrapProj(p,ox,oy);if(p.t==='bubble')p.vz+=40*dt;dead=p.life<=0||!!blocked3D(p.x,p.y,p.z);}
   if(dead){removeModel(p);G.projs.splice(i,1);}}}
 // what this player pressed, sent to the host
 function netClientKey(k){const N=G.net,p=G.player;if(k==='o'){netJoinerAuto();return true;}if(['r','=','+','-','o','escape','p','m'].includes(k)&&!(k==='r'&&(G.mode==='race'||G.mode==='airrace')))return k==='o';
