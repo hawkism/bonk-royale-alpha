@@ -48,7 +48,14 @@ body{margin:0;background:var(--sky);color:var(--ink);font-family:var(--body);ove
 .lbBtns{display:flex;gap:8px;flex-wrap:wrap}#shopBtn{background:#ff7b1c;color:#fff}
 .tkPill,.tkBal{justify-self:start;background:rgba(27,34,53,.82);color:#fff;border-radius:999px;padding:6px 14px;font-weight:900}.tkPill b,.tkBal b{color:var(--yellow);font-size:1.15rem}.tkBal{justify-self:auto;display:inline-block;margin-bottom:10px}
 .card-top.orange{background:linear-gradient(135deg,#ff7b1c,#ff4fa3)}
-#shopGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+#shopGrid,.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.sgrid.big{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.shead{font-family:var(--display);font-weight:400;font-size:1.35rem;color:#1b2235;margin:14px 0 6px}.ssec{grid-column:1/-1;font-family:var(--display);font-weight:400;font-size:1.05rem;color:#4a5570;margin:8px 0 0}
+.shopClock{display:inline-block;margin:0 0 10px 8px;background:#5b3cc4;color:#fff;font-weight:900;border-radius:999px;padding:6px 14px}
+.sitem.r1{background:linear-gradient(160deg,#5dbb63,#2e7d32)}.sitem.r2{background:linear-gradient(160deg,#4fa3ff,#1f5fc4)}.sitem.r3{background:linear-gradient(160deg,#b06bff,#6a2fc4)}.sitem.r4{background:linear-gradient(160deg,#ffcb1f,#ff7b1c)}
+.sitem.r1 small,.sitem.r2 small,.sitem.r3 small,.sitem.r4 small{color:#fff;opacity:.9}
+.sitem.big{min-height:150px}.sitem.big .ic{font-size:3.4rem}.sitem.big b{font-size:1.35rem}
+.sitem .sw{display:flex;gap:3px}.sitem .sw i{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.85);box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.deal.new{background:#ffcb1f;color:#1b2235}
 .sitem{position:relative;border:3px solid transparent;border-radius:12px;padding:10px;text-align:left;cursor:pointer;background:linear-gradient(160deg,var(--rc),#fff 150%);display:grid;gap:3px;font-family:var(--body);box-shadow:inset 0 -4px 0 rgba(0,0,0,.15);color:#1b2235}
 .sitem.sel{border-color:var(--yellow);transform:translateY(-2px)}.sitem .ic{font-size:2rem;line-height:1}.sitem b{font-family:var(--display);font-weight:400;font-size:1.1rem;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.35)}.sitem small{font-weight:800;font-size:.74rem;opacity:.8}
 .sitem .buy{margin-top:4px;border:0;border-radius:8px;padding:6px 8px;font-family:var(--display);font-size:1rem;cursor:pointer;background:var(--yellow);color:var(--ink);box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}.sitem .buy.sure{background:#5cff7a}.sitem .buy[disabled]{background:#cfd5de;color:#6b7382;cursor:not-allowed}.sitem .own{margin-top:4px;font-weight:900;font-size:.85rem;color:#1b2235;background:rgba(255,255,255,.7);border-radius:8px;padding:5px 8px;text-align:center}
@@ -694,7 +701,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
 <div id="lobbyBar"><div class="lvl"><b id="lvlNum">1</b><div class="lvlr"><span>Level</span><div class="xpb"><i id="lvlFill"></i></div><small id="lvlTxt"></small></div></div>
   <div class="chal"><h3>Challenges</h3><ul id="chalList"></ul></div><div class="lbBtns"><button class="brick small" id="lockerBtn" type="button">Locker</button><button class="brick small" id="shopBtn" type="button">🎟️ Ticket Shop</button></div><div class="tkPill">🎟️ <b id="tkNum">0</b> tickets</div></div>
 <div id="shop" class="screen" hidden><div class="card"><div class="card-top orange"><div class="studs"></div><h2>Ticket Shop</h2><p class="tag">Earn tickets by playing matches, finishing challenges and leveling up. Tap an item to try it on!</p></div>
-  <div class="card-body"><div class="tkBal">🎟️ <b id="shopTk">0</b> tickets</div><p id="shopMsg" class="note" style="margin:0 0 8px;font-weight:800"></p><div id="shopDeal"></div><div id="shopGrid"></div><div class="btns"><button class="brick" id="shopDone" type="button">Done</button></div></div></div></div>
+  <div class="card-body"><div class="tkBal">🎟️ <b id="shopTk">0</b> tickets</div><p id="shopMsg" class="note" style="margin:0 0 8px;font-weight:800"></p><div class="shopClock" id="shopClock"></div><div id="shopDeal"></div><h3 class="shead">⭐ Featured</h3><div id="shopFeat" class="sgrid big"></div><h3 class="shead">📅 Daily items</h3><div id="shopDaily" class="sgrid"></div><h3 class="shead">🛍️ Everything else</h3><div id="shopGrid"></div><div class="btns"><button class="brick" id="shopDone" type="button">Done</button></div></div></div></div>
 <div id="locker" class="screen" hidden><div class="card"><div class="card-top blue"><div class="studs"></div><h2>Locker</h2><p class="tag">Pick your outfit, back bling, glider and pickaxe. Level up to unlock more!</p></div>
   <div class="card-body"><div id="lockTabs" class="ltabs"></div><div id="lockGrid"></div><div class="btns"><button class="brick" id="lockDone" type="button">Done</button></div></div></div></div>
 <div id="pause" class="screen" hidden><div class="card"><div class="card-top blue"><div class="studs"></div><h2>Paused</h2></div>
@@ -1969,7 +1976,20 @@ OUTFITS.push(
   {id:'robo',name:'Robo Bonker',lvl:1,shop:400,rar:3,top:'#b8c4d4',top2:'#43c6ff',pants:'#7d8796',shoe:'#43c6ff',glove:'#43c6ff',hair:'#1b1b1b',hairStyle:'bald',hat:'robot',hatCol:'#b8c4d4',back:'drone',skin:'#b8c4d4'},
   {id:'hero',name:'Super Bonk',lvl:1,shop:500,rar:4,top:'#1f6fd6',top2:'#ffcb1f',pants:'#e2312b',shoe:'#e2312b',glove:'#e2312b',hair:'#1b1b1b',hairStyle:'spiky',hat:'mask',hatCol:'#e2312b',back:'cape',capeCol:'#e2312b',skin:'#e0ac69'},
   {id:'banana',name:'Banana Buddy',lvl:1,shop:600,rar:4,top:'#ffe14d',top2:'#fff7b0',pants:'#ffe14d',shoe:'#6b4a1e',glove:'#ffe14d',hair:'#1b1b1b',hairStyle:'bald',hat:'banana',hatCol:'#ffe14d',back:'none',skin:'#ffe14d'});
+// 0.6: more for the shop (isNew: the NEW ribbon)
+OUTFITS.push({id:'firefighter',name:'Firefighter Flo',lvl:1,shop:300,rar:2,isNew:1,top:'#e2312b',top2:'#ffcb1f',pants:'#2b2f3a',shoe:'#1b1b1b',glove:'#ffcb1f',hair:'#c98b4a',hairStyle:'short',hat:'helmet',hatCol:'#e2312b'},
+  {id:'astro',name:'Astro Ava',lvl:1,shop:450,rar:3,isNew:1,top:'#f4f6fa',top2:'#43c6ff',pants:'#f4f6fa',shoe:'#7d8796',glove:'#f4f6fa',hair:'#3b2414',hairStyle:'long',hat:'astro',hatCol:'#f4f6fa'},
+  {id:'pirate',name:'Captain Pete',lvl:1,shop:350,rar:3,isNew:1,top:'#8a1f2b',top2:'#ffcb1f',pants:'#2b2f3a',shoe:'#3b2414',glove:null,hair:'#1b1b1b',hairStyle:'short',hat:'pirate',hatCol:'#1b1b1b'},
+  {id:'dino',name:'Dino Dan',lvl:1,shop:400,rar:3,isNew:1,top:'#3aa845',top2:'#9bd400',pants:'#3aa845',shoe:'#2f7a37',glove:'#3aa845',hair:'#1b1b1b',hairStyle:'bald',hat:'dino',hatCol:'#3aa845'},
+  {id:'royal',name:'Royal Rex',lvl:1,shop:550,rar:4,isNew:1,top:'#5b3cc4',top2:'#ffcb1f',pants:'#2b2f3a',shoe:'#ffcb1f',glove:'#ffffff',hair:'#c98b4a',hairStyle:'short',hat:'crown',hatCol:'#ffcb1f'},
+  {id:'chicken',name:'Chicken Chuck',lvl:1,shop:250,rar:2,isNew:1,top:'#ffffff',top2:'#ffcb1f',pants:'#ffffff',shoe:'#ff9a3c',glove:'#ffffff',hair:'#1b1b1b',hairStyle:'bald',hat:'chicken',hatCol:'#ffffff'},
+  {id:'snowday',name:'Snow Day Sam',lvl:1,shop:200,rar:1,isNew:1,top:'#43c6ff',top2:'#ffffff',pants:'#1f4fa3',shoe:'#ffffff',glove:'#e2312b',hair:'#e8c26a',hairStyle:'short',hat:'beanie',hatCol:'#e2312b'},
+  {id:'rockstar',name:'Rock Star Riley',lvl:1,shop:350,rar:3,isNew:1,top:'#2b2f3a',top2:'#ff3df5',pants:'#2b2f3a',shoe:'#ff3df5',glove:'#2b2f3a',hair:'#ff3df5',hairStyle:'spiky',hat:'band',hatCol:'#ff3df5'});
 GLIDERS.push({id:'candy',name:'Candy Wing',lvl:1,shop:150,c:['#ff8fc8','#ffffff']},{id:'dragon',name:'Dragon Wings',lvl:1,shop:350,c:['#e2312b','#ff9a3c']},{id:'ufo',name:'Mini UFO',lvl:1,shop:450,c:['#9fe4ff','#7d8796']});
+GLIDERS.push({id:'kite',name:'Rainbow Kite',lvl:1,shop:250,isNew:1,c:['#ff3b3b','#43c6ff']},{id:'shark',name:'Shark Fin',lvl:1,shop:300,isNew:1,c:['#7d8796','#ffffff']},{id:'sunset',name:'Sunset Sail',lvl:1,shop:200,isNew:1,c:['#ff7b1c','#ffcb1f']},
+  {id:'mint',name:'Mint Chip',lvl:1,shop:150,isNew:1,c:['#7be495','#3b2414']},{id:'thunder',name:'Thunder Wing',lvl:1,shop:400,isNew:1,c:['#2b2f3a','#ffcb1f']});
+PICKS.push({id:'candycane',name:'Candy Cane',lvl:1,shop:200,isNew:1,c:['#ffffff','#e2312b']},{id:'icecrystal',name:'Ice Crystal',lvl:1,shop:300,isNew:1,c:['#bff4ff','#43c6ff']},{id:'goldhammer',name:'Golden Hammer',lvl:1,shop:450,isNew:1,c:['#8a5a2b','#ffcb1f']},
+  {id:'bubble',name:'Bubble Pop',lvl:1,shop:250,isNew:1,c:['#ff8fc8','#9fe4ff']});
 PICKS.push({id:'fish',name:'Fish Slapper',lvl:1,shop:200,c:['#8a5a2b','#43a7ff']},{id:'laser',name:'Laser Sword',lvl:1,shop:400,c:['#2b2f3a','#5cff7a']});
 BACKS.push({id:'guitar',name:'Rock Guitar',lvl:1,shop:200},{id:'wings',name:'Angel Wings',lvl:1,shop:300},{id:'drone',name:'Mini Drone',lvl:1,shop:350});
 // weapon wraps: recolour every gun you hold (pal = [dark parts, main, accent]); some also tint your laser beams
@@ -1983,7 +2003,10 @@ const WRAPS=[{id:'none',name:'No wrap',lvl:1,rar:0},
   {id:'galaxy',name:'Galaxy',lvl:1,shop:300,pal:['#1b1240','#5b3cc4','#43c6ff'],em:0.3},
   {id:'neon',name:'Neon Night',lvl:1,shop:350,pal:['#0b0d14','#5cff7a','#ff3df5'],em:0.6},
   {id:'rainbow',name:'Rainbow Blast',lvl:1,shop:400,pal:'rainbow',em:0.15},
-  {id:'diamond',name:'Diamond',lvl:1,shop:500,pal:['#5a7a9a','#bff4ff','#ffffff'],em:0.45,laser:['#bff4ff','#ffffff']}];
+  {id:'diamond',name:'Diamond',lvl:1,shop:500,pal:['#5a7a9a','#bff4ff','#ffffff'],em:0.45,laser:['#bff4ff','#ffffff']},
+  {id:'camo',name:'Camo',lvl:1,shop:200,isNew:1,pal:['#3b4a2a','#6b8e23','#a0a060']},{id:'tiger',name:'Tiger Stripes',lvl:1,shop:250,isNew:1,pal:['#1b1b1b','#ff7b1c','#ffcb1f']},
+  {id:'ocean',name:'Ocean Wave',lvl:1,shop:250,isNew:1,pal:['#0b3a6b','#1f6fd6','#9fe4ff'],em:0.15},{id:'cotton',name:'Cotton Candy',lvl:1,shop:300,isNew:1,pal:['#ff8fc8','#c4a7ff','#9fe4ff'],em:0.1},
+  {id:'goldrush',name:'Gold Rush',lvl:1,shop:450,isNew:1,pal:['#8a5a00','#ffcb1f','#fff3a0'],em:0.3}];
 const WRAP_RAINBOW=['#ff3b3b','#ff9a3c','#ffcb1f','#5cff7a','#43c6ff','#9b6bff','#ff3df5'];
 function applyWrap(g,id){const w=WRAPS.find(x=>x.id===id);if(!w||!w.pal)return g;let k=0;
   g.traverse(o=>{if(!o.isMesh||!o.material||o.material.type!=='MeshLambertMaterial')return;const c=o.material.color,lum=0.2126*c.r+0.7152*c.g+0.0722*c.b;
@@ -3956,7 +3979,7 @@ function miniRunways(g,k){for(const r of RUNWAYS){g.save();g.translate(r.x*k,r.y
 /* ---- the Hangar ---- */
 const PLANE_PAINTS=[{id:'classic',name:'Factory colours',lvl:1},{id:'sky',name:'Sky Blue',col:'#43c6ff',c2:'#ffffff',lvl:1},{id:'sunset',name:'Sunset',col:'#ff7b1c',c2:'#ffcb1f',lvl:2},
   {id:'mint',name:'Mint',col:'#7be495',c2:'#ffffff',lvl:3},{id:'stripes',name:'Racing Stripes',col:'#ffffff',c2:'#e2312b',pat:'stripes',lvl:4},{id:'checker',name:'Checkered Flag',col:'#1b1d24',c2:'#ffffff',pat:'checker',lvl:6},
-  {id:'candy',name:'Candy Cane',col:'#ff6fae',c2:'#ffffff',pat:'stripes',lvl:8},{id:'school',name:'Flight School',col:'#1f6fd6',c2:'#ffcb1f',pat:'stripes',school:'done'},{id:'gold',name:'Gold Ace',col:'#ffcb1f',c2:'#ffffff',em:0.25,school:'gold'}];
+  {id:'candy',name:'Candy Cane',col:'#ff6fae',c2:'#ffffff',pat:'stripes',lvl:8},{id:'school',name:'Flight School',col:'#1f6fd6',c2:'#ffcb1f',pat:'stripes',school:'done'},{id:'firetruck',name:'Fire Engine',col:'#e2312b',c2:'#ffffff',pat:'stripes',shop:300,isNew:1},{id:'galaxy',name:'Galaxy Jet',col:'#1b1240',c2:'#43c6ff',em:0.2,shop:400,isNew:1},{id:'tiger',name:'Tiger Plane',col:'#ff7b1c',c2:'#1b1b1b',pat:'stripes',shop:350,isNew:1},{id:'gold',name:'Gold Ace',col:'#ffcb1f',c2:'#ffffff',em:0.25,school:'gold'}];
 const PLANE_DECALS=[{id:'none',name:'No decal',lvl:1},{id:'star',name:'⭐ Star',ic:'⭐',lvl:1},{id:'bolt',name:'⚡ Lightning',ic:'⚡',lvl:2},{id:'heart',name:'❤️ Heart',ic:'❤️',lvl:3},
   {id:'smile',name:'😄 Smiley',ic:'😄',lvl:4},{id:'shark',name:'🦈 Shark',ic:'🦈',lvl:5},{id:'seven',name:'7️⃣ Lucky 7',ic:'7️⃣',lvl:6},{id:'fire',name:'🔥 Flames',ic:'🔥',lvl:7}];
 // each part changes how the plane flies (1 = normal): speed, turn (banked turns), roll, pitch, lift; tough = a softer bump on a hard landing
@@ -3968,7 +3991,7 @@ const PLANE_PARTS={
   tail:[{id:'std',name:'Classic tail',lvl:1,s:{}},{id:'big',name:'Big tail',lvl:2,tip:'steady, quicker loops',s:{pitch:1.2,turn:1.05},sc:1.35},{id:'twin',name:'Twin tail',lvl:7,tip:'turns and rolls quicker',s:{turn:1.15,roll:1.1},twin:true}]};
 const HANGAR_SECS=[['paint','🎨 Paint',PLANE_PAINTS],['decal','🏷️ Decal',PLANE_DECALS],['wing','🪽 Wings',PLANE_PARTS.wing],['body','✈️ Body',PLANE_PARTS.body],['tail','🔺 Tail',PLANE_PARTS.tail]];
 const schoolDone=()=>{const s=PROG.school||{};return['takeoff','rings','tricks','land'].every(k=>(+s[k]||0)>0);},schoolGold=()=>{const s=PROG.school||{};return['takeoff','rings','tricks','land'].every(k=>(+s[k]||0)>=3);};
-const hangarLocked=it=>it.school?!(it.school==='gold'?schoolGold():schoolDone()):levelOf(PROG.xp)<(it.lvl||1);
+const hangarLocked=it=>it.shop?!owns('plane',it.id):it.school?!(it.school==='gold'?schoolGold():schoolDone()):levelOf(PROG.xp)<(it.lvl||1);
 // your plane: what you picked in the Hangar (anything locked or unknown falls back to the classic part)
 function hangarNow(){const L=PROG.locker||{},o={};for(const[k,,list]of HANGAR_SECS){const it=list.find(x=>x.id===L['pl_'+k]);o[k]=it&&!hangarLocked(it)?it.id:list[0].id;}return o;}
 const planeSet=c=>(c&&(c.isPlayer||c.remote||c.human)&&c.look&&c.look.plane)||null;
@@ -4000,11 +4023,12 @@ function planeLook(g,col,b){if(!b)return;const kids=g.children,body=kids[0],nose
 // the Hangar tab in the Locker: five rows (paint, decal, wings, body, tail), and how your plane flies with these parts
 function renderHangar(){const now=hangarNow(),s=planeStats({driver:{isPlayer:true,look:{plane:now}}}),bar=v=>'▮'.repeat(clamp(Math.round(v*5),1,8));
   $('lockGrid').innerHTML=`<div class="hgStats">✈️ Your plane · Speed ${bar(s.speed)} · Turning ${bar(s.turn)} · Roll ${bar(s.roll)} · Lift ${bar(s.lift)}${s.tough?' · 💪 Tough':''}</div>`+HANGAR_SECS.map(([k,n,list])=>`<div class="hgSec"><b>${n}</b>`+list.map(it=>{const locked=hangarLocked(it),on=now[k]===it.id;
-    return`<button type="button" class="litem${on?' on':''}${locked?' locked':''}" data-sec="${k}" data-id="${it.id}" ${locked?'disabled':''} style="--rc:${hangarCardCol(it.col)}"><b>${esc(it.name)}</b><span>${locked?(it.school==='gold'?'Win gold in every Flight School lesson':it.school?'Finish Flight School':'Unlocks at level '+it.lvl):on?'Equipped':it.tip||'Tap to equip'}</span></button>`;}).join('')+'</div>').join('');}
+    return`<button type="button" class="litem${on?' on':''}${locked?' locked':''}" data-sec="${k}" data-id="${it.id}" ${locked?'disabled':''} style="--rc:${hangarCardCol(it.col)}"><b>${esc(it.name)}</b><span>${locked?(it.shop?'🎟️ In the Ticket Shop':it.school==='gold'?'Win gold in every Flight School lesson':it.school?'Finish Flight School':'Unlocks at level '+it.lvl):on?'Equipped':it.tip||'Tap to equip'}</span></button>`;}).join('')+'</div>').join('');}
 // a card's colour: the paint, darker for very light paints so the white writing on it can be read
 function hangarCardCol(c){if(!c)return'#9fe3ff';const n=parseInt(c.slice(1),16),l=(0.3*(n>>16&255)+0.59*(n>>8&255)+0.11*(n&255))/255;return l>0.7?shadeHex(c,0.6):c;}
 function hangarPick(sec,id){PROG.locker['pl_'+sec]=id;saveProg();renderLocker();sfx('pickup');}
 LOCK_TABS.push(['hangar','✈️ Hangar',[]]);
+for(const p of PLANE_PAINTS)if(p.shop)SHOP.push({t:'plane',tn:'Plane Paint',ic:'✈️',it:{id:p.id,name:p.name,shop:p.shop,rar:p.shop>=400?3:2,isNew:p.isNew,col:p.col,c2:p.c2}}); // (plane paint jobs in the Ticket Shop)
 
 /* ---- tricks ---- */
 // a finished LOOP or ROLL: a short speed boost, and (for players) a few tickets, up to 10 tricks a match
@@ -5848,20 +5872,35 @@ $('lockDone').addEventListener('click',()=>{showScreen(prevScreen&&prevScreen!==
 // See also: cosmetics, xp-levels
 /* ================= Ticket Shop ================= */
 let shopSel=null,shopSure=null,shopSureT=0;
-function shopCard(e,deal){const it=e.it,own=e.t!=='fuel'&&owns(e.t,it.id),price=shopPrice(e),key=e.t+':'+it.id,can=PROG.tickets>=price;
+/* 0.6: the shop looks like a big game item shop: today's deal, three big Featured items and six Daily items that change every
+   day (the same for everyone: the day picks them), then everything else by kind. Cards are coloured by rarity, with the item's
+   colours as little swatches and a NEW ribbon on new items, and a clock counts down to the next day's shop. */
+const SHOP_SECS=[['👕 Outfits','outfit'],['🪂 Gliders','glider'],['⛏️ Pickaxes','pick'],['🎒 Back Bling','back'],['🎨 Gun Wraps','wrap'],['🐾 Pets','pet'],['✈️ Plane Paint','plane'],['🚀 Gadgets','gadget'],['⛽ Gadget fuel','fuel']];
+function shopRotation(){const d=Math.floor(Date.now()/864e5),R=mulberry32((d*7919+13)>>>0),deal=dealItem(),a=SHOP.filter(e=>e.t!=='fuel'&&e!==deal);
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return{feat:a.slice(0,3),daily:a.slice(3,9)};}
+// an item's own colours, shown as little swatches on its card
+function shopSwatch(e){const it=e.it,c=e.t==='outfit'?[it.top,it.top2,it.pants]:e.t==='glider'||e.t==='pick'?it.c:e.t==='wrap'?(it.pal==='rainbow'?['#ff3b3b','#ffcb1f','#5cff7a','#43c6ff']:it.pal):e.t==='plane'?[it.col,it.c2]:null;
+  return c?'<span class="sw">'+c.filter(Boolean).map(x=>`<i style="background:${x}"></i>`).join('')+'</span>':'';}
+function shopClock(){const el=$('shopClock');if(!el)return;const left=864e5-Date.now()%864e5,h=Math.floor(left/36e5),m=Math.floor(left%36e5/6e4),s=Math.floor(left%6e4/1e3);
+  el.textContent='🕒 New items in '+(h?h+'h ':'')+m+'m '+String(s).padStart(2,'0')+'s';if(left<1200&&!$('shop').hidden)setTimeout(renderShop,1300);}
+setInterval(()=>{if(!$('shop').hidden)shopClock();},1000);
+function shopCard(e,deal,big){const it=e.it,own=e.t!=='fuel'&&owns(e.t,it.id),price=shopPrice(e),key=e.t+':'+it.id,can=PROG.tickets>=price;
   const btn=own?`<div class="own">${e.t==='gadget'?'✓ Owned · bring it from the Locker':PROG.locker[e.t]===it.id?'✓ Wearing it':'✓ Owned · tap to wear'}</div>`
     :`<button type="button" class="buy${shopSure===key?' sure':''}" data-buy="${key}" ${can?'':'disabled'}>${shopSure===key?'Tap again to buy!':can?(price<it.shop?`<span class="was">${it.shop}</span>`:'')+'🎟️ '+price:'Need '+(price-PROG.tickets)+' more'}</button>`;
-  return`<div class="sitem${shopSel===key?' sel':''}" data-key="${key}" style="--rc:${RAR_COL[shopRar(it)]}">${deal?'<span class="deal">TODAY\'S DEAL · HALF PRICE!</span>':''}<span class="ic">${e.ic}</span><b>${esc(it.name)}</b><small>${e.t==='fuel'?'You have '+Math.round(PROG.fuel[it.id])+(it.id==='shield'?' charges':' s'):RAR_NAME[shopRar(it)]+' '+e.tn}</small>${btn}</div>`;}
-function renderShop(){$('shopTk').textContent=PROG.tickets;const d=dealItem();$('shopDeal').innerHTML=shopCard(d,true);$('shopGrid').innerHTML=SHOP.filter(e=>e!==d).map(e=>shopCard(e,false)).join('');}
+  return`<div class="sitem r${shopRar(it)}${big?' big':''}${shopSel===key?' sel':''}" data-key="${key}" style="--rc:${RAR_COL[shopRar(it)]}">${deal?'<span class="deal">TODAY\'S DEAL · HALF PRICE!</span>':it.isNew?'<span class="deal new">NEW!</span>':''}<span class="ic">${e.ic}</span>${shopSwatch(e)}<b>${esc(it.name)}</b><small>${e.t==='fuel'?'You have '+Math.round(PROG.fuel[it.id])+(it.id==='shield'?' charges':' s'):RAR_NAME[shopRar(it)]+' '+e.tn}</small>${btn}</div>`;}
+function renderShop(){$('shopTk').textContent=PROG.tickets;const d=dealItem(),{feat,daily}=shopRotation(),used=new Set([d,...feat,...daily]);$('shopDeal').innerHTML=shopCard(d,true);
+  $('shopFeat').innerHTML=feat.map(e=>shopCard(e,false,true)).join('');$('shopDaily').innerHTML=daily.map(e=>shopCard(e,false)).join('');
+  $('shopGrid').innerHTML=SHOP_SECS.map(([n,t])=>{const L=SHOP.filter(e=>e.t===t&&!used.has(e));return L.length?`<h4 class="ssec">${n}</h4>`+L.map(e=>shopCard(e,false)).join(''):'';}).join('');shopClock();}
 function openShop(){prevScreen=curScreen==='shop'?prevScreen:curScreen;showScreen('shop');shopSel=null;shopSure=null;$('shopMsg').textContent='';renderShop();}
 function closeShop(){if(shopPreview){shopPreview=null;rebuildLobby();}showScreen(prevScreen&&prevScreen!=='shop'?prevScreen:'welcome');}
 $('shop').addEventListener('click',ev=>{const b=ev.target.closest('[data-buy]');const card=ev.target.closest('.sitem');if(!card)return;const key=card.dataset.key,[t,id]=key.split(':'),e=SHOP.find(x=>x.t===t&&x.it.id===id);
   if(b){if(shopSure!==key||performance.now()-shopSureT>8000){shopSure=key;shopSureT=performance.now();sfx('pickup');renderShop();return;}
     const price=shopPrice(e);if(PROG.tickets<price)return;PROG.tickets-=price;
+    if(t==='plane'){PROG.owned.push(key);PROG.locker.pl_paint=id;saveProg();shopSure=null;audioInit();sfx('victory');renderShop();$('shopMsg').textContent='🎉 You got the '+e.it.name+' paint job! Your plane wears it now (change it in the Locker → Hangar).';return;}
     if(t==='gadget'||t==='fuel'){gadBuy(t,id);shopSure=null;audioInit();sfx('victory');renderShop();$('shopMsg').textContent=t==='fuel'?'⛽ Fuel added!':'🎉 You got the '+e.it.name+'! You will bring it to every match (change it in the Locker → Gadgets).';return;}
     PROG.owned.push(key);PROG.locker[t]=id;if(t==='outfit')PROG.locker.back='outfit';saveProg();shopSure=null;shopPreview=null;rebuildLobby();
     audioInit();sfx('victory');renderShop();$('shopMsg').textContent='🎉 You got '+e.it.name+'! You are wearing it now, and it is in your Locker.';return;}
-  shopSure=null;shopSel=key;if(t==='gadget'||t==='fuel'){sfx('pickup');renderShop();return;}if(owns(t,id)){PROG.locker[t]=id;if(t==='outfit')PROG.locker.back='outfit';saveProg();shopPreview=null;}else shopPreview={t,id};rebuildLobby();sfx('pickup');renderShop();});
+  shopSure=null;shopSel=key;if(t==='gadget'||t==='fuel'||t==='plane'){sfx('pickup');renderShop();return;}if(owns(t,id)){PROG.locker[t]=id;if(t==='outfit')PROG.locker.back='outfit';saveProg();shopPreview=null;}else shopPreview={t,id};rebuildLobby();sfx('pickup');renderShop();});
 $('shopBtn').addEventListener('click',openShop);$('shopBtn2').addEventListener('click',openShop);$('shopDone').addEventListener('click',closeShop);
 $('playBtn').addEventListener('click',startGame);$('againBtn').addEventListener('click',()=>{if(NET.lastNet&&NET.R)toMenu('mplobby');else startGame();});$('menuBtn').addEventListener('click',()=>toMenu('menu'));$('homeBtn').addEventListener('click',()=>toMenu('welcome'));
 $('resumeBtn').addEventListener('click',()=>setPaused(false));$('quitBtn').addEventListener('click',()=>toMenu('welcome'));
