@@ -289,6 +289,8 @@ body.touch #prompt{bottom:auto;top:74px;white-space:normal;max-width:min(420px,4
 @media (max-width:640px){.setwrap{grid-template-columns:1fr}.setnav{display:flex;overflow-x:auto;gap:6px}.setnav button{white-space:nowrap;padding:8px 10px;font-size:.95rem}}
 /* save codes (Settings → Profile) */
 .savebox{width:100%;box-sizing:border-box;font:12px/1.3 ui-monospace,Menlo,Consolas,monospace;border-radius:8px;border:2px solid #d6dbe4;padding:6px;margin:6px 0;word-break:break-all;resize:vertical}
+/* the island sliders (Match options) */
+.wsl{display:grid;grid-template-columns:minmax(0,1fr);gap:2px 10px;margin:6px 0}.wsl .wrow{display:flex;justify-content:space-between;font-weight:800;color:#1b2235;margin-top:6px}.wsl .wrow b{font-weight:800;color:#6b7590}.wsl input[type=range]{width:100%}
 /* @module src/css/07-about-help.css: The About and Help screens. */
 /* ---------- about + help ---------- */
 .about p{margin:0;font-weight:700;line-height:1.45}.about h3,.hpage h3{margin:4px 0 0;font-family:var(--display);font-weight:400;font-size:1.3rem}.about ul{margin:0;padding-left:20px;font-weight:700;line-height:1.55}
@@ -601,6 +603,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
               <input type="radio" name="len" id="len8" value="8"><label for="len8">8 min</label>
             </div></div>
           <div class="opt" id="optBots"><div class="opt-label"><span id="botsLabel">Bots</span><span id="botsOut">8</span></div><input type="range" id="bots" min="5" max="15" step="1" value="8"></div>
+          <div class="opt" id="optWorld"><div class="opt-label">🌍 The island</div><p class="opt-desc">How much of each thing the island gets. In multiplayer, the host's choice is used for everyone.</p><div id="worldSliders" class="wsl"></div><button class="brick small" id="worldReset" type="button">Back to normal</button></div>
           <div class="opt" id="optDiff"><div class="opt-label" id="diffLabel">Bot skill</div>
             <div class="seg">
               <input type="radio" name="diff" id="diffEasy" value="easy" checked><label for="diffEasy">Easy</label>
@@ -987,8 +990,9 @@ function blocked3D(x,y,z){if(z<0)return true;if((x<0||y<0||x>WORLD||y>WORLD)&&!i
 function groundAt(x,y,z){let g=MAP.floaty&&tileAt(x,y)===6&&!inIsle(x,y,0)?-4000:0; // (open sky between the Sky Islands: a long way down)
   for(const o of cellOf(x,y)){if(!inFoot(o,x,y,3))continue;const top=surfAt(o,x,y);if(top<=z+STEP&&top>g)g=top;}return g;}
 function inBuilding(x,y,m){for(const b of BUILDINGS)if(x>b.x-m&&x<b.x+b.w+m&&y>b.y-m&&y<b.y+b.h+m)return true;return false;}
+let WORLD_KEY='';
 function genMap(id){
-  MAP=MAPS[id]||MAPS.meadow;MAP_ID=MAPS[id]?id:'meadow';
+  MAP=MAPS[id]||MAPS.meadow;MAP_ID=MAPS[id]?id:'meadow';WORLD_KEY=worldKey(MAP_ID); // (the world sliders: trees, rocks, pads and chests)
   OB.length=0;PADS.length=0;CHEST_SPOTS.length=0;BUILDINGS.length=0;BRICK_SPOTS.length=0;for(const c of GRID)c.length=0;
   const R=mulberry32(MAP.seed);
   for(let j=0;j<N;j++)for(let i=0;i<N;i++){const cx=(i+.5)*T,cy=(j+.5)*T;let k=tileKind(cx,cy);if((i===N>>1||j===N>>1)&&k!==6)k=1;if(MAP.grid&&k===0&&(i%MAP.grid===0||j%MAP.grid===0))k=1;TILE[i+j*N]=k;} // (the Big City has a whole grid of streets) // the two roads cross in the middle
@@ -1024,16 +1028,16 @@ function genMap(id){
     for(const o of OB)if(o.t==='cyl'&&Math.hypot(o.x-x,o.y-y)<o.r+r+44)return false;
     for(const p of PADS)if(Math.hypot(p.x-x,p.y-y)<r+60)return false;
     for(const p of CHEST_SPOTS)if(Math.hypot(p.x-x,p.y-y)<r+50)return false;return true;};
-  const free2=(x,y,r)=>{if(x<100||y<100||x>WORLD-100||y>WORLD-100)return false;if(pointBlocked(x,y,r))return false;for(const p of PADS)if(Math.hypot(p.x-x,p.y-y)<500)return false;return true;};
+  const free2=(x,y,r)=>{if(x<100||y<100||x>WORLD-100||y>WORLD-100)return false;if(pointBlocked(x,y,r))return false;for(const p of PADS)if(Math.hypot(p.x-x,p.y-y)<500/Math.sqrt(Math.max(1,WM('pads'))))return false;return true;}; // (closer together when the Bounce pads slider asks for more)
   const more=n=>Math.round(n*K*K); // a bigger island gets proportionally more trees, rocks, pads and chests
   // the Big City's skyscrapers: tall, colourful and solid (their roofs are only reachable with a jetpack, rocket boots or the hook)
   for(let a=0,n=0;a<3000&&n<(MAP.towers||0);a++){const i=2+Math.floor(R()*(N-6)),j=2+Math.floor(R()*(N-6));let ok=true;
     for(let jj=j-1;jj<j+3&&ok;jj++)for(let ii=i-1;ii<i+3;ii++)if(TILE[ii+jj*N]!==0){ok=false;break;}
     if(ok){for(let jj=j;jj<j+2;jj++)for(let ii=i;ii<i+2;ii++)TILE[ii+jj*N]=3;addOb({t:'box',x:i*T+8,y:j*T+8,w:2*T-16,d:2*T-16,z0:0,h:260+Math.floor(R()*200),col:['#ff6fae','#43c6ff','#ffcb1f','#7be495','#9b6bff','#ff7b1c'][n%6],wall:true,tower:true});n++;}}
-  for(let a=0,n=0;a<3000&&n<more(58*(MAP.treeMul??1));a++){const x=R()*WORLD,y=R()*WORLD;if(free(x,y,18)){addOb({t:'cyl',x,y,r:MAP.tree==='antenna'?14:16,z0:0,h:220,kind:'tree',v:Math.floor(R()*3)});n++;}}
-  for(let a=0,n=0;a<3000&&n<more(24);a++){const x=R()*WORLD,y=R()*WORLD,r=18+R()*10;if(free(x,y,r)){addOb({t:'cyl',x,y,r,z0:0,h:Math.round(r*1.35),kind:'rock',v:R()});n++;}}
-  for(let a=0,n=0;a<3000&&n<more(7);a++){const x=R()*WORLD,y=R()*WORLD;if(!isBad(x,y)&&!inBuilding(x,y,60)&&free2(x,y,40)){PADS.push({x,y});n++;}}
-  for(let a=0,n=0;a<3000&&n<more(10);a++){const x=R()*WORLD,y=R()*WORLD;if(free(x,y,20)){CHEST_SPOTS.push({x,y});n++;}}
+  for(let a=0,n=0;a<9000&&n<more(58*(MAP.treeMul??1)*WM('trees'));a++){const x=R()*WORLD,y=R()*WORLD;if(free(x,y,18)){addOb({t:'cyl',x,y,r:MAP.tree==='antenna'?14:16,z0:0,h:220,kind:'tree',v:Math.floor(R()*3)});n++;}}
+  for(let a=0,n=0;a<9000&&n<more(24*WM('rocks'));a++){const x=R()*WORLD,y=R()*WORLD,r=18+R()*10;if(free(x,y,r)){addOb({t:'cyl',x,y,r,z0:0,h:Math.round(r*1.35),kind:'rock',v:R()});n++;}}
+  for(let a=0,n=0;a<9000&&n<more(7*WM('pads'));a++){const x=R()*WORLD,y=R()*WORLD;if(!isBad(x,y)&&!inBuilding(x,y,60)&&free2(x,y,40)){PADS.push({x,y});n++;}}
+  for(let a=0,n=0;a<9000&&n<more(10*WM('chests'));a++){const x=R()*WORLD,y=R()*WORLD;if(free(x,y,20)){CHEST_SPOTS.push({x,y});n++;}}
   hospIsle();
   furnishAll(); // furniture inside the buildings (interiors module)
   genRails(); // grind rails beside the main roads (hoverboard module)
@@ -2374,7 +2378,12 @@ const RED_T=['#ff7b1c','#c0392b','#ff5f5f','#d35400','#ff8f6b','#b03a2e','#e74c3
 const BASES={red:{x:420*K,y:1980*K},blue:{x:1980*K,y:420*K}}; // team bases in opposite corners (design units × K)
 const LEGS=['#2b2f3a','#1f4fa3','#6b4a2b','#3d3d3d','#7a1f1f','#2e7d32'];
 const SR=[1750,1000,620,340,160,30].map(r=>r*K),SHR=[[.15,.30],[.40,.52],[.60,.70],[.76,.88],[.90,1.0]],SDPS=[3,5,7,10,14,18];
-const opts={len:3,bots:8,diff:'easy',map:'meadow',mode:'royale',storm:'on',rule:'kills',squad:'solo'};
+const opts={len:3,bots:8,diff:'easy',map:'meadow',mode:'royale',storm:'on',rule:'kills',squad:'solo',world:{}};
+// the world sliders (Match options): how much of each thing the island gets, in percent (100 = normal, 0 = none, 300 = three times as many).
+// The host's choice goes to everyone in multiplayer with the match start, so every player builds the same island.
+const WORLD_KEYS=[['trees','🌳 Trees'],['rocks','🪨 Rocks'],['pads','🟡 Bounce pads'],['chests','🧰 Chests'],['loot','🎁 Loot on the ground'],['cars','🚗 Cars and mechs']];
+const WM=k=>clamp(Math.round(+((opts.world||{})[k]??100)||0),0,300)/100;
+const worldKey=map=>map+':'+['trees','rocks','pads','chests'].map(WM).join(',');
 let G=null;
 const isEnemy=(a,b)=>a!==b&&!(a.team&&a.team===b.team);
 const GRAV=()=>MAP.lowG?420:980;
@@ -2413,7 +2422,7 @@ const lootItem=(table,wt,x,y,delay=0)=>{const id=pick(table);return makeItem(id,
 
 function newGame(){
   if(opts.mode==='school'&&(MAPS[opts.map].dark||MAPS[opts.map].stars))opts.map='meadow'; // (Flight School needs a landing strip: not in the cave or space)
-  if(MAP_ID!==opts.map||WRECKED){genMap(opts.map);buildWorld();WRECKED=false;} // (a boss mech wrecked the island last match: build it fresh)
+  if(MAP_ID!==opts.map||WRECKED||WORLD_KEY!==worldKey(opts.map)){genMap(opts.map);buildWorld();WRECKED=false;} // (a boss mech wrecked the island last match: build it fresh)
   if(G)cleanupGame();
   for(const o of OB.filter(o=>o.built))removeOb(o);
   const mode=opts.mode,bus=mode==='royale';
@@ -2432,9 +2441,9 @@ function newGame(){
   else{for(let k=0;k<opts.bots;k++)G.chars.push(makeChar(names[k],TORSO[k%TORSO.length],false));const placed=[];for(const c of G.chars){const s=freeSpot(WORLD/2,WORLD/2,WORLD*0.42,280,placed);c.x=s.x;c.y=s.y;c.z=groundAt(s.x,s.y,10);placed.push(c);}}
   for(const c of G.chars)buildCharModel(c);
   if(MODE().noLoot)G.chests=[];else{
-  for(let k=0;k<Math.round(36*K);k++){const s=freeSpot(WORLD/2,WORLD/2,WORLD*0.5,60,G.items);G.items.push(makeItem(pick(FLOOR_LOOT),s.x,s.y));}
-  for(let k=0;k<Math.round(7*K);k++){const s=freeSpot(WORLD/2,WORLD/2,WORLD*0.5,60,G.items);G.items.push(makeItem('heart',s.x,s.y));}
-  for(let k=0;k<Math.round(12*K);k++){const s=freeSpot(WORLD/2,WORLD/2,WORLD*0.5,60,G.items);G.items.push(makeItem('bricks',s.x,s.y));}spawnGadgetLoot();}
+  for(let k=0;k<Math.round(36*K*WM('loot'));k++){const s=freeSpot(WORLD/2,WORLD/2,WORLD*0.5,60,G.items);G.items.push(makeItem(pick(FLOOR_LOOT),s.x,s.y));} // (the loot slider)
+  for(let k=0;k<Math.round(7*K*WM('loot'));k++){const s=freeSpot(WORLD/2,WORLD/2,WORLD*0.5,60,G.items);G.items.push(makeItem('heart',s.x,s.y));}
+  for(let k=0;k<Math.round(12*K*WM('loot'));k++){const s=freeSpot(WORLD/2,WORLD/2,WORLD*0.5,60,G.items);G.items.push(makeItem('bricks',s.x,s.y));}spawnGadgetLoot();}
   if(!MODE().noCars)spawnCars();
   if(mode==='zombie'){for(let k=0;k<4;k++){const a=k*TAU/4;G.items.push(makeItem(['bat','pistol','sword','chicken'][k],p.x+Math.cos(a)*70,p.y+Math.sin(a)*70));}}
   spawnLootSpecials();
@@ -3306,7 +3315,7 @@ function carModel(col){const g=new THREE.Group();
     const h=new THREE.Mesh(GEO.boxC,mat('#c5ccd6'));h.scale.set(7.6,12,3);w.add(h);g.add(w);wheels.push(w);}
   g.userData.wheels=wheels;scene.add(g);return g;}
 function spawnCars(){G.cars=[];
-  for(let n=0,a=0;n<7&&a<500;a++){let x,y,ang;
+  for(let n=0,a=0;n<Math.round(7*WM('cars'))&&a<500*Math.max(1,WM('cars'));a++){let x,y,ang; // (the Cars and mechs slider)
     if(a<300){const along=Math.random()<0.5,t=rand(150,WORLD-150);if(along){x=t;y=15*T+T/2+rand(-12,12);ang=Math.random()<.5?0:Math.PI;}else{x=15*T+T/2+rand(-12,12);y=t;ang=Math.random()<.5?Math.PI/2:-Math.PI/2;}}
     else{const s=freeSpot(WORLD/2,WORLD/2,WORLD*0.45,0,null);x=s.x;y=s.y;ang=Math.random()*TAU;}
     if(pointBlocked(x,y,36)||isBad(x,y)||inBuilding(x,y,40)||tileAt(x,y)===3)continue; // (3: a building, or a Construction Site tower)
@@ -3411,7 +3420,7 @@ function vehBits(kind,col){const mega=kind==='mega',mech=kind==='mech'||kind==='
   return{kind:mech?'mech':plane||boat||board||cat||heli||ft||bump||mix?kind:'car',boss,mega,r:mech?MECH.r*s:plane?36:boat?32:board?16:cat?26:heli?34:ft?30:bump?22:mix?28:24,h:mech?MECH.h*s:plane?30:boat?24:board?14:cat?40:heli?40:ft?40:bump?22:mix?40:28,seat:mech?MECH.seat*s:cat?16:heli?10:ft?12:bump?6:5,hp,maxHp:hp,m:mech?mechModel(col,boss,s):plane?planeModel(col):boat?boatModel(col):board?boardModel(col):cat?catapultModel(col):heli?heliModel(col):ft?truckModel(col):bump?bumperModel(col):mix?mixerModel(col):carModel(col)};} // (the helicopter and fire truck: Rescue Squad)
 function newVehicle(x,y,ang,col,kind){return{x,y,z:groundAt(x,y,10),vz:0,ang,speed:0,vx:0,vy:0,steer:0,driver:null,col,home:{x,y,ang},dead:false,respawnAt:0,onGround:true,padCd:0,wheelRot:0,walkT:0,cd:0,...vehBits(kind,col)};}
 const MECH_COLS=['#7d8796','#ff7b1c','#1f6fd6','#3aa845'];
-function spawnMechs(){const want=Math.round(2*K);
+function spawnMechs(){const want=Math.round(2*K*WM('cars'));
   for(let n=0,a=0;n<want&&a<400;a++){const s=freeSpot(rand(WORLD*0.12,WORLD*0.88),rand(WORLD*0.12,WORLD*0.88),300,0,null);
     if(pointBlocked(s.x,s.y,MECH.r+10)||isBad(s.x,s.y)||inBuilding(s.x,s.y,50)||G.cars.some(c=>Math.hypot(c.x-s.x,c.y-s.y)<500))continue;
     G.cars.push(newVehicle(s.x,s.y,Math.random()*TAU,MECH_COLS[n%MECH_COLS.length],'mech'));n++;}}
@@ -5678,9 +5687,16 @@ function drawMini(){
 /* ================= screens ================= */
 const radioVal=n=>document.querySelector(`input[name=${n}]:checked`).value;
 const cap=s=>s[0].toUpperCase()+s.slice(1);
-function readOpts(){opts.len=+radioVal('len');opts.bots=+$('bots').value;opts.diff=radioVal('diff');opts.map=radioVal('map');opts.mode=radioVal('mode');opts.storm=radioVal('storm');opts.rule=radioVal('rule');opts.squad=radioVal('squad');opts.drop=radioVal('drop')||'normal';store.set('bbr3d-opts',opts);}
+function readOpts(){opts.len=+radioVal('len');opts.bots=+$('bots').value;opts.diff=radioVal('diff');opts.map=radioVal('map');opts.mode=radioVal('mode');opts.storm=radioVal('storm');opts.rule=radioVal('rule');opts.squad=radioVal('squad');opts.drop=radioVal('drop')||'normal';opts.world=worldRead();store.set('bbr3d-opts',opts);}
+// the island sliders (Match options): 0 to 300 percent in steps of 25
+const worldWord=v=>v===0?'None':v<100?'Fewer':v===100?'Normal':v<=200?'More':'Lots';
+function worldRead(){const o={};for(const[k]of WORLD_KEYS){const el=$('w_'+k);o[k]=el?+el.value:100;}return o;}
+function worldShow(){for(const[k]of WORLD_KEYS){const el=$('w_'+k),out=$('wo_'+k);if(el&&out)out.textContent=worldWord(+el.value)+' ('+el.value+'%)';}}
+$('worldSliders').innerHTML=WORLD_KEYS.map(([k,n])=>`<label class="wrow" for="w_${k}"><span>${n}</span><b id="wo_${k}"></b></label><input type="range" id="w_${k}" min="0" max="300" step="25" value="100">`).join('');
+$('worldSliders').addEventListener('input',()=>{worldShow();opts.world=worldRead();store.set('bbr3d-opts',opts);});
+$('worldReset').addEventListener('click',()=>{for(const[k]of WORLD_KEYS)$('w_'+k).value=100;worldShow();opts.world=worldRead();store.set('bbr3d-opts',opts);});
 function applyOpts(){[['len',opts.len],['diff',cap(opts.diff)],['map',cap(opts.map)],['mode',cap(opts.mode)],['storm',cap(opts.storm)],['rule',cap(opts.rule)],['squad',cap(opts.squad)],['drop',cap(opts.drop||'normal')]].forEach(([n,v])=>{const el=$(n+v);if(el)el.checked=true;});
-  $('bots').value=opts.bots;$('botsOut').textContent=opts.bots;syncMenu();}
+  $('bots').value=opts.bots;$('botsOut').textContent=opts.bots;for(const[k]of WORLD_KEYS){const el=$('w_'+k);if(el)el.value=clamp(Math.round((+((opts.world||{})[k]??100)||0)/25)*25,0,300);}worldShow();syncMenu();}
 function syncMenu(){const mode=radioVal('mode'),map=radioVal('map'),stormOff=mode==='royale'&&radioVal('storm')==='off';
   $('modeDesc').textContent=stormOff?'Ride the battle bus in, then bash away with no storm. Everyone respawns until the timer runs out!':MODES[mode].desc;$('mapDesc').textContent=MAPS[map].desc;
   $('optStorm').hidden=mode!=='royale';$('optSquad').hidden=mode!=='royale';$('optRule').hidden=!stormOff;$('ruleDesc').textContent=RULES[radioVal('rule')].sub;
@@ -6319,10 +6335,10 @@ function renderMpLobby(){const inRoom=!!NET.R,L=NET.lob,host=NET.role==='host';$
 function netHostStart(){if(NET.role!=='host')return;readOpts();const L=NET.lob;Object.assign(L,{bots:opts.bots,diff:opts.diff,len:opts.len,storm:opts.storm});
   const ps=netPlayers().slice(0,L.max||8),kind=netTeamKind(L.mode),useTeams=kind!=='coop'&&!(kind==='free'&&L.tm==='ffa');
   const roster=ps.map(p=>({peer:p.peer,name:cleanName(p.presence.bonk.name)||'Player',look:p.presence.bonk.look||null,team:kind==='coop'?'hero':useTeams?(L.teams[p.peer]||'r'):null,host:p.presence.bonk.role==='host'}));
-  const start={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),mode:L.mode,map:L.map,bots:L.bots,diff:L.diff,len:L.len,storm:L.storm,roster};
+  const start={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),mode:L.mode,map:L.map,bots:L.bots,diff:L.diff,len:L.len,storm:L.storm,wo:Object.assign({},opts.world||{}),roster};
   L.start=start;NET.startId=start.id;NET.R.presence({lob:L});netStartGame(start);}
 // set up the match from the roster (the host runs it; Phase 4 lets the other players see and play it)
-function netStartGame(S){netLog('match '+S.id+' starting: '+S.mode+' on '+S.map+', '+S.roster.length+' players');S.roster.forEach(r=>r.name=cleanName(r.name)||'Player');Object.assign(opts,{mode:S.mode,map:S.map,bots:Math.max(S.bots,S.roster.length-1),diff:S.diff,len:S.len,storm:S.storm,squad:'solo',rule:opts.rule});
+function netStartGame(S){netLog('match '+S.id+' starting: '+S.mode+' on '+S.map+', '+S.roster.length+' players');S.roster.forEach(r=>r.name=cleanName(r.name)||'Player');Object.assign(opts,{mode:S.mode,map:S.map,bots:Math.max(S.bots,S.roster.length-1),diff:S.diff,len:S.len,storm:S.storm,squad:'solo',rule:opts.rule,world:Object.assign({},S.wo||{})}); // (the host's island sliders)
   applyOpts();for(const s of['menu','mplobby'])$(s).hidden=true;startGame();G.net={role:NET.role==='host'?'host':'client',start:S,peers:{}};const me=netMe(),mine=S.roster.find(r=>r.peer===(me&&me.peer));
   const p=G.player;if(mine){p.name=mine.name;p.peer=mine.peer;}
   if(NET.role==='host'){const bots=G.chars.filter(c=>c!==p&&!c.zombie&&c.ai);let bi=0;
