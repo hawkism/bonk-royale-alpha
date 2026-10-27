@@ -263,6 +263,11 @@ body.touch #prompt{bottom:auto;top:74px;white-space:normal;max-width:min(420px,4
 @media (max-width:900px){.wcol{margin:auto}.wgrid{grid-template-columns:repeat(3,1fr)}}
 @media (max-height:520px){.wl1 span{font-size:3.4rem}.wl2 span{font-size:2.1rem}.wcol{gap:8px}#wPlay{font-size:2rem;padding:8px 46px 6px}.wtag{display:none}.wbtn i{font-size:1.3rem}}
 @media (prefers-reduced-motion:reduce){.wl1 span,.wl2 span,.wl2 em,#wPlay,.wrays,#wFloat span{animation:none}}
+/* the walkable lobby (0.6): while you walk round the plaza the menus fade away; a Menu button and a hint show instead */
+#welcome .wcol,#wFloat,#lobbyBar{transition:opacity .35s}
+body.hubwalk #welcome .wcol,body.hubwalk #wFloat,body.hubwalk #lobbyBar{opacity:0;pointer-events:none}
+#hubMenu{position:fixed;top:14px;right:16px;z-index:5}
+#hubHint{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:rgba(27,34,53,.82);color:#fff;font-weight:900;border-radius:999px;padding:8px 16px;text-align:center;max-width:calc(100% - 32px)}
 /* @module src/css/05-play-screen.css: The play screen: mode cards and map tiles. */
 /* ---------- play screen: mode cards + map tiles ---------- */
 .seg.modes,.seg.maps{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
@@ -389,6 +394,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
 
 <div id="welcome" class="screen">
   <div id="wFloat" aria-hidden="true"></div>
+  <button class="brick small" id="hubMenu" type="button" hidden>☰ Menu</button><div id="hubHint">🚶 Walk with W A S D or tap the ground · walk into the 🎟️ shop, the 👕 locker or onto ▶ PLAY</div>
   <div id="trackBadge" hidden></div>
   <div class="wcol">
     <div class="wlogo" role="img" aria-label="Bonk Royale 3D"><div class="wrays"></div>
@@ -2158,15 +2164,18 @@ function rebuildLobby(){if(lobbyChar)removeModel(lobbyChar);lobbyChar=makeChar('
 function lobbyFrame(dt,t){if(!lobbyChar)rebuildLobby();const c=lobbyChar;
   if(lobbyMap!==MAP_ID||!c.m){lobbyMap=MAP_ID;let s=null;const fx0=Math.cos(-Math.PI/4),fy0=Math.sin(-Math.PI/4);
     for(let k=0;k<60&&!s;k++){const x=k<30?300+k*60:1240,y=k<30?1240:300+(k-30)*60;const cam={x:x+fx0*110-fy0*30,y:y+fy0*110+fx0*30};
-      if(!pointBlocked(x,y,40)&&!isBad(x,y)&&!pointBlocked(cam.x,cam.y,50)&&segClearCar({x,y},cam)&&!pointBlocked(x-fy0*60,y+fx0*60,30))s={x,y};}
-    s=s||freeSpot(WORLD/2+60,WORLD/2+60,260,0,null);c.x=s.x;c.y=s.y;c.z=groundAt(s.x,s.y,10);if(c.m)removeModel(c);buildCharModel(c);}
+      if(!pointBlocked(x,y,40)&&!isBad(x,y)&&!pointBlocked(cam.x,cam.y,50)&&segClearCar({x,y},cam)&&!pointBlocked(x-fy0*60,y+fx0*60,30)&&hubClear({x,y},fx0,fy0))s={x,y};} // (room for the lobby plaza too)
+    for(let k=0;k<200&&!s;k++){const q=freeSpot(WORLD/2,WORLD/2,WORLD*0.4,0,null);if(hubClear(q,fx0,fy0))s=q;}
+    s=s||freeSpot(WORLD/2+60,WORLD/2+60,260,0,null);hubBuild(s,fx0,fy0);c.x=s.x;c.y=s.y;c.z=groundAt(s.x,s.y,10);if(c.m)removeModel(c);buildCharModel(c);}
   {const ww=(!$('locker').hidden&&lockTab==='wrap')||(!$('shop').hidden&&shopSel&&shopSel.startsWith('wrap:'));c.slots[0]={id:ww?'laser':'fists'};}
-  const m=c.m,g=m.g;g.visible=true;g.position.set(c.x,c.z,c.y);g.rotation.set(0,Math.PI/2-(-Math.PI/4)+Math.sin(t*0.4)*0.25,0);setHeld(c);
-  lobbyT+=dt;const e=lobbyT%12;m.armL.rotation.z=m.armR.rotation.z=m.legL.rotation.z=m.legR.rotation.z=m.body.rotation.z=0;m.legL.rotation.x=m.legR.rotation.x=0;
+  if(HUB.g)HUB.g.visible=true;const walking=hubWalk(c,dt,t,Math.cos(-Math.PI/4),Math.sin(-Math.PI/4)); // (the walkable lobby: lobby-hub module)
+  const m=c.m,g=m.g;g.visible=true;g.position.set(c.x,c.z,c.y);g.rotation.set(0,walking?Math.PI/2-c.hubFace:Math.PI/2-(-Math.PI/4)+Math.sin(t*0.4)*0.25,0);setHeld(c);
+  if(walking)lobbyT=8;lobbyT+=dt;const e=walking?-1:lobbyT%12;m.armL.rotation.z=m.armR.rotation.z=m.legL.rotation.z=m.legR.rotation.z=m.body.rotation.z=0;m.legL.rotation.x=m.legR.rotation.x=0;
   if(e<4){m.armL.rotation.x=-Math.PI/2+Math.sin(e*8)*1.3;m.armR.rotation.x=-Math.PI/2-Math.sin(e*8)*1.3;m.armL.rotation.z=-0.5;m.armR.rotation.z=0.5;m.body.rotation.z=Math.sin(e*4)*0.22;}
   else if(e<8){const s=(Math.sin(e*7)+1)/2;m.armL.rotation.x=m.armR.rotation.x=0;m.armL.rotation.z=-0.3-2.5*s;m.armR.rotation.z=0.3+2.5*s;m.legL.rotation.z=-0.35*s;m.legR.rotation.z=0.35*s;g.position.y+=s*7;}
+  else if(walking){const sw=Math.sin(c.walk)*0.7;m.legL.rotation.x=sw;m.legR.rotation.x=-sw;m.armL.rotation.x=-sw*0.8;m.armR.rotation.x=sw*0.8;}
   else{m.armL.rotation.x=-0.2;m.armR.rotation.x=-0.3+Math.sin(t*2)*0.1;g.position.y+=Math.sin(t*2)*0.6;}
-  const ang=-Math.PI/4,fx=Math.cos(ang),fy=Math.sin(ang),cx=c.x+fx*110-fy*30,cy=c.y+fy*110+fx*30;camera.position.set(cx,c.z+44,cy);{const dx=c.x-cx,dy=c.y-cy,dl=Math.hypot(dx,dy)||1,rx=-dy/dl,ry=dx/dl,k=innerWidth>900?52:0;camera.lookAt(c.x+rx*k,c.z+28,c.y+ry*k);}
+  const hw=document.body.classList.contains('hubwalk'),D=hw?200:110,ang=-Math.PI/4,fx=Math.cos(ang),fy=Math.sin(ang),cx=c.x+fx*D-fy*30,cy=c.y+fy*D+fx*30;camera.position.set(cx,c.z+(hw?110:44),cy);{const dx=c.x-cx,dy=c.y-cy,dl=Math.hypot(dx,dy)||1,rx=-dy/dl,ry=dx/dl,k=innerWidth>900&&!hw?52:0;camera.lookAt(c.x+rx*k,c.z+28,c.y+ry*k);} // (walking round the lobby: further back and higher, you in the middle)
   sun.position.set(c.x+300,700,c.y+200);sun.target.position.set(c.x,0,c.y);lobbyFlair(t,c);
   // the pet waits beside you on the welcome screen: a bit to your right (towards the middle of the screen) and towards the camera
   if(c.m.pet){const dx=c.x-cx,dy=c.y-cy,dl=Math.hypot(dx,dy)||1;c.face=-Math.PI/4;movePet(c,dt,t,true,{x:c.x-dy/dl*34-dx/dl*22,y:c.y+dx/dl*34-dy/dl*22});}
@@ -2184,6 +2193,65 @@ document.addEventListener('click',e=>{const tb=e.target.closest('#lockTabs .ltab
   const li=e.target.closest('#lockGrid .litem');if(li&&!li.disabled&&lockTab==='hangar'){hangarPick(li.dataset.sec,li.dataset.id);return;}
   if(li&&!li.disabled&&lockTab==='gadget'){gadToggle(li.dataset.id);renderLocker();sfx('pickup');return;}
   if(li&&!li.disabled){PROG.locker[lockTab]=li.dataset.id;saveProg();renderLocker();rebuildLobby();sfx('pickup');}});
+// @module src/js/11b-lobby-hub.js: The walkable lobby: you spawn in a little plaza on the welcome screen and walk around it (WASD, the arrows, or tap the ground); walk into the Ticket Shop, the Locker tent or onto the PLAY pad to open them.
+// Main: HUB, hubPlace, hubBuild, hubWalk, hubTap
+// See also: lobby-locker (lobbyFrame calls hubWalk), ticket-shop (openShop), menus (showScreen), visuals (the hub hides in a match)
+/* ================= the lobby hub (0.6) =================
+   The welcome screen is a place: your character stands in a little plaza next to the island you picked, and you can walk
+   around. Three places: the Ticket Shop (a striped booth: walk in its door to shop), the Locker (a tent: walk in to change
+   your outfit) and the PLAY pad (a glowing ring: step on it to pick a game). After a match you spawn back in the plaza.
+   It is only on the welcome screen, and only for you (nothing here is sent to other players). */
+const HUB={g:null,map:'',spawn:null,places:[],walkTo:null,cool:0,reset:true,hint:false};
+// where everything goes: behind you (seen from the camera): the shop on one side, the locker on the other, the PLAY pad in the middle further back
+function hubPlace(s,fx,fy){const rx=-fy,ry=fx,P=(b,r)=>({x:s.x-fx*b+rx*r,y:s.y-fy*b+ry*r});
+  return{shop:P(240,-170),locker:P(240,170),play:P(340,0),face:Math.atan2(fy,fx)};}
+const hubClear=(s,fx,fy)=>{const p=hubPlace(s,fx,fy);return!onRunway(s.x,s.y,80)&&[p.shop,p.locker,p.play].every(q=>!onRunway(q.x,q.y,80)&&!pointBlocked(q.x,q.y,75)&&!isBad(q.x,q.y)&&!inBuilding(q.x,q.y,80)&&q.x>80&&q.y>80&&q.x<WORLD-80&&q.y<WORLD-80&&[0.25,0.5,0.75].every(f=>!pointBlocked(lerp(s.x,q.x,f),lerp(s.y,q.y,f),30)));}; // (and a clear walk from the spawn to each place)
+function hubSign(text,col){const cv=document.createElement('canvas');cv.width=512;cv.height=128;const c=cv.getContext('2d');c.font='bold 64px "Lilita One", sans-serif';c.textAlign='center';c.textBaseline='middle';
+  c.lineWidth=14;c.strokeStyle='#1b2235';c.strokeText(text,256,68);c.fillStyle=col;c.fillText(text,256,68);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),depthWrite:false}));s.scale.set(150,37.5,1);return s;}
+function hubBuild(s,fx,fy){if(HUB.g)scene.remove(HUB.g);const g=new THREE.Group(),p=hubPlace(s,fx,fy),toward=q=>Math.atan2(s.x-q.x,s.y-q.y);HUB.spawn={x:s.x,y:s.y};
+  const B=(par,col,x,y,zz,w,h,d,em)=>{const m=new THREE.Mesh(GEO.boxC,em?basic(col):mat(col));m.position.set(x,y,zz);m.scale.set(w,h,d);m.castShadow=true;par.add(m);return m;};
+  // the Ticket Shop: an orange booth with a striped awning, a counter and a door facing the plaza
+  {const sh=new THREE.Group();sh.position.set(p.shop.x,groundAt(p.shop.x,p.shop.y,10),p.shop.y);sh.rotation.y=toward(p.shop);
+    B(sh,'#ff7b1c',0,40,-10,120,80,70);B(sh,'#ffcb1f',0,84,-10,128,8,78);for(let k=0;k<6;k++)B(sh,k%2?'#ffffff':'#e2312b',-50+k*20,74,32,20,4,26);
+    B(sh,'#2b1a3a',0,26,25.5,34,52,2);B(sh,'#ffcb1f',0,54,26,40,4,3,1);B(sh,'#8a5a2b',-40,22,30,30,8,14);B(sh,'#8a5a2b',40,22,30,30,8,14);
+    const sg=hubSign('🎟️ TICKET SHOP','#ffcb1f');sg.position.set(0,118,0);sh.add(sg);g.add(sh);}
+  // the Locker: a blue tent with its flap open
+  {const lk=new THREE.Group();lk.position.set(p.locker.x,groundAt(p.locker.x,p.locker.y,10),p.locker.y);lk.rotation.y=toward(p.locker);
+    const t=new THREE.Mesh(GEO.cone,mat('#1f6fd6'));t.scale.set(110,95,110);lk.add(t);const fl=new THREE.Mesh(GEO.boxC,mat('#1b2235'));fl.scale.set(34,46,2);fl.position.set(0,23,46);lk.add(fl);
+    B(lk,'#ffcb1f',0,98,0,6,10,6);const sg=hubSign('👕 LOCKER','#9fe3ff');sg.position.set(0,128,0);lk.add(sg);g.add(lk);}
+  // the PLAY pad: a glowing ring on the ground with an arrow bobbing over it
+  {const pl=new THREE.Group();pl.position.set(p.play.x,groundAt(p.play.x,p.play.y,10)+1,p.play.y);const ring=new THREE.Mesh(new THREE.TorusGeometry(46,6,8,40).rotateX(Math.PI/2),basic('#ffcb1f'));pl.add(ring);
+    const disc=new THREE.Mesh(GEO.cylC,new THREE.MeshBasicMaterial({color:0x5cff7a,transparent:true,opacity:0.45}));disc.scale.set(88,1,88);pl.add(disc);
+    const ar=new THREE.Mesh(new THREE.ConeGeometry(16,34,4).rotateX(Math.PI),basic('#5cff7a'));ar.position.y=60;pl.add(ar);const sg=hubSign('▶ PLAY','#5cff7a');sg.position.set(0,98,0);pl.add(sg);pl.userData.ar=ar;g.add(pl);HUB.pad=pl;}
+  HUB.places=[{id:'shop',x:p.shop.x+Math.sin(toward(p.shop))*50,y:p.shop.y+Math.cos(toward(p.shop))*50,r:34,box:{x:p.shop.x,y:p.shop.y,r:62}},
+    {id:'locker',x:p.locker.x+Math.sin(toward(p.locker))*46,y:p.locker.y+Math.cos(toward(p.locker))*46,r:32,box:{x:p.locker.x,y:p.locker.y,r:48}},{id:'play',x:p.play.x,y:p.play.y,r:40}];
+  scene.add(g);HUB.g=g;}
+// walking mode: the welcome menus fade away so the plaza fills the screen (a Menu button and a hint show instead)
+function hubMode(on){if(document.body.classList.contains('hubwalk')===on)return;document.body.classList.toggle('hubwalk',on);$('hubMenu').hidden=!on;}
+$('hubMenu').addEventListener('click',()=>hubMode(false));
+// a tap or click on the ground on the welcome screen: walk there
+function hubTap(e){if(G||curScreen!=='welcome'||!lobbyChar||!HUB.g)return;const r=renderer.domElement.getBoundingClientRect(),v=new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
+  const rc=new THREE.Raycaster();rc.setFromCamera(v,camera);const pt=new THREE.Vector3();if(rc.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-lobbyChar.z),pt))HUB.walkTo={x:pt.x,y:pt.z};}
+renderer.domElement.addEventListener('pointerdown',hubTap);
+$('welcome').addEventListener('pointerdown',e=>{if(e.target===$('welcome')||e.target.id==='wFloat')hubTap(e);}); // (the welcome screen covers the game view: a tap on its empty space is a tap on the ground)
+// every lobby frame on the welcome screen: walk (keys or the tapped spot), face the way you go, swing your legs, and open a place you walk into
+function hubWalk(c,dt,t,fx,fy){if(HUB.reset&&HUB.spawn){HUB.reset=false;c.x=HUB.spawn.x;c.y=HUB.spawn.y;c.z=groundAt(c.x,c.y,10);HUB.walkTo=null;}
+  if(HUB.pad)HUB.pad.userData.ar.position.y=60+Math.sin(t*3)*8;HUB.cool=Math.max(0,HUB.cool-dt);
+  if(curScreen!=='welcome')return false;
+  {const h=$('hubHint'),txt=TOUCH.on?'🚶 Tap the ground to walk there · walk into the 🎟️ shop, the 👕 locker or onto ▶ PLAY':'🚶 Walk with W A S D or click the ground · walk into the 🎟️ shop, the 👕 locker or onto ▶ PLAY';if(h.textContent!==txt)h.textContent=txt;}
+  // the camera looks along -f: W walks away from it, S toward it, A / D sideways
+  const K=k=>keys.has(k),fw=((K('w')||K('arrowup'))?1:0)-((K('s')||K('arrowdown'))?1:0),sd=((K('d')||K('arrowright'))?1:0)-((K('a')||K('arrowleft'))?1:0);
+  let mx=-fx*fw+fy*sd,my=-fy*fw-fx*sd;if(mx||my)HUB.walkTo=null;
+  else if(HUB.walkTo){const dx=HUB.walkTo.x-c.x,dy=HUB.walkTo.y-c.y,d=Math.hypot(dx,dy);if(d<10)HUB.walkTo=null;else{mx=dx/d;my=dy/d;}}
+  const L=Math.hypot(mx,my);if(!L)return false;mx/=L;my/=L;hubMode(true);const sp=230*dt;
+  const solid=(x,y)=>pointBlocked(x,y,14)||isBad(x,y)||HUB.places.some(q=>q.box&&Math.hypot(x-q.box.x,y-q.box.y)<q.box.r);
+  // something in the way (a tree, a rock): slide round it, trying a little to each side before giving up
+  let moved=false;for(const a of[0,0.5,-0.5,1,-1,1.5,-1.5]){const ca=Math.cos(a),sa=Math.sin(a),dx=mx*ca-my*sa,dy=mx*sa+my*ca,x=c.x+dx*sp,y=c.y+dy*sp;if(!solid(x,y)){c.x=x;c.y=y;mx=dx;my=dy;moved=true;break;}}
+  if(!moved)HUB.walkTo=null;
+  c.z=groundAt(c.x,c.y,10);c.hubFace=Math.atan2(my,mx);c.walk=(c.walk||0)+dt*12;
+  if(!HUB.cool)for(const q of HUB.places)if(Math.hypot(c.x-q.x,c.y-q.y)<q.r){HUB.cool=1.2;HUB.walkTo=null;const bx=c.x-mx*70,by=c.y-my*70;if(!solid(bx,by)){c.x=bx;c.y=by;}sfx('pickup');
+    hubMode(false);if(q.id==='shop')openShop();else if(q.id==='locker'){showScreen('locker');renderLocker();}else showScreen('menu');break;}
+  return true;}
 // @module src/js/12-models.js: 3D models: characters (from their outfit), held weapons, rescue drones, the battle bus.
 // Main: buildCharModel, setHeld, removeModel, droneModel, busModel
 // See also: cosmetics, visuals
@@ -4144,6 +4212,8 @@ XM.ctf={name:'Capture the Flag',goal:3,
   end(p,b){b.xm=b.xm||{};b.xm.ctf=b.xm.ctf||{wins:0};if(G.win)b.xm.ctf.wins++;
     return{title:G.draw?"It's a tie!":(G.score.red>G.score.blue?'Red':'Blue')+' team wins!',sub:'Capture the Flag',cls:G.win?'':G.draw?'purple':'blue',
       stats:[[G.score.red+' – '+G.score.blue,'Captures'],[p.kos,'Your KOs'],[p.rescues,'Drone rescues'],[fmt(G.mt),'Match time']]};}};
+// F52: maps with long, twisty race tracks get more time (bots take about 100 s a lap on the Big City)
+const RACE_LONG={city:2,cave:2};
 XM.race={name:'Car Race',laps:3,
   init(){
     // 8 gates around the map, plus a route between them that bots follow around buildings and trees
@@ -4162,6 +4232,7 @@ XM.race={name:'Car Race',laps:3,
       const car={x,y,z:groundAt(x,y,10),vz:0,ang:dir,speed:0,vx:0,vy:0,steer:0,hp:9999,driver:null,col:colr,home:{x,y,ang:dir},dead:false,respawnAt:0,onGround:true,padCd:0,wheelRot:0,m:carModel(colr),
         next:1,lap:0,lastCp:0,finished:false,stuckT:0,revT:0,maxMul:c.isPlayer?1:({easy:0.8,medium:0.9,hard:0.98}[opts.diff]||0.9)};
       G.cars.push(car);c.x=x;c.y=y;c.z=car.z;c.raceCar=car;enterCar(c,car);});
+    if(RACE_LONG[MAP_ID])G.len=Math.max(G.len,G.len*RACE_LONG[MAP_ID]); // F52: the Big City's and the cave's tracks are much longer: more time to finish the 3 laps
     G.goAt=G.time+4;G.finishers=[];G.yaw=dir;G.pitch=-0.15;G.cdShown=0;announce('Car Race!',`${this.laps} laps. Drive through every glowing gate in order. Get ready...`,3);},
   progress(c){const car=c.raceCar,n=G.cps.length;if(!car)return -1e9;if(car.finished)return 1e7-G.finishers.indexOf(c)*1000;
     const nx=G.cps[car.next];return(car.lap*n+((car.next-1+n)%n))*10000-Math.hypot(car.x-nx.x,car.y-nx.y);},
@@ -5479,6 +5550,7 @@ const tmpV=new THREE.Vector3();
 function syncVisuals(dt){
   const t=G?G.time:performance.now()/1000;
   if(!G){lobbyFrame(dt,t);animateWorld(dt,t,{x:lobbyChar.x,y:lobbyChar.y});return;}
+  if(HUB.g&&HUB.g.visible){HUB.g.visible=false;HUB.reset=true;} // (the lobby plaza is only on the welcome screen; after the match you spawn back in it)
   const p=G.player;
   if(HOSP&&HOSP.staff)HOSP.staff.sheet.visible=p.state==='gone'&&!!p.watch; // the sheet over you, in the hospital bed
   // characters
@@ -5799,7 +5871,7 @@ $('muteBtn').addEventListener('click',e=>{setMuted(!AU.muted);e.currentTarget.bl
 // See also: screens, lobby-locker
 /* ================= menus: welcome · play · settings · about · help ================= */
 const SCREENS=['welcome','menu','settings','about','help','locker','shop','mplobby'];let curScreen='welcome',prevScreen='welcome',setFrom='welcome';
-function showScreen(id){for(const s of SCREENS)$(s).hidden=s!==id;if(id){curScreen=id;$('muteBtn').hidden=true;}$('lobbyBar').hidden=!['welcome','menu','locker','shop'].includes(id);$('lobbyBar').classList.remove('open');
+function showScreen(id){if(id!=='welcome'&&typeof hubMode==='function')hubMode(false);for(const s of SCREENS)$(s).hidden=s!==id;if(id){curScreen=id;$('muteBtn').hidden=true;}$('lobbyBar').hidden=!['welcome','menu','locker','shop'].includes(id);$('lobbyBar').classList.remove('open');
   if(id==='welcome'||id==='menu')renderLobbyBar();if(id==='menu')syncMenu();if(id==='mplobby')renderMpLobby();if(id==='profile')renderProfile();
   const f={welcome:'wPlay',menu:'playBtn',settings:'setDone',about:'aboutDone',help:'helpNext'}[id];if(f&&$(f))try{$(f).focus({preventScroll:true});}catch(e){}}
 // welcome: floating emoji
