@@ -414,6 +414,9 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
           <input type="radio" name="mode" id="modeZombie" value="zombie"><label for="modeZombie"><i>🧟</i>Zombie Survival</label>
           <input type="radio" name="mode" id="modeRace" value="race"><label for="modeRace"><i>🏎️</i>Car Race</label>
           <input type="radio" name="mode" id="modeAirrace" value="airrace"><label for="modeAirrace"><i>✈️</i>Plane Race</label>
+          <input type="radio" name="mode" id="modeStunt" value="stunt"><label for="modeStunt"><i>🎢</i>Stunt Course</label>
+          <input type="radio" name="mode" id="modeBalloons" value="balloons"><label for="modeBalloons"><i>🎈</i>Balloon Battle</label>
+          <input type="radio" name="mode" id="modeSchool" value="school"><label for="modeSchool"><i>🎓</i>Flight School</label>
           <input type="radio" name="mode" id="modeFloorlava" value="floorlava"><label for="modeFloorlava"><i>🌋</i>Floor is Lava</label>
           <input type="radio" name="mode" id="modeCrown" value="crown"><label for="modeCrown"><i>👑</i>Capture the Crown</label>
           <input type="radio" name="mode" id="modeCtf" value="ctf"><label for="modeCtf"><i>🚩</i>Capture the Flag</label>
@@ -652,7 +655,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
       <p>Nobody really gets hurt: when you get bonked, a friendly rescue drone carries you away and drops you back in.</p>
       <h3>What's inside</h3>
       <ul>
-        <li>🎮 15 game modes: Battle Royale, Team Battle, Zombie Survival, Car Race, Plane Race, Floor is Lava, Capture the Crown, Capture the Flag, Fort Siege, Rescue Squad, King of the Hill, Build Battle, the Training Room, Mr. Bonk's Challenge Show and the Mega Robot</li>
+        <li>🎮 18 game modes: Battle Royale, Team Battle, Zombie Survival, Car Race, Plane Race, the Stunt Course, Balloon Battle, Flight School, Floor is Lava, Capture the Crown, Capture the Flag, Fort Siege, Rescue Squad, King of the Hill, Build Battle, the Training Room, Mr. Bonk's Challenge Show and the Mega Robot</li>
         <li>🗺️ 13 maps, from Candy Land and a low-gravity Space Station to slippery Frozen Peaks and the Big City</li>
         <li>🔫 20+ weapons with Common to Legendary rarities, plus your very own Mythic Laser Blaster</li>
         <li>🔨 Building and editing, cars, loot llamas, vending machines and squads</li>
@@ -833,7 +836,7 @@ function musicTick(){if(!AU.c||!MUS.g)return;const c=AU.c,now=c.currentTime;
 function musicStart(){if(!AU.c||MUS.g)return;MUS.g=AU.c.createGain();MUS.g.gain.value=0;MUS.g.connect(AU.m);MUS.nextT=AU.c.currentTime+0.1;MUS.timer=setInterval(musicTick,50);}
 // which song fits right now
 function musicPick(){if(!G||G.ended)return'lobby';if(G.mode==='zombie')return'zombie';if(G.mode==='training'||G.mode==='buildbattle')return'lobby';
-  if(G.noRespawn||G.mode==='race'||G.mode==='airrace')return'final';if(G.len<1e8&&G.mode!=='royale'&&G.len-G.mt<30)return'final';if(G.mode==='royale'&&!G.storm&&G.len-G.mt<30)return'final';return'battle';}
+  if(G.noRespawn||G.mode==='race'||AIRISH())return'final';if(G.len<1e8&&G.mode!=='royale'&&G.len-G.mt<30)return'final';if(G.mode==='royale'&&!G.storm&&G.len-G.mt<30)return'final';return'battle';}
 function setMusic(on){MUS.on=on;store.set('bonk-music',on);document.querySelectorAll('input[name="music"]').forEach(r=>r.checked=(r.value==='on')===on);}
 document.querySelectorAll('input[name="music"]').forEach(r=>{r.checked=(r.value==='on')===MUS.on;r.addEventListener('change',()=>{audioInit();musicStart();setMusic(r.value==='on');});});
 // browsers only allow sound after the first tap or key press
@@ -2379,6 +2382,7 @@ const makeItem=(id,x,y,ammo,delay=0,r)=>{const w=WEAPONS[id];r=r??rollRar(id,LOO
 const lootItem=(table,wt,x,y,delay=0)=>{const id=pick(table);return makeItem(id,x,y,undefined,delay,rollRar(id,wt));};
 
 function newGame(){
+  if(opts.mode==='school'&&(MAPS[opts.map].dark||MAPS[opts.map].stars))opts.map='meadow'; // (Flight School needs a landing strip: not in the cave or space)
   if(MAP_ID!==opts.map||WRECKED){genMap(opts.map);buildWorld();WRECKED=false;} // (a boss mech wrecked the island last match: build it fresh)
   if(G)cleanupGame();
   for(const o of OB.filter(o=>o.built))removeOb(o);
@@ -2905,10 +2909,10 @@ function keyAction(k){const p=G.player;if(k==='o'){if(!NET_CTX)setAutopilot(!G.a
   else if(k==='t'){const L=['wood','stone','metal'];G.matSel=L[(L.indexOf(G.matSel)+1)%3];sfx('pickup',p);}
   else if(k==='b')startEmote(p);
   else if(k===' ')playerSpace();
-  else if(k==='r'&&(G.mode==='race'||G.mode==='airrace')&&p.raceCar&&G.time>G.goAt)XM[G.mode].reset(p.raceCar);
-  else if(k==='r'&&G.mode!=='race'&&G.mode!=='airrace'){const s=p.slots[p.cur];if(s&&WEAPONS[s.id].zoom){aimDown=!aimDown;sfx('pickup',p);}else toast('Hold a weapon with a scope (like the Mythic Laser Blaster) and press R to look through it.');}
+  else if(k==='r'&&(G.mode==='race'||AIRISH())&&p.raceCar&&G.time>G.goAt)XM[G.mode].reset(p.raceCar);
+  else if(k==='r'&&G.mode!=='race'&&!AIRISH()){const s=p.slots[p.cur];if(s&&WEAPONS[s.id].zoom){aimDown=!aimDown;sfx('pickup',p);}else toast('Hold a weapon with a scope (like the Mythic Laser Blaster) and press R to look through it.');}
   else if(aimDown&&(k==='='||k==='+'||k==='-')){const s=p.slots[p.cur];if(s&&s.id==='laser'){laserZ=clamp(laserZ+(k==='-'?-1:1),0,2);sfx('pickup',p);}}
-  else if(k==='f'&&(G.mode==='race'||G.mode==='airrace'))toast('No getting out during the race!');
+  else if(k==='f'&&(G.mode==='race'||AIRISH()))toast('No getting out during the race!');
   else if(k==='f'&&p.vehicle&&p.vehicle.boss)toast('Bosses never give up! 👑');
   else if(k==='f'){if(p.vehicle)exitCar(p);else{const car=nearestCar(p);if(car&&p.state==='alive')enterCar(p,car);}}
 }
@@ -2996,7 +3000,7 @@ function stickMove(x,y){const s=TOUCH.stick,R=65*tScale()*TL().g.stick;let dx=x-
 function stickEnd(){TOUCH.stick=null;TOUCH.mx=TOUCH.my=TOUCH.mag=0;TOUCH.sprint=false;['w','a','s','d','shift'].forEach(k=>setVK(k,false));const st=$('tStick');st.classList.remove('live','sprint');st.querySelector('i').style.transform='translate(-50%,-50%)';layoutTouch();}
 // what the pop-up action button does right now (same order the keyboard uses)
 function touchActNow(p){if(!G||G.ended||!p)return null;
-  if(p.vehicle){if(G.mode==='race'||G.mode==='airrace')return p.raceCar&&G.time>G.goAt?{k:'reset',l:G.mode==='race'?'RESET CAR':'RESET PLANE',i:'🔄'}:null;return p.vehicle.boss?null:{k:'exit',l:'GET OUT',i:'🚪'};}
+  if(p.vehicle){if(G.mode==='race'||AIRISH())return p.raceCar&&G.time>G.goAt?{k:'reset',l:G.mode==='race'?'RESET CAR':'RESET PLANE',i:'🔄'}:null;return p.vehicle.boss?null:{k:'exit',l:'GET OUT',i:'🚪'};}
   if(p.state!=='alive')return null;const rv=reviveTarget(p);if(rv)return{k:'revive',l:'REVIVE',i:'➕',hold:1};
   if(p.ride)return{k:'ride',l:'GET OFF',i:'🎢'};
   const ni=nearInteract(p);if(ni)return ni.type==='ride'?{k:'ride',l:'RIDE',i:'🎢'}:ni.type==='llama'?{k:'llama',l:'OPEN',i:'🦙'}:{k:'vend',l:'BUY · '+ni.o.cost.n+' '+ni.o.cost.mat,i:'🛒'};
@@ -3565,10 +3569,12 @@ function planeAssist(car,dt,s){
   if(!loop&&alt<140&&car.vz<-60&&s.y>-0.2){wantNose=Math.max(wantNose,0.15);wantBank=0;} // too low and sinking: level off
   // coming down to land: a gentle glide, then the wings level and the nose comes up a little (a flare), so it lands instead of BONKing
   if(!loop&&alt<250&&s.y<0)wantNose=Math.max(wantNose,-0.22);
-  if(!loop&&alt<120){wantBank*=0.3;wantNose=Math.max(wantNose,car.vz<-110?0.12:-0.06);}
+  // over a landing strip with the stick forward: you are landing, so come down onto it (no holding the height, a shorter look ahead)
+  const landing=s.y<-0.2&&!!onRunway(car.x+car.vx*0.5,car.y+car.vy*0.5,40);
+  if(!loop&&alt<120){wantBank*=0.3;wantNose=Math.max(wantNose,car.vz<-110?0.12:landing?-0.14:-0.06);}
   if(alt+car.vz*1.1<50&&car.vz<-80){wantNose=Math.max(wantNose,0.3);wantBank*=0.3;} // about to hit the ground whatever the stick says: pull up
-  if(alt<150&&spd>330)wantNose=Math.max(wantNose,alt<120?0.15:0);
-  let avoid=false;{const h=Math.hypot(car.vx,car.vy)||1,ux=car.vx/h,uy=car.vy/h,z=car.z-35;if(z>gz+12)scan:for(let d=15;d<h*2.5;d+=15)for(const o of[0,22,-22,40,-40]){const x=car.x+ux*d-uy*o,y=car.y+uy*d+ux*o;if(blocked3D(wpx(x),wpy(x,y),z)){wantNose=Math.max(wantNose,spd>300?0.5:0.3);wantBank*=0.3;avoid=true;break scan;}}} // a tree or a building in the next 2.5 s (wing tips too): climb over it, at full power // too fast to land: hold the height (the engine eases off) until it is slow enough
+  if(alt<150&&spd>330&&!landing)wantNose=Math.max(wantNose,alt<120?0.15:0);
+  let avoid=false;{const h=Math.hypot(car.vx,car.vy)||1,ux=car.vx/h,uy=car.vy/h,z=car.z-35;if(z>gz+12)scan:for(let d=15;d<h*(landing?1:2.5);d+=15)for(const o of[0,22,-22,40,-40]){const x=car.x+ux*d-uy*o,y=car.y+uy*d+ux*o;if(blocked3D(wpx(x),wpy(x,y),z)){wantNose=Math.max(wantNose,spd>300?0.5:0.3);wantBank*=0.3;avoid=true;break scan;}}} // a tree or a building in the next 2.5 s (wing tips too): climb over it, at full power // too fast to land: hold the height (the engine eases off) until it is slow enough
   return{t:s.boost||avoid?1:s.slow?0.2:alt<170&&s.y<-0.2?0.2:loop?1:0.8,p:loop?1:clamp((wantNose-nose)*3,-1,1),r:loop?0:clamp((wantBank-bank)*3,-1,1),y:loop?0:s.x*0.4*clamp(1-Math.abs(bank),0,1)};}
 // the plane's twin foam machine guns: hold the trigger and they rattle away from the wing tips, straight ahead, taking turns
 function planeGuns(car,d){car.cd=0.07;car.gun=car.gun?0:1;const F=planeAxis(car,0,0,1),Lf=planeAxis(car,1,0,0),s=car.gun?1:-1,sp=1400+Math.max(0,car.speed||0),j=()=>(Math.random()-0.5)*0.03;
@@ -3582,7 +3588,7 @@ function planeWrap(car){const W=PLANE_WRAP,ox=car.x,oy=car.y;
 // the wheels touch the ground: a gentle landing (wings level, nose not down, not falling fast), or a BONK and a bounce
 function planeTouch(car,g){car.z=g;_pe.setFromQuaternion(car.q,'YXZ');const vz=car.vz;
   if(car.chute||(Math.abs(_pe.z)<0.45&&_pe.x<0.35&&vz>-300)){if(car.chute){car.vx=car.vy=0;car.chute=false;}car.fly=false;car.onGround=true;car.vz=0;car.gp=0;car.speed=Math.hypot(car.vx,car.vy);planeLevel(car,0);sfx('land',car);burst(car.x,car.y,car.z,8,'puff','#ffffff',80);if(car.driver&&car.driver.isPlayer&&onRunway(car.x,car.y,10))toast('🛬 Smooth landing on the strip!');return;}
-  sfx('bonk',car);addText(car.x,car.y,car.z+40,'BONK!','#ff7b1c',18);burst(car.x,car.y,car.z,14,'puff','#ffffff',120);damageCar(car,planeStats(car).tough?22:45,null);
+  sfx('bonk',car);car.bumped=true;addText(car.x,car.y,car.z+40,'BONK!','#ff7b1c',18);burst(car.x,car.y,car.z,14,'puff','#ffffff',120);damageCar(car,planeStats(car).tough?22:45,null);
   if(car.driver&&car.driver.isPlayer)G.shake=Math.max(G.shake||0,8);car.vz=Math.abs(vz)*0.35+160;car.vx*=0.45;car.vy*=0.45;car.z=g+2;planeLevel(car,0.2);}
 function boatDrive(car,d,me,K,dt){car.cd=Math.max(0,car.cd-dt);
   const thr=me?(K('w')||K('arrowup')||autoOn(d)?1:K('s')||K('arrowdown')?-1:0):0,str=me?(K('a')||K('arrowleft')?-1:K('d')||K('arrowright')?1:0):0,max=me&&K('shift')?520:420;
@@ -3866,7 +3872,7 @@ LOCK_TABS.push(['hangar','✈️ Hangar',[]]);
 
 /* ---- tricks ---- */
 // a finished LOOP or ROLL: a short speed boost, and (for players) a few tickets, up to 10 tricks a match
-function planeTrickDone(car,kind){const d=car.driver;car.boostT=1.6;car.trickT=G.time;if(!d||!(d.isPlayer||d.remote))return;
+function planeTrickDone(car,kind){const d=car.driver;car.boostT=1.6;car.trickT=G.time;if(XM[G.mode]&&XM[G.mode].trick)XM[G.mode].trick(car,kind);if(!d||!(d.isPlayer||d.remote))return;
   G.tricks=G.tricks||new Map();const n=(G.tricks.get(d)||0)+1;G.tricks.set(d,n);const tk=n<=10?5:0,msg=(kind==='loop'?'➰ Nice loop!':'🌀 Nice roll!')+(tk?' +'+tk+' 🎟️':'')+' Speed boost!';
   if(d.isPlayer){if(tk){PROG.tickets+=tk;saveProg();}addText(car.x,car.y,car.z+60,kind==='loop'?'NICE LOOP!':'NICE ROLL!','#ffcb1f',18);toast(msg);sfx('pickup',car);}
   else{if(tk)netTell(d,'tk',tk);netTell(d,'ann',[kind==='loop'?'➰ Nice loop!':'🌀 Nice roll!',tk?'+'+tk+' 🎟️ · Speed boost!':'Speed boost!',1.4]);}}
@@ -4852,6 +4858,186 @@ const RESCUE_NET={s:()=>{const R=G.rs;return{f:R.fires.map(f=>[ri(f.x),ri(f.y),r
     while(R.fires.length>s.f.length){const f=R.fires.pop();if(f.m)scene.remove(f.m);}
     s.f.forEach((a,i)=>{let f=R.fires[i];if(!f)f=R.fires[i]={hitT:-9};if(f.x!==a[0]||f.y!==a[1]){if(f.x!=null&&f.m)burst(f.x,f.y,f.z+20,20,'puff','#e8f4ff',120);}Object.assign(f,{x:a[0],y:a[1],z:a[2],hp:a[3]});});
     s.p.forEach((a,i)=>{const p=R.people[i]||(R.people[i]={});Object.assign(p,{x:a[0],y:a[1],z:a[2],st:a[3],b:a[4],car:a[5]>=0?G.cars[a[5]]:-1});});}};
+// @module src/js/29f-plane-modes.js: Three plane game modes: Flight School (four short lessons with medals), the Stunt Course (a timed ring course with time rings, trick rings, low gates and updrafts) and Balloon Battle (pop the other planes' balloons with the foam guns).
+// Main: XM.school, XM.stunt, XM.balloons, SCHOOL_LESSONS, STUNT_NET, BALLOON_NET, planeFor, balloonPos, AIRISH
+// See also: air-race (XM.airrace: the rings, the start line and the bot pilot), planes-plus (strips, planeTrickDone), cars (planeDrive asks XM[mode].fly), net-mode-state (XMNET.stunt, XMNET.balloons)
+/* ================= plane modes (0.5) =================
+   Flight School (on your own): take off, follow the rings, LOOP and ROLL, land on the strip. Each lesson is timed and
+   gives a 🥉 🥈 or 🥇 medal; a better medal pays tickets once. Finish all four for the Flight School paint job, and win
+   gold in all four for Gold Ace (the Hangar). On a map with no strips (the cave, space) the school uses the Meadow.
+   Stunt Course: the Plane Race rings, but for points against the clock. Every ring scores 100 x your multiplier (it
+   grows with each ring, up to x3, and drops back after 12 s without one). Blue rings add 6 seconds; pink trick rings
+   count double if you LOOP or ROLL just before. Bonus: fly under the gates over the landing strips, and through the
+   green updraft rings (they throw you up). Most points when everyone's time runs out wins.
+   Balloon Battle: everyone flies a plane trailing three balloons. Pop other planes' balloons with the foam machine
+   guns; nobody gets hurt. Lose all three and your plane floats down on its parachute. The last plane with balloons
+   wins (or the most balloons, then the most pops, after 3 minutes). */
+MODEFLAGS.school={noCombat:1,noLoot:1,noCars:1};MODEFLAGS.stunt={noCombat:1,noLoot:1,noCars:1};MODEFLAGS.balloons={noLoot:1,noCars:1};
+MODES.school={desc:'Learn to fly! Four short lessons: take off, follow the rings, LOOP and ROLL, and land on the strip. Win a medal in each one (on your own).'};
+MODES.stunt={desc:'Fly the ring course for points before your time runs out! Blue rings give you more time, pink rings count double after a trick, and the gates and updrafts are bonus points.'};
+MODES.balloons={desc:'Everyone flies a plane with three balloons. Pop the other planes\' balloons with your foam guns! The last plane with balloons wins. Nobody gets hurt.'};
+// the Plane Race and the Stunt Course work the same way (no getting out, R goes back to the last ring)
+function AIRISH(){return!!G&&(G.mode==='airrace'||G.mode==='stunt');}
+// a plane for someone: parked (fly false) or flying level at a height
+function planeFor(c,x,y,z,ang,fly,col){const car=newVehicle(x,y,ang,col||(c.isPlayer?'#e2312b':CAR_COLS[G.cars.length%CAR_COLS.length]),'plane');
+  Object.assign(car,{z,fly,onGround:!fly,hp:9999,maxHp:9999,thr:fly?0.8:0,gp:0});car.q=new THREE.Quaternion();planeLevel(car,0);
+  if(fly){const F=planeAxis(car,0,0,1);car.vx=F.x*400;car.vy=F.y*400;car.vz=0;car.speed=400;}
+  G.cars.push(car);c.x=x;c.y=y;c.z=z;enterCar(c,car);return car;}
+const sendAway=()=>{for(const c of G.chars)if(!c.isPlayer){c.state='gone';c.respawnAt=1e9;if(c.m)c.m.visible=false;}};
+
+/* ---- Flight School ---- */
+const SCHOOL_LESSONS=[
+  {id:'takeoff',name:'Take off',goal:()=>(TOUCH.on?'Pull the stick back (or hold BOOST)':'Hold S (or Space)')+' to race down the strip, then climb to 100 ft',t:[12,20,60]},
+  {id:'rings',name:'Follow the rings',goal:()=>'Fly through the 5 rings. Follow the gold arrow!',t:[24,34,90]},
+  {id:'tricks',name:'LOOP and ROLL',goal:()=>TOUCH.on?'Tap LOOP to loop the loop, then tap ROLL for a barrel roll':'Press L to loop the loop, then tap K for a barrel roll',t:[14,24,90]},
+  {id:'land',name:'Land on the strip',goal:()=>(TOUCH.on?'Push the stick a little forward':'Hold W a little')+' to glide down and land on the strip, gently',t:[0,0,90]}];
+const MEDAL=['—','🥉','🥈','🥇'],MEDAL_TK=[0,10,20,40];
+XM.school={name:'Flight School',
+  init(){G.len=1e9;G.noRespawn=true;sendAway();const P=G.player;P.invuln=1e9;G.fs={i:-1,ph:'brief',t:G.time+0.5,start:0,got:[],tries:0};
+    const r=RUNWAYS[0],p=r?rwPt(r,-r.L/2+80,0):{x:WORLD/2,y:WORLD/2};G.fsCar=planeFor(P,p.x,p.y,groundAt(p.x,p.y,10),r?r.a:0,false);G.yaw=r?r.a:0;
+    announce('🎓 Flight School','Four short lessons. Win a medal in each one!',3);this.next();},
+  // the next lesson: put the plane where the lesson starts
+  next(){const S=G.fs,P=G.player,car=G.fsCar,r=RUNWAYS[0];S.i++;S.tries=0;if(S.i>=SCHOOL_LESSONS.length){this.finish();return;}
+    const L=SCHOOL_LESSONS[S.i];S.ph='brief';S.t=G.time+3;S.tricks={loop:false,roll:false};this.clearRings();
+    const fly=(x,y,z,a,sp)=>{Object.assign(car,{x,y,z,ang:a,fly:true,onGround:false,chute:false,hold:true,trick:null,trickHeld:false,kHeld:0});planeLevel(car,0);const F=planeAxis(car,0,0,1);Object.assign(car,{vx:F.x*sp,vy:F.y*sp,vz:0,speed:sp,sp0:sp,thr:0.8});};
+    if(L.id==='takeoff'&&r){const p=rwPt(r,-r.L/2+80,0);Object.assign(car,{x:p.x,y:p.y,z:groundAt(p.x,p.y,10),ang:r.a,fly:false,onGround:true,vx:0,vy:0,vz:0,speed:0,thr:0,gp:0,hold:true});planeLevel(car,0);}
+    else if(L.id==='land'&&r){const p=rwPt(r,-r.L/2-350,0);fly(p.x,p.y,groundAt(p.x,p.y,10)+110,r.a,280);} // (inside the strip's cleared approach)
+    else{const a=r?r.a:0,x=r?r.x:WORLD/2,y=r?r.y:WORLD/2;fly(x,y,Math.max(groundAt(x,y,5000),0)+450,a,420);}
+    if(L.id==='rings'){const a=car.ang,cps=[];for(let k=1;k<=5;k++){const d=k*560,s=Math.sin(k*1.3)*260,x=car.x+Math.cos(a)*d-Math.sin(a)*s,y=car.y+Math.sin(a)*d+Math.cos(a)*s;cps.push({x,y,z:Math.max(groundAt(x,y,5000)+260,car.z+Math.sin(k)*90),tx:Math.cos(a),ty:Math.sin(a)});}
+      G.cps=cps;G.cpM=cps.map(airRingModel);car.next=0;car.lap=0;P.raceCar=car;
+      const ar=new THREE.Mesh(new THREE.ConeGeometry(14,46,12).rotateX(Math.PI/2),new THREE.MeshBasicMaterial({color:0xffcb1f}));ar.visible=false;scene.add(ar);G.airArrow=ar;}
+    P.x=car.x;P.y=car.y;P.z=car.z;G.yaw=car.ang;G.pitch=0;announce(`Lesson ${S.i+1}: ${L.name}`,L.goal(),3);sfx('ding');},
+  clearRings(){if(G.cpM)for(const g of G.cpM)scene.remove(g);G.cpM=null;G.cps=null;if(G.airArrow){scene.remove(G.airArrow);G.airArrow=null;}G.player.raceCar=null;},
+  ringFor(car){return G.cps&&G.cps[car.next];},
+  // a lesson done: the medal by time (landing: by where and how gently), tickets for a better medal than before
+  pass(medal){const S=G.fs,L=SCHOOL_LESSONS[S.i];S.got[S.i]=medal;S.ph='done';S.t=G.time+3;const sc=PROG.school=Object.assign({},PROG.school||{}),old=+sc[L.id]||0,wasDone=schoolDone(),wasGold=schoolGold();
+    if(medal>old){sc[L.id]=medal;PROG.tickets+=MEDAL_TK[medal]-MEDAL_TK[old];saveProg();}
+    announce(medal?MEDAL[medal]+' '+['','Bronze','Silver','Gold'][medal]+' medal!':'Lesson over',medal>old?'+'+(MEDAL_TK[medal]-MEDAL_TK[old])+' 🎟️':medal?'':'Have another go next time!',2.6);sfx(medal?'victory':'lose');
+    if(!wasDone&&schoolDone())setTimeout(()=>toast('🎨 New in the Hangar: the Flight School paint job!'),2600);if(!wasGold&&schoolGold())setTimeout(()=>toast('🎨 All gold! New in the Hangar: Gold Ace paint!'),3200);},
+  update(dt){const S=G.fs,P=G.player,car=G.fsCar;if(!S||G.endAt)return;P.invuln=1e9;car.hp=car.maxHp;
+    if(P.vehicle!==car&&P.state==='alive'){enterCar(P,car);toast('✈️ Stay in the plane in Flight School!');}
+    if(S.ph==='brief'){if(G.time>=S.t){S.ph='go';S.start=G.time;car.hold=false;if(car.fly){const F=planeAxis(car,0,0,1),sp=car.sp0||400;car.vx=F.x*sp;car.vy=F.y*sp;car.vz=F.z*sp;}}return;}
+    if(S.ph==='done'){if(G.time>=S.t)this.next();return;}
+    const L=SCHOOL_LESSONS[S.i],el=G.time-S.start,byTime=()=>el<=L.t[0]?3:el<=L.t[1]?2:1;
+    if(el>L.t[2]){this.pass(0);return;}
+    if(L.id==='takeoff'&&car.fly&&car.z-groundAt(car.x,car.y,car.z+20)>=400)this.pass(byTime());
+    else if(L.id==='rings'){const cp=G.cps[car.next],a=car.lp||{x:car.x,y:car.y,z:car.z};car.lp={x:car.x,y:car.y,z:car.z};
+      if(airSegDist(a,car,cp)<=AIR_RING+20){car.next++;sfx('pickup');burst(cp.x,cp.y,cp.z,16,'confetti',null,160);if(car.next>=G.cps.length)this.pass(byTime());}}
+    else if(L.id==='tricks'&&S.tricks.loop&&S.tricks.roll&&!car.trick)this.pass(byTime());
+    else if(L.id==='land'){if(car.bumped){car.bumped=false;S.tries++;toast('Too hard! Try again: slower, and only a little nose down');const r=RUNWAYS[0];if(r){const p=rwPt(r,-r.L/2-350,0);Object.assign(car,{x:p.x,y:p.y,z:groundAt(p.x,p.y,10)+110,ang:r.a,fly:true,onGround:false,trick:null});planeLevel(car,0);const F=planeAxis(car,0,0,1);Object.assign(car,{vx:F.x*280,vy:F.y*280,vz:0,speed:280});}}
+      else if(!car.fly){const r=onRunway(car.x,car.y,10);this.pass(r?(S.tries===0&&r===RUNWAYS[0]&&(car.x-r.x)*Math.cos(r.a)+(car.y-r.y)*Math.sin(r.a)<0?3:2):1);}}},
+  trick(car,kind){if(G.fs&&car===G.fsCar&&G.fs.ph==='go')G.fs.tricks[kind]=true;},
+  finish(){const S=G.fs;S.ph='end';G.win=S.got.every(m=>m>0);G.endAt=G.time+4;this.clearRings();announce('🎓 Flight School done!',S.got.map((m,i)=>SCHOOL_LESSONS[i].name+' '+MEDAL[m||0]).join(' · '),4,G.win?'victory':'');sfx(G.win?'victory':'ding');},
+  hud(c1,c2,c3){const S=G.fs;if(!S||S.i<0||S.i>=SCHOOL_LESSONS.length){setC(c1,'chip final');setH(c1,'🎓 Flight School');setH(c2,'');setH(c3,'');return;}
+    const L=SCHOOL_LESSONS[S.i],el=S.ph==='go'?G.time-S.start:0;setC(c1,'chip final');setH(c1,`🎓 Lesson ${S.i+1}/4: ${esc(L.name)}`);setC(c2,'chip');
+    setH(c2,L.id==='land'?'🥇 on the near half of the strip':'🥇 '+L.t[0]+' s · 🥈 '+L.t[1]+' s');setC(c3,'chip');setH(c3,(L.id==='rings'&&G.fsCar?'Rings '+(G.fsCar.next||0)+'/5 · ':'')+(L.id==='tricks'&&S.tricks?(S.tricks.loop?'✅':'⬜')+' loop '+(S.tricks.roll?'✅':'⬜')+' roll · ':'')+'Time '+fmt(el));},
+  visual(dt,t){if(G.cpM&&G.player.raceCar)XM.airrace.visual.call(XM.airrace,dt,t);},
+  mini(m,k){if(G.cps)XM.airrace.mini.call(XM.airrace,m,k);},
+  spawn:spreadSpawn,
+  cleanup(){this.clearRings();},
+  end(p,b){const S=G.fs||{got:[]};b.xm=b.xm||{};b.xm.school=b.xm.school||{wins:0};if(G.win)b.xm.school.wins++;
+    return{title:G.win?'🎓 You can fly!':'Flight School',sub:'Medals: '+SCHOOL_LESSONS.map((L,i)=>L.name+' '+MEDAL[S.got[i]||0]).join(' · '),cls:G.win?'':'purple',
+      stats:SCHOOL_LESSONS.map((L,i)=>[MEDAL[S.got[i]||0],L.name])};}};
+
+/* ---- Stunt Course ---- */
+const STUNT={time:60,ringT:6,max:3,decay:12};
+XM.stunt=Object.assign(Object.create(XM.airrace),{name:'Stunt Course',laps:99,
+  init(){XM.airrace.init.call(this);const n=G.cps.length;G.cps.forEach((c,i)=>{c.kind=i===0?'ring':i%3===1?'time':i%3===2?'trick':'ring';});
+    for(const car of G.cars)Object.assign(car,{sc:0,mul:1,tl:STUNT.time,lastRingT:0,done:false});
+    // bonus: a low gate over the middle of each landing strip, and updraft rings (over the fans on the Sky Islands)
+    G.gates=RUNWAYS.map(r=>({x:r.x,y:r.y,a:r.a,w:r.W+20,top:150,m:this.gateModel(r)}));
+    const ups=typeof FANS!=='undefined'&&FANS.length&&MAP_ID==='sky'?FANS.slice(0,4).map(f=>({x:f.x,y:f.y})):[0,1,2].map(k=>{const a=G.cps[k*3%n],b=G.cps[(k*3+1)%n];return{x:(a.x+b.x)/2,y:(a.y+b.y)/2};});
+    G.ups=ups.map(u=>({x:u.x,y:u.y,z:Math.max(groundAt(u.x,u.y,5000),0)+230,m:this.upModel()}));for(const u of G.ups)u.m.position.set(u.x,u.z,u.y);
+    G.len=STUNT.time+120;announce('🎢 Stunt Course!','Fly through the rings for points! Blue rings: more time. Pink rings: do a trick first for double points.',3.4);},
+  gateModel(r){const g=new THREE.Group();for(const s of[-1,1]){const p=new THREE.Mesh(GEO.cylC,basic('#ffcb1f'));p.scale.set(10,170,10);p.position.set(0,85,s*(r.W/2+10));g.add(p);}
+    const b=new THREE.Mesh(GEO.boxC,basic('#ff6fae'));b.scale.set(6,24,r.W+40);b.position.y=160;g.add(b);g.position.set(r.x,groundAt(r.x,r.y,10),r.y);g.rotation.y=-r.a;scene.add(g);return g;},
+  upModel(){const m=new THREE.Mesh(new THREE.TorusGeometry(110,10,8,40).rotateX(Math.PI/2),new THREE.MeshBasicMaterial({color:0x5dff8a,transparent:true,opacity:0.7}));scene.add(m);return m;},
+  update(dt){const left=G.goAt-G.time;
+    if(left>0){const k=Math.ceil(left);if(k<=3&&k!==G.cdShown){G.cdShown=k;announce(String(k),'',0.9);sfx('pickup');}return;}
+    if(G.cdShown!=='go'){G.cdShown='go';announce('GO!','Rings for points! Lost? Press R (or tap RESET) to go back to the last ring.',1.8);sfx('horn');G.raceStart=G.time;
+      for(const car of G.cars){const d=car.driver;car.hold=false;car.lyaw=null;car.thr=d&&(d.isPlayer||d.remote)?1:car.maxMul;const F=planeAxis(car,0,0,1);car.vx=F.x*420;car.vy=F.y*420;car.vz=F.z*420;car.speed=420;}}
+    if(NETC())return;const n=G.cps.length;
+    for(const car of G.cars){const d=car.driver;if(!d||car.done)continue;
+      car.tl-=dt;if(car.tl<=0){car.tl=0;car.done=true;car.hold=true;if(d.isPlayer)announce('⏱️ Time!','You scored '+car.sc+' points',2.4);else if(d.remote)netTell(d,'ann',['⏱️ Time!','You scored '+car.sc+' points',2.4]);continue;}
+      if(car.mul>1&&G.time-car.lastRingT>STUNT.decay)car.mul=1;
+      const a=car.lp||{x:car.x,y:car.y,z:car.z};car.lp={x:car.x,y:car.y,z:car.z};if(Math.hypot(car.x-a.x,car.y-a.y)>600)continue;
+      car.stuckT=(car.stuckT||0)+dt;car.groundT=car.fly?0:(car.groundT||0)+dt;if(((!d.isPlayer&&!d.remote)||autoOn(d))&&(car.stuckT>25||car.groundT>3)){this.reset(car);continue;}
+      const tell=(t,s)=>{if(d.isPlayer){addText(car.x,car.y,car.z+60,t,'#ffcb1f',18);if(s)toast(s);}else if(d.remote)netTell(d,'ann',[t,s||'',1.2]);};
+      // the next ring in the course
+      const cp=G.cps[car.next];if(airSegDist(a,car,cp)<=AIR_RING+20){const trick=cp.kind==='trick'&&(car.trick||G.time-(car.trickT||-99)<2.5),pts=Math.round(100*car.mul*(trick?2:1));
+        car.sc+=pts;car.mul=Math.min(STUNT.max,car.mul+0.25);car.lastRingT=G.time;if(cp.kind==='time')car.tl+=STUNT.ringT;
+        tell('+'+pts+(trick?' TRICK x2!':''),cp.kind==='time'?'⏱️ +'+STUNT.ringT+' seconds!':'');if(d.isPlayer){sfx('pickup');burst(cp.x,cp.y,cp.z,16,'confetti',null,160);}
+        car.lastCp=car.next;car.next=(car.next+1)%n;car.stuckT=0;car.around=false;}
+      // bonus: under a gate (low, between the posts), through an updraft (it throws you up)
+      for(const g of G.gates){const u0=(a.x-g.x)*Math.cos(g.a)+(a.y-g.y)*Math.sin(g.a),u1=(car.x-g.x)*Math.cos(g.a)+(car.y-g.y)*Math.sin(g.a),v=-(car.x-g.x)*Math.sin(g.a)+(car.y-g.y)*Math.cos(g.a),alt=car.z-groundAt(car.x,car.y,car.z+20);
+        if(Math.sign(u0)!==Math.sign(u1)&&Math.abs(v)<g.w/2&&alt<g.top-10&&alt>8&&G.time-(car.gateT||-9)>3){car.gateT=G.time;car.sc+=250;tell('+250 UNDER THE GATE!');if(d.isPlayer)sfx('ding');}}
+      for(const u of G.ups)if(Math.hypot(car.x-u.x,car.y-u.y)<110&&Math.abs(car.z-u.z)<50&&G.time-(car.upT||-9)>2){car.upT=G.time;car.vz+=650;car.sc+=50;tell('+50 UPDRAFT!');if(d.isPlayer)sfx('boing');}}
+    if(!G.endAt&&G.raceStart&&G.cars.every(c=>c.done||!c.driver))this.finish();},
+  finish(){if(G.endAt)return;finishFFA(ffaPlaces(c=>c.raceCar?c.raceCar.sc:0),'Stunt Course');},
+  hud(c1,c2,c3,p){const car=p.raceCar;if(!car)return;const list=ffaPlaces(c=>c.raceCar?c.raceCar.sc:0),me=list.find(e=>e.c===p);
+    setC(c1,'chip final');setH(c1,'🎢 '+(car.sc||0)+' points · x'+(car.mul||1).toFixed(2).replace(/0$/,''));setC(c2,me.place===1?'chip final':'chip');setH(c2,'Position '+me.place+' / '+list.length);
+    setC(c3,car.tl<10?'chip storm':'chip');setH(c3,'⏱️ '+Math.ceil(car.tl??STUNT.time)+' s');},
+  visual(dt,t){const car=G.player.raceCar;G.cpM.forEach((g,i)=>{const c=G.cps[i],nxt=car&&i===car.next,col=c.kind==='time'?'#43c6ff':c.kind==='trick'?'#ff6fae':'#ffffff';
+      g.userData.m.color.set(nxt?'#ffcb1f':col);g.userData.m.opacity=nxt?0.95:c.kind==='ring'?0.35:0.6;g.scale.setScalar(nxt?1+0.06*Math.sin(t*6):1);});
+    for(const u of G.ups||[])u.m.rotation.y=t;
+    const A=G.airArrow;if(!A)return;A.visible=!!(car&&car.q&&G.player.vehicle===car&&!G.ended&&!car.done);if(!A.visible)return;
+    const g=G.cps[car.next],f=new THREE.Vector3(0,0,1).applyQuaternion(car.q);A.position.set(car.x,car.z+58,car.y).addScaledVector(f,80);A.lookAt(g.x,g.z,g.y);},
+  cleanup(){XM.airrace.cleanup.call(this);for(const g of G.gates||[])scene.remove(g.m);for(const u of G.ups||[])scene.remove(u.m);},
+  end(p,b){const car=p.raceCar||{};return endFFA(p,b,'Stunt Course',e=>(e.c.raceCar?e.c.raceCar.sc:0)+' pts',me=>[['#'+me.place,'Finish'],[car.sc||0,'Points'],['x'+(car.mul||1),'Multiplier']]);}});
+const STUNT_NET={s:()=>Object.assign(XMNET.race.s(),{st:G.cars.map(c=>[c.sc||0,r2(c.mul||1),r2(c.tl||0),c.done?1:0])}),
+  a:s=>{XMNET.race.a(s);(s.st||[]).forEach((a,i)=>{const car=G.cars[i];if(car)Object.assign(car,{sc:a[0],mul:a[1],tl:a[2],done:!!a[3]});});}};
+
+/* ---- Balloon Battle ---- */
+const BALLOON={n:3,len:180,cols:['#e2312b','#ffcb1f','#43c6ff','#7be495','#ff6fae','#9b6bff','#ff7b1c','#ffffff']};
+// where a plane's balloon is: on strings behind and above its tail
+function balloonPos(car,i){_pv.set(-16+16*i,44+(i===1?10:0),-90).applyQuaternion(car.q||_pq.identity());return{x:car.x+_pv.x,y:car.y+_pv.z,z:car.z+_pv.y};}
+XM.balloons={name:'Balloon Battle',
+  init(){G.len=BALLOON.len;G.noRespawn=true;G.cars=[];const n=G.chars.length;
+    G.chars.forEach((c,i)=>{const a=i/n*TAU,x=WORLD/2+Math.cos(a)*900,y=WORLD/2+Math.sin(a)*900,z=Math.max(groundAt(x,y,5000),0)+450,car=planeFor(c,x,y,z,a+Math.PI/2,true);
+      Object.assign(car,{bl:BALLOON.n,hold:true,bcol:BALLOON.cols[i%BALLOON.cols.length]});c.pops=0;c.invuln=1e9;});
+    for(const car of G.cars)car.blM=this.model(car);
+    G.goAt=G.time+4;G.cdShown=0;announce('🎈 Balloon Battle!','Pop the other planes\' balloons with your foam guns! Keep yours safe.',3.2);},
+  model(car){const g=new THREE.Group();g.userData.b=[];for(let i=0;i<BALLOON.n;i++){const b=new THREE.Mesh(GEO.sphC,mat(car.bcol||'#e2312b'));b.scale.set(22,26,22);g.add(b);
+      const s=new THREE.Mesh(GEO.cylC,basic('#ffffff'));s.scale.set(0.8,1,0.8);g.add(s);g.userData.b.push({b,s});}scene.add(g);return g;},
+  update(dt){const left=G.goAt-G.time;for(const c of G.chars)c.invuln=1e9;for(const car of G.cars)car.hp=car.maxHp;
+    if(left>0){const k=Math.ceil(left);if(k<=3&&k!==G.cdShown){G.cdShown=k;announce(String(k),'',0.9);sfx('pickup');}return;}
+    if(G.cdShown!=='go'){G.cdShown='go';announce('GO!','',1.2);sfx('horn');for(const car of G.cars){car.hold=false;const F=planeAxis(car,0,0,1);car.vx=F.x*420;car.vy=F.y*420;car.vz=F.z*420;car.speed=420;car.thr=0.8;}}
+    if(NETC()||G.endAt)return;
+    // a foam bullet that passes through a balloon pops it
+    for(const p of G.projs){if(p.t!=='bolt'||p.life<=0)continue;const a={x:p.x-p.vx*dt,y:p.y-p.vy*dt,z:p.z-p.vz*dt};
+      for(const car of G.cars){if(!car.bl||car.driver===p.owner||!car.driver)continue;let hit=false;for(let i=0;i<car.bl&&!hit;i++){const q=balloonPos(car,i);if(airSegDist(a,p,q)<18)hit=true;}
+        if(!hit)continue;p.life=0;car.bl--;const o=p.owner,d=car.driver,q=balloonPos(car,car.bl);if(o)o.pops=(o.pops||0)+1;burst(q.x,q.y,q.z,18,'confetti',null,160);sfx('pop',car);
+        feed('🎈 '+nameTag(o)+' popped '+nameTag(d)+'\'s balloon!');
+        if(!car.bl){car.chute=true;car.outT=G.time;if(d.isPlayer)announce('💥 Out of balloons!','Your plane floats down on its parachute. Watch the others!',2.6);else if(d.remote)netTell(d,'ann',['💥 Out of balloons!','Your plane floats down on its parachute.',2.6]);}
+        break;}}
+    const alive=G.cars.filter(c=>c.bl>0&&c.driver);if(!G.endAt&&(alive.length<=1||G.mt>=G.len))this.finish();},
+  score(c){const car=c.vehicle&&c.vehicle.kind==='plane'?c.vehicle:G.cars.find(v=>v.driver===c)||{};return(car.bl||0)*1e6+(car.outT||1e5)*10+(c.pops||0);},
+  finish(){if(G.endAt)return;finishFFA(ffaPlaces(c=>this.score(c)),'Balloon Battle');},
+  // the bot pilot (and you on autopilot): chase the nearest plane that still has balloons, line up behind it and fire at its balloons
+  fly(car,dt){if(!car.fly)return{t:1,p:car.speed>150?1:0,r:0,y:0};if(car.chute)return{t:0,p:0,r:0,y:0};
+    let foe=null,bd=1e9;for(const v of G.cars){if(v===car||!v.bl||!v.driver)continue;const[dx,dy]=pvec(car,v),d=Math.hypot(dx,dy);if(d<bd){bd=d;foe=v;}}
+    _pe.setFromQuaternion(car.q,'YXZ');const bank=_pe.z,nose=-_pe.x,gz=Math.max(groundAt(car.x,car.y,car.z+20),groundAt(car.x+car.vx*0.8,car.y+car.vy*0.8,5000)),low=car.z-gz<220;let tx,ty,tz,fire=false;
+    if(foe){const q=balloonPos(foe,1),[dx,dy]=pvec(car,q),hd=Math.hypot(dx,dy);if(car.pass){if(hd>900)car.pass=false;}else if(hd<260)car.pass=true;
+      if(car.pass){tx=car.x+Math.cos(car.ang)*500;ty=car.y+Math.sin(car.ang)*500;tz=gz+420;}else{tx=car.x+dx;ty=car.y+dy;tz=q.z;}
+      const F=planeAxis(car,0,0,1),to=norm3({x:dx,y:dy,z:q.z-car.z});fire=!car.pass&&hd<800&&F.x*to.x+F.y*to.y+F.z*to.z>0.97;}
+    else{const a=G.time*0.3;tx=WORLD/2+Math.cos(a)*900;ty=WORLD/2+Math.sin(a)*900;tz=gz+450;}
+    const hd=Math.hypot(tx-car.x,ty-car.y),h=angDiff(car.ang,Math.atan2(ty-car.y,tx-car.x));let el=clamp(Math.atan2(tz-car.z,Math.max(hd,1)),-0.5,0.5);if(low)el=Math.max(el,car.z-gz<100?0.6:0.4);
+    const want=low?0:clamp(h*1.4,-0.7,0.7),F=planeAxis(car,0,0,1),sp=Math.hypot(car.vx,car.vy,car.vz)||1,al=clamp(((car.vx*F.x+car.vy*F.y+car.vz*F.z)/sp-0.6)/0.25,0,1),p=clamp((el-nose)*3,-1,1);
+    const skill=car.driver&&(car.driver.isPlayer||car.driver.remote)?1:({easy:0.75,medium:0.88,hard:1}[opts.diff]||0.88);
+    return{t:0.85*skill+0.1,p:p>0?p*al:p,r:clamp((want*al-bank)*2.5,-1,1),y:clamp(h*2,-1,1)*al,fire:fire&&Math.random()<skill};},
+  hud(c1,c2,c3,p){const car=p.vehicle&&p.vehicle.kind==='plane'?p.vehicle:G.cars.find(v=>v.driver===p)||{};const alive=G.cars.filter(c=>c.bl>0&&c.driver).length;
+    setC(c1,'chip final');setH(c1,(car.bl?'🎈'.repeat(car.bl):'💥 Out')+' · '+(p.pops||0)+' popped');setC(c2,'chip');setH(c2,alive+' planes with balloons');setC(c3,'chip');setH(c3,'Time '+fmt(Math.max(0,G.len-(G.mt||0))));},
+  visual(){for(const car of G.cars){const g=car.blM;if(!g)continue;g.userData.b.forEach((o,i)=>{const on=i<(car.bl||0);o.b.visible=o.s.visible=on;if(!on)return;
+      const q=balloonPos(car,i),tail=planeAxis(car,0,0,-1),ax=car.x+tail.x*36,ay=car.y+tail.y*36,az=car.z+18+tail.z*36,dx=q.x-ax,dy=q.y-ay,dz=q.z-15-az,L=Math.hypot(dx,dy,dz)||1;
+      o.b.position.set(q.x,q.z,q.y);o.s.position.set(ax+dx/2,az+dz/2,ay+dy/2);o.s.scale.y=L;o.s.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(dx/L,dz/L,dy/L));});}},
+  mini(m,k){for(const car of G.cars){if(!car.bl)continue;m.fillStyle=car.bcol||'#fff';m.beginPath();m.arc(car.x*k,car.y*k,5,0,TAU);m.fill();}},
+  spawn:spreadSpawn,
+  cleanup(){for(const car of G.cars||[])if(car.blM)scene.remove(car.blM);},
+  end(p,b){const car=G.cars.find(v=>v.driver===p)||{};return endFFA(p,b,'Balloon Battle',e=>{const v=G.cars.find(x=>x.driver===e.c)||{};return(v.bl?'🎈'.repeat(v.bl):'out')+' · '+(e.c.pops||0)+' pops';},
+    me=>[['#'+me.place,'Finish'],[p.pops||0,'Balloons popped'],[car.bl||0,'Balloons left']]);}};
+const BALLOON_NET={s:()=>({g:r2(G.goAt-G.time),b:G.cars.map(c=>c.bl||0),o:G.cars.map(c=>c.chute?1:0),pp:G.chars.map(c=>[c.cid,c.pops||0])}),
+  a:s=>{G.goAt=G.time+s.g;s.b.forEach((n,i)=>{const car=G.cars[i];if(!car)return;car.bl=n;car.chute=!!s.o[i];if(!car.bcol)car.bcol=BALLOON.cols[i%BALLOON.cols.length];if(!car.blM)car.blM=XM.balloons.model(car);});
+    for(const[cid,n]of s.pp||[]){const c=byCid(cid);if(c)c.pops=n;}}};
 // @module src/js/30-fun.js: Fun extras: bonk streaks (DOUBLE BONK! …) and the end-of-match party with fireworks and dancing.
 // Main: bonkStreak, startParty, partyTick, STREAK_NAMES
 // See also: combat (calls bonkStreak), update (starts the party)
@@ -5330,7 +5516,7 @@ const PLANE_SEAT=new THREE.Vector3(0,-13,6);
 const PCAM={v:null,hx:1,hz:0,s:0};
 function planeCam(v,dt){$('scope').hidden=true;
   // the Plane Race countdown: behind and a little above the whole line-up, looking over it at the starting line and the start ring
-  if(G.mode==='airrace'&&G.cps&&G.goAt&&G.time<G.goAt&&v.home){const s=G.cps[0],a=v.home.ang,b=520+(Math.ceil(G.cars.length/3)-1)*AIR_ROW+380;
+  if(AIRISH()&&G.cps&&G.goAt&&G.time<G.goAt&&v.home){const s=G.cps[0],a=v.home.ang,b=520+(Math.ceil(G.cars.length/3)-1)*AIR_ROW+380;
     camera.position.set(s.x-Math.cos(a)*b,s.z+190,s.y-Math.sin(a)*b);camPos.copy(camera.position);if(camera.fov!==70){camera.fov=70;camera.updateProjectionMatrix();}
     camera.up.set(0,1,0);camera.lookAt(s.x-Math.cos(a)*300,s.z+10,s.y-Math.sin(a)*300);PCAM.v=null;return;}
   const f=new THREE.Vector3(0,0,1).applyQuaternion(v.q),P=new THREE.Vector3(v.x,v.z+14,v.y),fh=Math.hypot(f.x,f.z);
@@ -5411,7 +5597,7 @@ function updateHUD(){updateNetHUD();gadgetHud();{const at=$('autoTag'),on=!!(G&&
   if(G.toastT<=0){let h='';if(p.state==='bus')h='Press <kbd>Space</kbd> to jump out of the bus!';else if(p.state==='sky'&&!p.glide)h='Press <kbd>Space</kbd> to open your glider';
     else if(p.vehicle&&G.mode==='race')h='<kbd>W</kbd> go · <kbd>A</kbd><kbd>D</kbd> steer · <kbd>Shift</kbd> turbo · <kbd>R</kbd> reset car';else if(p.vehicle&&p.vehicle.kind==='mech'){const v=p.vehicle;h=(v.boss?'👑 BOSS MECH ':'🤖 MECH ')+Math.max(0,Math.round(v.hp))+'/'+v.maxHp+' · <kbd>Click</kbd> blast · <kbd>Space</kbd> jump + STOMP · <kbd>Shift</kbd> run'+(v.boss?'':' · <kbd>F</kbd> get out');}
     else if(p.vehicle&&p.vehicle.kind==='plane'){const v=p.vehicle,ins='✈️ '+Math.round((v.speed||0)/4)+' mph · ⬆ '+Math.max(0,Math.round((v.z-groundAt(v.x,v.y,v.z+20))/4))+' ft · throttle '+Math.round((v.thr||0)*100)+'%<br>';
-      h=ins+(v.fly?'<kbd>W</kbd> dive · <kbd>S</kbd> climb · <kbd>A</kbd><kbd>D</kbd> turn · <kbd>L</kbd> loop · <kbd>K</kbd> barrel roll (hold: hard turn) · <kbd>Space</kbd> boost · <kbd>Q</kbd> slow · '+(G.mode==='airrace'?'<kbd>R</kbd> back to the last ring':'hold <kbd>Click</kbd> machine guns · <kbd>E</kbd> water balloons · <kbd>F</kbd> jump out'):'<kbd>S</kbd> or <kbd>Space</kbd> to roll · <kbd>A</kbd><kbd>D</kbd> steer · it takes off by itself when it is fast enough · <kbd>F</kbd> get out');}
+      h=ins+(v.fly?'<kbd>W</kbd> dive · <kbd>S</kbd> climb · <kbd>A</kbd><kbd>D</kbd> turn · <kbd>L</kbd> loop · <kbd>K</kbd> barrel roll (hold: hard turn) · <kbd>Space</kbd> boost · <kbd>Q</kbd> slow · '+(AIRISH()?'<kbd>R</kbd> back to the last ring':'hold <kbd>Click</kbd> machine guns · <kbd>E</kbd> water balloons · <kbd>F</kbd> jump out'):'<kbd>S</kbd> or <kbd>Space</kbd> to roll · <kbd>A</kbd><kbd>D</kbd> steer · it takes off by itself when it is fast enough · <kbd>F</kbd> get out');}
     else if(p.vehicle&&p.vehicle.kind==='heli')h='🚁 HELICOPTER · <kbd>W</kbd><kbd>S</kbd> forward/back · <kbd>A</kbd><kbd>D</kbd> turn · <kbd>Space</kbd> up · <kbd>Q</kbd> down · hover by a roof to pick people up, then land on the H · <kbd>F</kbd> get out';
     else if(p.vehicle&&p.vehicle.kind==='firetruck')h='🚒 FIRE TRUCK · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> drive · aim at a fire and hold <kbd>Click</kbd> to spray · <kbd>F</kbd> get out';
     else if(p.vehicle&&p.vehicle.kind==='catapult')h='🏰 CATAPULT · <kbd>W</kbd><kbd>S</kbd> roll · <kbd>A</kbd><kbd>D</kbd> turn · aim at the fort and <kbd>Click</kbd> to launch a foam boulder · <kbd>F</kbd> get out';
@@ -5464,7 +5650,7 @@ function applyOpts(){[['len',opts.len],['diff',cap(opts.diff)],['map',cap(opts.m
 function syncMenu(){const mode=radioVal('mode'),map=radioVal('map'),stormOff=mode==='royale'&&radioVal('storm')==='off';
   $('modeDesc').textContent=stormOff?'Ride the battle bus in, then bash away with no storm. Everyone respawns until the timer runs out!':MODES[mode].desc;$('mapDesc').textContent=MAPS[map].desc;
   $('optStorm').hidden=mode!=='royale';$('optSquad').hidden=mode!=='royale';$('optRule').hidden=!stormOff;$('ruleDesc').textContent=RULES[radioVal('rule')].sub;
-  $('optLen').hidden=mode==='zombie'||mode==='race'||mode==='airrace'||mode==='siege'||mode==='rescue';$('optBots').hidden=mode==='zombie';$('botsLabel').textContent=(mode==='team'||mode==='ctf'||mode==='siege')?'Bots (split into two teams)':'Bots';$('diffLabel').textContent=mode==='zombie'?'Zombie toughness':'Bot skill';
+  $('optLen').hidden=mode==='zombie'||mode==='race'||mode==='airrace'||mode==='stunt'||mode==='balloons'||mode==='school'||mode==='siege'||mode==='rescue';$('optBots').hidden=mode==='zombie'||mode==='school';$('botsLabel').textContent=(mode==='team'||mode==='ctf'||mode==='siege')?'Bots (split into two teams)':'Bots';$('diffLabel').textContent=mode==='zombie'?'Zombie toughness':'Bot skill';
   {const parts=[];if(!$('optStorm').hidden)parts.push(radioVal('storm')==='off'?'Storm off':'Storm on');if(!$('optSquad').hidden)parts.push(cap(radioVal('squad')));if(!$('optLen').hidden)parts.push(radioVal('len')+' min');if(!$('optBots').hidden)parts.push($('bots').value+' bots');parts.push(cap(radioVal('diff')));
     $('matchSum').textContent='⚙️ '+parts.join(' · ');$('matchFor').textContent='for '+(document.querySelector('label[for=mode'+cap(mode)+']').lastChild.textContent.trim());}
   if(map!==MAP_ID&&!G){genMap(map);buildWorld();}showBest();}
@@ -5639,13 +5825,13 @@ const HELP_PAGES=[
     :`<ul><li><b>Z</b> wall · <b>X</b> ramp · <b>C</b> floor · <b>V</b> roof. Click to place, hold to keep building.</li><li>Look up to build higher.</li><li><b>G</b> edits a wall into a door or window.</li><li><b>T</b> switches wood, stone and metal. Metal is strongest!</li><li>Swing your pickaxe at trees, rocks and walls to collect materials.</li></ul>`},
   {t:'🚌 Bus & storm',shots:['bus','storm'],body:()=>`<ul><li>Battle Royale starts on the <b>battle bus</b>. ${TOUCH.on?'Tap JUMP OUT':'Press Space'} over the spot you want to land.</li><li>Your glider opens by itself, or open it early.</li><li>The <b>purple storm</b> shrinks the island. It hurts while you are in it, so keep moving to the safe circle!</li><li>The white dashed circle on the minimap shows where the storm goes next.</li><li>🌐 <b>The edges loop!</b> Walk, drive or shoot off one side of the map and you come back in on the other side (the see-through curtain marks the edge). So nobody is safe hiding at the edge. Only the bridge to the Bonk Hospital goes on north.</li><li>☁️ <b>Sky Islands:</b> fall off an island and the rescue drone catches you. Stand on a big fan to fly up, then glide across to another island.</li><li>🎢 <b>Theme Park:</b> ${TOUCH.on?'tap the 🎢 button':'press <b>E</b>'} by a ride to get on (roller coaster, Ferris wheel), ${TOUCH.on?'tap it or JUMP':'press <b>E</b> or <b>Space</b>'} to get off. Walk onto the top of the water slide to zoom down into the pool.</li></ul>`},
   {t:'🚁 Getting bonked',shots:['drone'],body:()=>`<ul><li>When you run out of health you get knocked out, but a <b>rescue drone</b> flies you back in after a few seconds.</li><li>In Battle Royale, drones stop at the <b>final circle</b>. Then it's last one standing!</li><li>In <b>Squads</b> you get knocked down first. A teammate can revive you by holding ${TOUCH.on?'the green REVIVE button':'E'} next to you.</li><li>Heal up with bandages, med kits and shield potions.</li></ul>`},
-  {t:'🏆 How to win',shots:[],body:()=>`<p>Every game mode has its own way to win:</p><div class="hwin">${[['🪂 Battle Royale','Be the last one (or last squad) standing when the storm closes.'],['⚔️ Team Battle','Red team needs 20 knockouts before blue does.'],['🧟 Zombie Survival','Survive as many zombie waves as you can. Build walls!'],['🏎️ Car Race','Drive through the glowing gates in order. Finish 3 laps first.'],['✈️ Plane Race','Fly through the glowing rings in the sky in order. Finish 3 laps first.'],['🌋 Floor is Lava','Build up and stay above the rising lava the longest.'],['👑 Capture the Crown','Grab the crown and hold it to score points.'],['🚩 Capture the Flag','Steal the blue flag and bring it back to your base.'],['🏰 Fort Siege','Build a fort around your treasure, then steal theirs and carry it home. The fastest steal wins.'],['🚒 Rescue Squad','Everyone together: put out every fire and fly everyone off the rooftops to the H before time runs out.'],['⛰️ King of the Hill','Stand in the golden circle to score. It moves around!'],['🏗️ Build Battle','Build the tallest tower before time runs out.'],['🤖 Mega Robot','Everyone teams up against one giant robot. Bonk it before time runs out!'],['🎯 Training Room','No winning here: practice your aim, building and every weapon.']].map(([a,b])=>`<div><b>${a}</b>${b}</div>`).join('')}</div>`},
+  {t:'🏆 How to win',shots:[],body:()=>`<p>Every game mode has its own way to win:</p><div class="hwin">${[['🪂 Battle Royale','Be the last one (or last squad) standing when the storm closes.'],['⚔️ Team Battle','Red team needs 20 knockouts before blue does.'],['🧟 Zombie Survival','Survive as many zombie waves as you can. Build walls!'],['🏎️ Car Race','Drive through the glowing gates in order. Finish 3 laps first.'],['✈️ Plane Race','Fly through the glowing rings in the sky in order. Finish 3 laps first.'],['🎢 Stunt Course','Score the most points flying through rings before your time runs out.'],['🎈 Balloon Battle','Be the last plane with balloons (pop the others with your foam guns).'],['🎓 Flight School','Win a medal in all four lessons.'],['🌋 Floor is Lava','Build up and stay above the rising lava the longest.'],['👑 Capture the Crown','Grab the crown and hold it to score points.'],['🚩 Capture the Flag','Steal the blue flag and bring it back to your base.'],['🏰 Fort Siege','Build a fort around your treasure, then steal theirs and carry it home. The fastest steal wins.'],['🚒 Rescue Squad','Everyone together: put out every fire and fly everyone off the rooftops to the H before time runs out.'],['⛰️ King of the Hill','Stand in the golden circle to score. It moves around!'],['🏗️ Build Battle','Build the tallest tower before time runs out.'],['🤖 Mega Robot','Everyone teams up against one giant robot. Bonk it before time runs out!'],['🎯 Training Room','No winning here: practice your aim, building and every weapon.']].map(([a,b])=>`<div><b>${a}</b>${b}</div>`).join('')}</div>`},
   {t:'🌐 Play with friends',shots:[],body:()=>`<ul><li>Tap <b>🌐 Multiplayer</b> on the welcome screen and type your <b>name</b>.</li><li><b>One player hosts:</b> tap <b>Host a game</b> and read out the 4-letter <b>room code</b>.</li><li><b>Everyone else joins:</b> tap <b>Join</b> and type the code. The host sees <b>🙋 wants to join</b> and taps <b>✅ Allow</b> (or <b>❌ Kick</b>).</li><li>The host picks the <b>game</b>, the <b>map</b> and the <b>teams</b>: <i>Host picks</i> (tap a player to move them), <i>🎲 Random</i>, <i>Pick your own</i> (tap Join Red/Blue…), or <i>Everyone vs everyone</i>.</li><li>Bots fill the empty spots. The host presses <b>START</b> and everyone drops into the same match!</li><li>Up to 8 real players, in every game mode: Battle Royale, Team Battle, Zombie Survival (team up against the waves), Car Race, Floor is Lava, Capture the Crown, Capture the Flag, King of the Hill, Build Battle and the Training Room.</li><li>Hold <b>Tab</b> (or tap <b>🏆</b>) for the <b>scoreboard</b>: everyone's knockouts and ping.</li><li>Out of the match? You <b>watch a teammate</b>. Press Space, click or tap JUMP to switch who you watch.</li><li>Friends who arrive late can <b>jump into a match that already started</b> by taking over a bot (the host can turn this off in Settings → 🌐 Multiplayer).</li><li>Need a break? Press <b>O</b> (or tap <b>🤖</b>) and autopilot plays for you. If you stop playing for a bit, a <b>💤 bot helper</b> plays for you until you're back. The host can turn either off in Settings → 🌐 Multiplayer.</li><li>After the match, <b>Play again</b> takes everyone back to the room.</li></ul>`},
   {t:'🔧 Connection trouble',shots:[],body:()=>`<ul><li>Everyone opens <b>the same Bonk Royale website</b> (or its app on the home screen). No account needed.</li><li>Everyone needs the <b>same version</b>: Stable, Beta and Alpha are separate websites, and players on different ones can't join each other.</li><li>At home, a <b>home server</b> is even faster (see 🏠 Home server).</li><li>Every device needs to be <b>online</b> during the match.</li><li>Run <b>Settings → 🌐 Multiplayer → Connection test</b>. Green checks mean you're ready.</li><li>Use <b>Test with a friend</b> to see how fast two devices talk. Under 150 ms feels smooth.</li><li>“No game found”: check the 4 letters, and make sure the host is still on the room screen.</li><li>If the host leaves, the match ends for everyone. If a player leaves, a bot takes over their character.</li></ul>`},
   {t:"🎤 Mr. Bonk's Show",shots:[],body:()=>`<p>A game show in five rounds. Win rounds to get points. The most points after round 5 wins <b>${SHOW_PRIZE} tickets</b>!</p><ol><li><b>Bonk Bat Brawl:</b> everyone gets a giant foam bat. ${TOUCH.on?'Tap FIRE':'Click'} to swing and bonk others out of the glowing circle. Knocked out? You're out, and your bat stops working. Everyone still in when time runs out wins <b>${SHOW_BRAWL_TK} tickets</b>!</li><li><b>Red Light, Green Light:</b> run to the finish on <b>🟢 GREEN</b>. On <b>🔴 RED</b>, freeze! Move and you go back to the start.</li><li><b>The Obstacle Course:</b> jump the pink hurdles and dodge the swinging foam hammers. The first three to the finish get points.</li><li><b>Hide and Seek:</b> hide inside the big ring. Seekers count to 15, then hunt. If a seeker touches you, you are out. Stay hidden until time runs out to win!</li><li><b>The Button Challenge:</b> one button wins the round. The others are traps (BOING!). Find the winner first!</li></ol><p>No real fighting in this mode (the foam bat only pushes), and it works in multiplayer too.</p>`},
   {t:'🛡️ Safety & chat',shots:[],body:()=>`<ul><li><b>Nobody gets in without the host's OK.</b> Anyone with the code can <i>ask</i> to join. The host sees their name and taps <b>✅ Allow</b> or <b>❌ Kick</b>. During a match, the request pops up at the top of the screen.</li><li>In the room, the host can tap <b>✖</b> next to a player to remove them.</li><li><b>Chat is off</b> unless the host turns it on (in the room, or in Settings → 🌐 Multiplayer).</li><li>When chat is on, press <b>Enter</b> or tap <b>💬</b> to type, or tap a quick message like <b>GG!</b>.</li><li><b>Swear words are hidden</b> in English, Spanish, French, Portuguese, German and Italian. They turn into ★★★. A player name with a swear word in it just shows as <b>Player</b>.</li><li>Only play with people you know, and never share your address, school or passwords in chat.</li></ul>`},
   {t:'🏠 Home server',shots:[],body:()=>`<p>Playing at home with family? A Windows PC can run the game for everyone on the same Wi-Fi. It's faster than going over the internet, and nobody needs an account.</p><ol><li>Put the whole <b>Bonk Royale</b> game folder on the PC (it has <b>Start Bonk Server.bat</b> in it).</li><li>Double-click <b>Start Bonk Server</b>. A window opens with an address like <b>http://192.168.1.20:8080</b>.</li><li>The first time, Windows may ask about the firewall: tick <b>Private networks</b> and click <b>Allow</b>.</li><li>On each iPad, phone or laptop on the same Wi-Fi, type that address into Safari or Chrome. Then use <b>🌐 Multiplayer</b> as usual: one player hosts and the others type the code.</li><li>Keep the server window open while you play. Close it when you're done.</li></ol><ul><li>The lobby says <b>🏠 Home server</b> when it's working.</li><li>Your locker, tickets and settings are saved separately for each address, so the home-server game starts fresh.</li><li>Only devices on your own Wi-Fi can reach the server, not the whole internet.</li></ul>`},
-  {t:'✈️ Planes, boats & hoverboards',shots:[],body:()=>`<p>Find a plane, a boat or a hoverboard and ${TOUCH.on?'tap <b>ACTION</b>':'press <b>F</b>'} to get in.</p><ul><li><b>🚁 Helicopters</b> (in Rescue Squad): ${TOUCH.on?'the stick flies and turns, hold JUMP to go up and CROUCH to go down':'<b>W</b>/<b>S</b> forward and back, <b>A</b>/<b>D</b> turn, <b>Space</b> up, <b>Q</b> down'}. Hover by a roof to pick people up, then land on the H. <b>🚒 Fire trucks</b>: aim at a fire and hold ${TOUCH.on?'FIRE':'Click'} to spray.</li><li><b>✈️ Planes fly for real:</b> ${TOUCH.on?'pull the stick back (or hold <b>BOOST</b>) to race down open ground, and the plane takes off by itself when it is fast enough':'hold <b>S</b> (or <b>Space</b>) to race down open ground, and the plane takes off by itself when it is fast enough'}. In the air: ${TOUCH.on?'the stick steers like a real plane: left and right turn (the plane banks by itself), push it forward to point the nose down and pull it back to point the nose up, and when you let go it flies level. <b>BOOST</b> goes faster':'<b>W</b> points the nose down and <b>S</b> points it up (like pushing and pulling a joystick), <b>A</b>/<b>D</b> turn (the plane banks by itself), <b>Space</b> boost, <b>Q</b> slow down (the arrow keys work too)'}. For tricks, ${TOUCH.on?'tap <b>➰ LOOP</b> to loop the loop and <b>🌀 ROLL</b> for a barrel roll (toward the side you lean the stick)':'press <b>L</b> to loop the loop and <b>K</b> for a barrel roll (toward the side you hold <b>A</b> or <b>D</b>)'}: fly high and fast first. A clean trick gives you a speed boost and 5 tickets (up to 10 tricks a match). ${TOUCH.on?'Hold <b>ROLL</b>':'Hold <b>K</b>'} with a turn for a <b>hard bank</b>: a much tighter turn. Too slow and you stall. Fly off the edge of the map and you come back in on the other side. hold ${TOUCH.on?'<b>FIRE</b>':'<b>Click</b>'} to rattle off the twin foam <b>machine guns</b> straight ahead, and ${TOUCH.on?'the <b>💧 BALLOON</b> button':'<b>E</b>'} drops <b>water balloons</b> that splash whoever is below. Every map with planes has painted <b>🛬 landing strips</b> (a plane waits at the start of each). Fly near one and a gold <b>LAND HERE</b> arrow shows. To land: ${TOUCH.on?'push the stick a little forward':'slow down (<b>Q</b>) and hold <b>W</b> a little'} to glide down over open ground; the plane levels off just above the ground by itself (land too hard and it goes BONK!). Jump out in the air and you fall, then your glider opens (just like jumping off the battle bus), and the plane floats down on its own parachute. Bonked while flying? You stay in the cockpit until the rescue drone lifts you out.</li><li><b>✈️ The Hangar</b> (in the Locker): pick your plane's paint, a decal, and its wings, body and tail. The parts change how it flies (faster, tighter turns, quicker rolls, more lift). In <b>Settings</b>: the <b>Ring helper</b> gently steers you toward the next ring in races, and <b>Expert flying</b> lets the stick loop and roll the plane with no limits.</li><li><b>🏁 Plane Race</b> is a whole game mode: everyone starts in the sky in a plane and flies through the glowing rings in order (the next ring is gold, and a <b>gold arrow</b> points to it). ${TOUCH.on?'Tap <b>RESET PLANE</b>':'Press <b>R</b>'} to go back to the last ring.</li><li><b>🛹 Hoverboards</b> are parked by the shiny <b>grind rails</b> beside the main roads. They are fast (${TOUCH.on?'push the stick all the way':'<b>Shift</b>'} to boost) and hover, so water does not slow them and lava cannot hurt you. ${TOUCH.on?'Tap <b>JUMP</b>':'Press <b>Space</b>'} to jump, and again in the air for a trick (360 spin, kickflip, backflip, superman). Land it for a little boost. Ride along a rail (or jump onto one) to <b>grind</b>, and launch off ramps for big air.</li><li><b>⛵ Boats</b> only go on water. ${TOUCH.on?'<b>FIRE</b>':'<b>Click</b>'} fires the <b>foam cannon</b>.</li></ul>`},
+  {t:'✈️ Planes, boats & hoverboards',shots:[],body:()=>`<p>Find a plane, a boat or a hoverboard and ${TOUCH.on?'tap <b>ACTION</b>':'press <b>F</b>'} to get in.</p><ul><li><b>🚁 Helicopters</b> (in Rescue Squad): ${TOUCH.on?'the stick flies and turns, hold JUMP to go up and CROUCH to go down':'<b>W</b>/<b>S</b> forward and back, <b>A</b>/<b>D</b> turn, <b>Space</b> up, <b>Q</b> down'}. Hover by a roof to pick people up, then land on the H. <b>🚒 Fire trucks</b>: aim at a fire and hold ${TOUCH.on?'FIRE':'Click'} to spray.</li><li><b>✈️ Planes fly for real:</b> ${TOUCH.on?'pull the stick back (or hold <b>BOOST</b>) to race down open ground, and the plane takes off by itself when it is fast enough':'hold <b>S</b> (or <b>Space</b>) to race down open ground, and the plane takes off by itself when it is fast enough'}. In the air: ${TOUCH.on?'the stick steers like a real plane: left and right turn (the plane banks by itself), push it forward to point the nose down and pull it back to point the nose up, and when you let go it flies level. <b>BOOST</b> goes faster':'<b>W</b> points the nose down and <b>S</b> points it up (like pushing and pulling a joystick), <b>A</b>/<b>D</b> turn (the plane banks by itself), <b>Space</b> boost, <b>Q</b> slow down (the arrow keys work too)'}. For tricks, ${TOUCH.on?'tap <b>➰ LOOP</b> to loop the loop and <b>🌀 ROLL</b> for a barrel roll (toward the side you lean the stick)':'press <b>L</b> to loop the loop and <b>K</b> for a barrel roll (toward the side you hold <b>A</b> or <b>D</b>)'}: fly high and fast first. A clean trick gives you a speed boost and 5 tickets (up to 10 tricks a match). ${TOUCH.on?'Hold <b>ROLL</b>':'Hold <b>K</b>'} with a turn for a <b>hard bank</b>: a much tighter turn. Too slow and you stall. Fly off the edge of the map and you come back in on the other side. hold ${TOUCH.on?'<b>FIRE</b>':'<b>Click</b>'} to rattle off the twin foam <b>machine guns</b> straight ahead, and ${TOUCH.on?'the <b>💧 BALLOON</b> button':'<b>E</b>'} drops <b>water balloons</b> that splash whoever is below. Every map with planes has painted <b>🛬 landing strips</b> (a plane waits at the start of each). Fly near one and a gold <b>LAND HERE</b> arrow shows. To land: ${TOUCH.on?'push the stick a little forward':'slow down (<b>Q</b>) and hold <b>W</b> a little'} to glide down over open ground; the plane levels off just above the ground by itself (land too hard and it goes BONK!). Jump out in the air and you fall, then your glider opens (just like jumping off the battle bus), and the plane floats down on its own parachute. Bonked while flying? You stay in the cockpit until the rescue drone lifts you out.</li><li><b>✈️ The Hangar</b> (in the Locker): pick your plane's paint, a decal, and its wings, body and tail. The parts change how it flies (faster, tighter turns, quicker rolls, more lift). In <b>Settings</b>: the <b>Ring helper</b> gently steers you toward the next ring in races, and <b>Expert flying</b> lets the stick loop and roll the plane with no limits.</li><li><b>🎓 Flight School</b> (on your own): four short lessons (take off, follow the rings, LOOP and ROLL, land on the strip), each with a 🥉 🥈 or 🥇 medal and tickets. Finish them all for a new paint job in the Hangar, and get gold in all four for another one.</li><li><b>🎢 Stunt Course</b>: fly the rings for points before your time runs out. Each ring scores more the more rings you string together. <b>Blue</b> rings give you more time, <b>pink</b> rings count double if you LOOP or ROLL just before, and you get bonus points for flying under the gates over the landing strips and through the green updraft rings.</li><li><b>🎈 Balloon Battle</b>: every plane trails three balloons. Pop the other planes' balloons with your foam machine guns. Nobody gets hurt: lose all three and your plane floats down on its parachute. The last plane with balloons wins.</li><li><b>🏁 Plane Race</b> is a whole game mode: everyone starts in the sky in a plane and flies through the glowing rings in order (the next ring is gold, and a <b>gold arrow</b> points to it). ${TOUCH.on?'Tap <b>RESET PLANE</b>':'Press <b>R</b>'} to go back to the last ring.</li><li><b>🛹 Hoverboards</b> are parked by the shiny <b>grind rails</b> beside the main roads. They are fast (${TOUCH.on?'push the stick all the way':'<b>Shift</b>'} to boost) and hover, so water does not slow them and lava cannot hurt you. ${TOUCH.on?'Tap <b>JUMP</b>':'Press <b>Space</b>'} to jump, and again in the air for a trick (360 spin, kickflip, backflip, superman). Land it for a little boost. Ride along a rail (or jump onto one) to <b>grind</b>, and launch off ramps for big air.</li><li><b>⛵ Boats</b> only go on water. ${TOUCH.on?'<b>FIRE</b>':'<b>Click</b>'} fires the <b>foam cannon</b>.</li></ul>`},
   {t:'💾 Save codes',shots:[],body:()=>`<p>Want your tickets, levels and Locker on another version (Stable, Beta or Alpha) or on another device? Use a <b>save code</b>.</p><ol><li>Go to <b>Settings → 👤 Profile</b> and tap <b>📋 Copy my code</b> (or <b>💾 Save to a file</b>).</li><li>On the other version or device, open <b>Settings → 👤 Profile</b>, paste the code (or <b>📂 Load a file</b>) and tap <b>📥 Load this code</b>.</li><li>Check the summary and tap <b>✅ Replace my progress</b>. Changed your mind? <b>↩ Undo the last load</b>.</li></ol><p>Codes from older versions always keep working.</p>`},
   {t:'🚀 Gadgets',shots:[],body:()=>`<p>Gadgets are machines that give you super moves. Get them in the <b>Ticket Shop</b> or by levelling up, then pick which ones to bring in <b>Locker → 🚀 Gadgets</b>. You start every match with them.</p><ul><li><b>🦘 Spring Shoes</b> (level 4): jump much higher. Never wear out.</li><li><b>⚡ Speed Suit</b>: ${TOUCH.on?'tap <b>SPEED</b>':'press <b>U</b>'} for 10 seconds of super speed.</li><li><b>🎒 Jetpack</b>: hold ${TOUCH.on?'<b>JUMP</b>':'<b>Space</b>'} in the air to fly up, smooth and steady.</li><li><b>🔥 Rocket Boots</b>: hold ${TOUCH.on?'<b>JUMP</b>':'<b>Space</b>'} in the air to blast up. They wobble you around! (Bring the jetpack <i>or</i> the boots.)</li><li><b>🫧 Shield Bubble</b>: blocks hits. Each hit pops one charge.</li><li><b>🪝 Grappling Hook</b>: ${TOUCH.on?'tap <b>HOOK</b>':'press <b>H</b>'} to zip to the wall, roof or ground you aim at. Never wears out.</li></ul><p><b>⛽ Fuel:</b> the speed suit, jetpack, rocket boots and shield bubble wear out. Buy more fuel in the Ticket Shop, or find <b>fuel cans</b> and <b>shield bubbles</b> lying around in matches.</p>`},
   {t:'👕 Level up & style',shots:[],body:()=>`<ul><li>Every match gives you <b>XP</b>. Level up to unlock outfits, gliders, pickaxes, back bling and gun wraps in the <b>Locker</b>.</li><li>Finish <b>challenges</b> (shown in the lobby) for bonus XP and tickets.</li><li>Earn <b>🎟️ tickets</b> by playing, then spend them in the <b>Ticket Shop</b>. Tap an item to try it on first!</li><li><b>Gun wraps</b> change the colour of every gun you hold, and even your laser beams.</li><li>${TOUCH.on?'Want your buttons somewhere else? Settings → Controls → <b>Customize touch controls</b>.':'Playing on a tablet? Touch controls turn on by themselves.'}</li></ul>`}];
@@ -5939,7 +6125,7 @@ if(!(window.claude&&window.claude.use)&&!window.BONK_WS&&!/mplocal/.test(locatio
 // Main: NET, NET_TEAMS, NET_MODES, netTeamKind, myLook, lookFromNet, netMe
 // See also: net-lobby, safety
 const NET_TEAMS=[{id:'r',name:'Red',col:'#e2312b'},{id:'b',name:'Blue',col:'#1f6fd6'},{id:'g',name:'Green',col:'#3aa845'},{id:'y',name:'Yellow',col:'#e0a800'}];
-const NET_MODES=['royale','team','zombie','race','airrace','siege','rescue','floorlava','crown','ctf','koth','buildbattle','training','show','robot'];
+const NET_MODES=['royale','team','zombie','race','airrace','siege','rescue','stunt','balloons','floorlava','crown','ctf','koth','buildbattle','training','show','robot'];
 const NET_TEAMMODES={host:'Host picks',random:'🎲 Random',self:'Pick your own',ffa:'Everyone vs everyone'};
 // how teams work in each mode: 'free' (any teams or FFA), 'rb' (red vs blue only), 'coop' (everyone together)
 const netTeamKind=m=>m==='team'||m==='ctf'||m==='siege'?'rb':m==='zombie'||m==='training'||m==='robot'||m==='rescue'?'coop':'free';
@@ -6075,7 +6261,7 @@ function renderMpLobby(){const inRoom=!!NET.R,L=NET.lob,host=NET.role==='host';$
   document.querySelectorAll('#mpChatSeg input').forEach(r=>r.checked=r.value===(L.chat?'on':'off'));netAskRender();chatRender();}
 // ---- lobby screen wiring ----
 (()=>{const modeSel=$('mpMode'),mapSel=$('mpMap');
-  modeSel.innerHTML=Object.keys(MODES).map(m=>{const l=document.querySelector('label[for=mode'+cap(m)+']'),ok=NET_MODES.includes(m);return`<option value="${m}"${ok?'':' disabled'}>${l?l.textContent.trim():m}${ok?'':' (coming soon)'}</option>`;}).join('');
+  modeSel.innerHTML=Object.keys(MODES).map(m=>{const l=document.querySelector('label[for=mode'+cap(m)+']'),ok=NET_MODES.includes(m);return`<option value="${m}"${ok?'':' disabled'}>${l?l.textContent.trim():m}${ok?'':m==='school'?' (on your own)':' (coming soon)'}</option>`;}).join('');
   mapSel.innerHTML=Object.keys(MAPS).map(k=>`<option value="${k}">${esc(MAPS[k].name)}</option>`).join('');
   modeSel.addEventListener('change',()=>{NET.lob.mode=modeSel.value;netHostSyncTeams();netPushLob();});
   mapSel.addEventListener('change',()=>{NET.lob.map=mapSel.value;netPushLob();});
@@ -6138,6 +6324,7 @@ const XMNET={
   robot:ROBOT_NET, // the Mega Robot (also in its own module)
   siege:SIEGE_NET, // Fort Siege (also in its own module)
   rescue:RESCUE_NET, // Rescue Squad (also in its own module)
+  stunt:STUNT_NET,balloons:BALLOON_NET, // the Stunt Course and Balloon Battle (plane-modes module)
   ctf:{s:()=>({f:['red','blue'].map(t=>{const F=G.flags[t];return[ri(F.x),ri(F.y),ri(F.z),F.carrier?F.carrier.cid+1:0,F.home?1:0];})}),
     a:s=>{['red','blue'].forEach((t,i)=>{const F=G.flags&&G.flags[t],a=s.f[i];if(!F||!a)return;F.x=a[0];F.y=a[1];F.z=a[2];F.carrier=a[3]?byCid(a[3]-1):null;F.home=!!a[4];});}},
   crown:{s:()=>({c:[ri(G.crown.x),ri(G.crown.y),ri(G.crown.z),G.crown.carrier?G.crown.carrier.cid+1:0],p:netPts()}),
@@ -6328,7 +6515,7 @@ function netClientProjs(dt){for(let i=G.projs.length-1;i>=0;i--){const p=G.projs
   if(dead){removeModel(p);G.projs.splice(i,1);}}}
 // what this player pressed, sent to the host
 function netClientKey(k){const N=G.net,p=G.player;if(k==='e'&&MAP.rides&&(p.ride||(p.state==='alive'&&!p.vehicle&&rideNear(p)))){if(p.ride)rideOff(p);else rideBoard(p,rideNear(p));return true;} // (rides are part of your own movement)
-  if(k==='o'){netJoinerAuto();return true;}if(['r','=','+','-','o','escape','p','m'].includes(k)&&!(k==='r'&&(G.mode==='race'||G.mode==='airrace')))return k==='o';
+  if(k==='o'){netJoinerAuto();return true;}if(['r','=','+','-','o','escape','p','m'].includes(k)&&!(k==='r'&&(G.mode==='race'||AIRISH())))return k==='o';
   N.acts.push([++N.aseq,k]);if(N.acts.length>12)N.acts.shift();N.inT=0;if(k===' ')netBusJumpSent();
   if(k>='1'&&k<='5'){N.curT=performance.now();return false;}if(['z','x','c','v','t'].includes(k))return false;
   if(k===' '&&(p.state==='sky'||(p.state==='alive'&&!p.vehicle)))return false;return true;}
