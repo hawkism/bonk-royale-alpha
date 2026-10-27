@@ -435,6 +435,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
           <input type="radio" name="map" id="mapPirate" value="pirate"><label for="mapPirate"><i>🏴‍☠️</i>Pirate Cove</label>
           <input type="radio" name="map" id="mapCity" value="city"><label for="mapCity"><i>🏙️</i>Big City</label>
           <input type="radio" name="map" id="mapSky" value="sky"><label for="mapSky"><i>☁️</i>Sky Islands</label>
+          <input type="radio" name="map" id="mapPark" value="park"><label for="mapPark"><i>🎢</i>Theme Park</label>
         </div><p class="opt-desc" id="mapDesc"></p></div>
       <p class="opt-desc" id="matchSum"></p>
       <div class="btns"><button class="brick" id="playBtn" type="button">START ▶</button><button class="brick small" id="mOptions" type="button">⚙️ Match options</button><button class="brick small" id="mHome" type="button">🏠 Home</button><p class="note" id="bestNote"></p></div>
@@ -640,7 +641,7 @@ body.tediting .tb.ghost{opacity:.3}body.tediting #lobbyBar{display:none!importan
       <h3>What's inside</h3>
       <ul>
         <li>🎮 15 game modes: Battle Royale, Team Battle, Zombie Survival, Car Race, Plane Race, Floor is Lava, Capture the Crown, Capture the Flag, Fort Siege, Rescue Squad, King of the Hill, Build Battle, the Training Room, Mr. Bonk's Challenge Show and the Mega Robot</li>
-        <li>🗺️ 11 maps, from Candy Land and a low-gravity Space Station to slippery Frozen Peaks and the Big City</li>
+        <li>🗺️ 12 maps, from Candy Land and a low-gravity Space Station to slippery Frozen Peaks and the Big City</li>
         <li>🔫 20+ weapons with Common to Legendary rarities, plus your very own Mythic Laser Blaster</li>
         <li>🔨 Building and editing, cars, loot llamas, vending machines and squads</li>
         <li>👕 A Locker, Ticket Shop, gun wraps, XP levels and daily challenges</li>
@@ -1373,6 +1374,97 @@ let NAVF=null;
 function isleSteer(c,gx,gy){const ai=c.ai;if(Math.hypot(gx-c.x,gy-c.y)<200)return null;if(!NAVF||NAVF.id!==MAP_ID){NAVF=navBuild();NAVF.id=MAP_ID;}
   if(!ai.np||ai.npG!==gx+','+gy||G.time>ai.npT){ai.np=navPath(NAVF,{x:c.x,y:c.y},{x:gx,y:gy})||[];ai.npG=gx+','+gy;ai.npT=G.time+4;}
   while(ai.np.length>1&&Math.hypot(ai.np[0].x-c.x,ai.np[0].y-c.y)<60)ai.np.shift();const w=ai.np[0];if(!w)return null;const dx=w.x-c.x,dy=w.y-c.y,d=Math.hypot(dx,dy)||1;return[dx/d,dy/d];}
+// @module src/js/06e-theme-park.js: The Theme Park map: a roller coaster you can ride, a Ferris wheel, a giant water slide into a pool and a bumper car arena. Rides move by the match clock; riding is part of your own movement.
+// Main: RIDES, PARK, rideBoard, rideOff, rideHold, rideNear, bumperModel
+// See also: maps (MAP.gen), three-setup (MAP.build), visuals (MAP.tick), update (updateChar holds a rider), llamas-vending (nearInteract, interact), cars (bumper cars via MAP.cars)
+/* ================= Theme Park (map) =================
+   A fun fair: a roller coaster you can ride, a Ferris wheel, a giant water slide into a pool and a bumper car arena.
+   The rides (RIDES) move by the match clock, so every player sees them in the same place without sending anything,
+   and riding is part of your own movement (like walking), so a joiner rides on their own screen and the host just sees
+   where they are. Press E (or the action button) by a ride to get on; E or JUMP to get off (from up high you just drop).
+   Bumper cars are little vehicles (kind 'bumper') in a fenced arena. Ride positions are in design units (times K). */
+const RIDES=[];
+const PARK={coaster:[620,640],wheel:[1760,620],slide:[1600,1420],pool:[1880,1880],bump:[640,1760]};
+// the plazas the rides stand on are paved (tile 1), so no tree or extra building lands on them
+function parkZone(x,y){const[px,py]=PARK.pool;if(((x-px)/260)**2+((y-py)/170)**2<1)return 2;
+  if(Math.abs(x-PARK.coaster[0])<330&&Math.abs(y-PARK.coaster[1])<250)return 1;if(Math.hypot(x-PARK.wheel[0],y-PARK.wheel[1])<190)return 1;
+  if(Math.abs(x-PARK.bump[0])<220&&Math.abs(y-PARK.bump[1])<160)return 1;if(Math.hypot(x-PARK.slide[0],y-PARK.slide[1])<120)return 1;
+  const ex=(x-1200)/820,ey=(y-1200)/820,e=ex*ex+ey*ey;return e>0.93&&e<1.07?1:0;}
+MAPS.park={name:'Theme Park',desc:'A fun fair! Ride the roller coaster and the Ferris wheel, zoom down the giant water slide into the pool, and crash around the bumper car arena.',seed:7777,
+  tiles:['#5fc46a','#e8c9a0','#43c6ff','#f4e2c4'],side:'#3e9a4c',rides:true,sky:['#7ccaf8','#fff4e0'],outside:'#5fc46a',tree:'lollipop',rock:'gumdrop',zone:parkZone,
+  b:[[13,3,3,3,'#ff6fae'],[3,13,3,3,'#43c6ff'],[23,12,3,3,'#ffcb1f'],[12,24,3,3,'#9b6bff'],[9,9,3,3,'#ff7b1c']],
+  gen(){RIDES.length=0;rideCoaster();rideWheel();rideSlide();parkArena();},
+  build(){for(const R of RIDES)R.build();parkArenaBuild();},
+  tick(dt,t){const tm=G?G.time:performance.now()/1000;for(const R of RIDES)R.tick(tm);},
+  cars(){const[bx,by]=PARK.bump;for(let k=0;k<6;k++){const x=(bx-150+(k%3)*150)*K,y=(by+(k<3?-70:70))*K,v=newVehicle(x,y,k<3?Math.PI/2:-Math.PI/2,['#ff3b3b','#43c6ff','#ffcb1f','#5cff7a','#ff9ad5','#9b6bff'][k],'bumper');v.hp=v.maxHp=1e6;v.maxMul=0.55;G.cars.push(v);}}};
+POI_NAMES.park=['Ticket Booth','Snack Stand','Prize Arcade','Popcorn Palace','Cotton Candy Corner'];
+EXTRA_NAMES.park=['Hot Dog Hut','Ring Toss','Funnel Cake Cafe','Balloon Pop','Lemonade Stand','Duck Pond','Face Paint Tent','Pretzel Place','Souvenir Shop','Ice Cream Cart','Teacup Cafe','Fun House'];
+// ---- the roller coaster: a closed loop with hills and a big drop; speed comes from height (faster at the bottom)
+function rideCoaster(){const[cx,cy]=PARK.coaster,n=180,P=[];
+  for(let i=0;i<n;i++){const a=i/n*TAU,x=(cx+Math.cos(a)*290+Math.cos(2*a)*30)*K,y=(cy+Math.sin(a)*200+Math.sin(3*a)*25)*K,z=a<0.35||a>TAU-0.35?30:40+130*Math.max(0,Math.sin(a*2.5-0.9))+70*Math.max(0,Math.sin(a*1.2));P.push({x,y,z});}
+  const AL=[0],Tm=[0],zt=Math.max(...P.map(p=>p.z));for(let i=0;i<n;i++){const a=P[i],b=P[(i+1)%n],d=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),v=Math.sqrt(110*110+2*520*(zt-(a.z+b.z)/2));AL.push(AL[i]+d);Tm.push(Tm[i]+d/v);}
+  const L=AL[n],lap=Tm[n],st=P[0];
+  const at=s=>{s=((s%L)+L)%L;let lo=0,hi=n;while(hi-lo>1){const m=(lo+hi)>>1;if(AL[m]<=s)lo=m;else hi=m;}const a=P[lo],b=P[(lo+1)%n],f=(s-AL[lo])/(AL[lo+1]-AL[lo]);
+    return{x:lerp(a.x,b.x,f),y:lerp(a.y,b.y,f),z:lerp(a.z,b.z,f),ang:Math.atan2(b.y-a.y,b.x-a.x),pitch:Math.atan2(b.z-a.z,Math.hypot(b.x-a.x,b.y-a.y))};};
+  const sAt=t=>{t=((t%lap)+lap)%lap;let lo=0,hi=n;while(hi-lo>1){const m=(lo+hi)>>1;if(Tm[m]<=t)lo=m;else hi=m;}return AL[lo]+(AL[lo+1]-AL[lo])*(t-Tm[lo])/(Tm[lo+1]-Tm[lo]);};
+  const R={kind:'coaster',name:'ROLLER COASTER',x:st.x,y:st.y-60,seats:6,
+    seat:(k,t)=>{const p=at(sAt(t)-Math.floor(k/2)*44),s=k%2?-9:9;return{x:p.x-Math.sin(p.ang)*s,y:p.y+Math.cos(p.ang)*s,z:p.z+12,ang:p.ang,pitch:p.pitch};},
+    ready:t=>{const p=at(sAt(t));return Math.hypot(p.x-st.x,p.y-st.y)<500;},
+    build(){for(let i=0;i<n;i++){const a=P[i],b=P[(i+1)%n],dx=b.x-a.x,dy=b.y-a.y,h=Math.hypot(dx,dy),ang=Math.atan2(dy,dx),pt=Math.atan2(b.z-a.z,h),mx=(a.x+b.x)/2,my=(a.y+b.y)/2,mz=(a.z+b.z)/2;
+        for(const s of[-9,9])S('boxC','#ff3b3b',mx-Math.sin(ang)*s,my+Math.cos(ang)*s,mz,Math.hypot(h,b.z-a.z)+1,3,3,{ry:-ang,rz:pt});S('boxC','#c5ccd6',mx,my,mz-3,Math.hypot(h,b.z-a.z)+1,2,20,{ry:-ang,rz:pt});
+        if(i%6===0&&a.z>34){S('cyl','#ffcb1f',a.x,a.y,0,6,a.z-3,6);if(!blocked3D(a.x,a.y,10))addOb({t:'cyl',x:a.x,y:a.y,r:5,z0:0,h:a.z-6});}}
+      S('box','#9b6bff',st.x-50,st.y-90,0,120,26,60);S('box','#ffcb1f',st.x-50,st.y-90,26,120,4,62,{em:0.2});
+      const g=new THREE.Group();R.cars=[];for(let k=0;k<3;k++){const c=new THREE.Group(),B=(col,x,y,z,w,h,d)=>{const m=new THREE.Mesh(GEO.boxC,mat(col));m.position.set(x,y,z);m.scale.set(w,h,d);c.add(m);};
+        B(['#ff3b3b','#43c6ff','#ffcb1f'][k],0,6,0,26,12,36);B('#2b2f3a',0,13,-4,22,3,8);B('#2b2f3a',0,13,10,22,3,8);B('#c5ccd6',0,2,0,30,3,40);g.add(c);R.cars.push(c);}world.add(g);},
+    tick(t){if(!R.cars)return;R.cars.forEach((c,k)=>{const p=at(sAt(t)-k*44);c.position.set(p.x,p.z,p.y);c.rotation.set(0,Math.PI/2-p.ang,0,'YXZ');c.rotateX(-p.pitch);});}};
+  RIDES.push(R);}
+// ---- the Ferris wheel: eight gondolas going slowly round
+function rideWheel(){const[wx,wy]=PARK.wheel,cx=wx*K,cy=wy*K,cz=330,Rr=280,sp=0.16;
+  const gp=(k,t)=>{const a=t*sp+k*TAU/8;return{x:cx,y:cy+Math.cos(a)*Rr,z:cz+Math.sin(a)*Rr};};
+  const R={kind:'wheel',name:'FERRIS WHEEL',x:cx,y:cy+60,seats:8,
+    seat:(k,t)=>{const p=gp(k,t);return{x:p.x,y:p.y,z:p.z-34,ang:0,pitch:0};},
+    bottom:t=>{let b=0,bz=1e9;for(let k=0;k<8;k++){const z=gp(k,t).z;if(z<bz){bz=z;b=k;}}return b;},ready:()=>true,
+    build(){for(const s of[-1,1])for(const d of[-1,1])S('cyl','#c5ccd6',cx+s*40,cy+d*150,0,12,cz+10,12,{rx:-d*0.42});addOb({t:'box',x:cx-50,y:cy-12,w:100,d:24,z0:0,h:40});
+      const g=new THREE.Group(),wh=new THREE.Group();wh.position.set(cx,cz,cy);g.add(wh);for(const s of[-14,14]){const rim=new THREE.Mesh(new THREE.TorusGeometry(Rr,4,6,48),mat('#ff6fae'));rim.rotation.y=Math.PI/2;rim.position.x=s;wh.add(rim);}
+      for(let k=0;k<8;k++){const sp2=new THREE.Mesh(GEO.boxC,mat('#ffffff'));sp2.scale.set(4,Rr*2,4);sp2.rotation.x=k*Math.PI/8;wh.add(sp2);}
+      const hub=new THREE.Mesh(GEO.cylC,mat('#ffcb1f'));hub.scale.set(30,40,30);hub.rotation.z=Math.PI/2;wh.add(hub);
+      R.gond=[];for(let k=0;k<8;k++){const c=new THREE.Group(),B=(col,x,y,z,w,h,d)=>{const m=new THREE.Mesh(GEO.boxC,mat(col));m.position.set(x,y,z);m.scale.set(w,h,d);c.add(m);};
+        B(['#ff3b3b','#43c6ff','#ffcb1f','#5cff7a'][k%4],0,-36,0,34,14,34);B('#ffffff',0,-14,0,3,30,3);B(['#ff3b3b','#43c6ff','#ffcb1f','#5cff7a'][k%4],0,-2,0,38,4,38);g.add(c);R.gond.push(c);}
+      R.wh=wh;world.add(g);},
+    tick(t){if(!R.wh)return;R.wh.rotation.x=-t*sp;R.gond.forEach((c,k)=>{const p=gp(k,t);c.position.set(p.x,p.z,p.y);});}};
+  RIDES.push(R);}
+// ---- the giant water slide: up the stairs to the top, then whoosh down a curvy slide into the pool
+function rideSlide(){const[sx,sy]=PARK.slide,[px,py]=PARK.pool,top=170,n=60,P=[];const x0=sx*K,y0=sy*K;
+  for(let i=0;i<=n;i++){const f=i/n,w=Math.sin(f*Math.PI*3)*90*(1-f);P.push({x:lerp(x0+40,px*K-60,f)+w,y:lerp(y0+40,py*K-80,f)-w*0.6,z:Math.max(4,top*(1-f)**1.3)});}
+  const dur=3.6,at=f=>{f=clamp(f,0,1)*n;const i=Math.min(n-1,Math.floor(f)),a=P[i],b=P[i+1],u=f-i;return{x:lerp(a.x,b.x,u),y:lerp(a.y,b.y,u),z:lerp(a.z,b.z,u),ang:Math.atan2(b.y-a.y,b.x-a.x),pitch:Math.atan2(b.z-a.z,Math.hypot(b.x-a.x,b.y-a.y))};};
+  const R={kind:'slide',name:'WATER SLIDE',x:x0+40,y:y0+40,z:top,seats:99,oneway:true,dur,
+    seat:(k,t,c)=>{const p=at((t-c.rideT0)/dur);return{x:p.x,y:p.y,z:p.z+2,ang:p.ang,pitch:0};},ready:()=>true,
+    build(){addOb({t:'box',x:x0-40,y:y0-40,w:120,d:120,z0:0,h:top,col:'#43c6ff',wall:true});addOb({t:'ramp',x:x0-40,y:y0-40-380,w:120,d:380,z0:0,h:top,dir:1,stairs:true});
+      S('box','#ffffff',x0-40,y0-40-380,0,120,4,380,{em:0.05});for(let i=0;i<n;i++){const a=P[i],b=P[i+1],dx=b.x-a.x,dy=b.y-a.y,h=Math.hypot(dx,dy),ang=Math.atan2(dy,dx),pt=Math.atan2(b.z-a.z,h),mx=(a.x+b.x)/2,my=(a.y+b.y)/2,mz=(a.z+b.z)/2;
+        S('boxC','#43c6ff',mx,my,mz,Math.hypot(h,b.z-a.z)+2,4,46,{ry:-ang,rz:pt});for(const s of[-22,22])S('boxC','#ffcb1f',mx-Math.sin(ang)*s,my+Math.cos(ang)*s,mz+8,Math.hypot(h,b.z-a.z)+2,16,4,{ry:-ang,rz:pt});
+        if(i%8===4&&a.z>20)S('cyl','#ffffff',a.x,a.y,0,8,a.z-4,8);}},
+    tick(){}};
+  RIDES.push(R);}
+// ---- the bumper car arena: a low fence round a smooth floor
+function parkArena(){const[bx,by]=PARK.bump,x0=(bx-200)*K,y0=(by-140)*K,w=400*K,d=280*K;const F=(x,y,w2,d2)=>addOb({t:'box',x,y,w:w2,d:d2,z0:0,h:26,col:'#ff6fae',wall:true});
+  F(x0,y0,w,10);F(x0,y0+d-10,w,10);F(x0,y0,10,d/2-60);F(x0,y0+d/2+60,10,d/2-60);F(x0+w-10,y0,10,d);}
+function parkArenaBuild(){const[bx,by]=PARK.bump,x0=(bx-200)*K,y0=(by-140)*K,w=400*K,d=280*K;S('box','#8a93a3',x0,y0,0,w,1.5,d);
+  for(let x=x0;x<=x0+w;x+=w/6)for(const y of[y0,y0+d])S('cyl','#c5ccd6',x,y,0,5,120,5);S('box','#9b6bff',x0,y0,120,w,4,d);}
+// the bumper car: a round little car with a bumper ring and a pole
+function bumperModel(col){const g=new THREE.Group(),B=(c,x,y,z,w,h,d,geo)=>{const m=new THREE.Mesh(GEO[geo||'boxC'],mat(c));m.position.set(x,y,z);m.scale.set(w,h,d);m.castShadow=true;g.add(m);return m;};
+  B('#2b2f3a',0,5,0,44,8,44,'cylC');B(col,0,12,0,38,10,38,'cylC');B('#ffffff',0,20,-8,22,10,8);B('#2b2f3a',0,18,10,4,8,4);B('#c5ccd6',0,60,-14,2,80,2,'cylC');B('#ffcb1f',0,100,-14,6,6,6,'sphC');
+  g.userData.wheels=[];scene.add(g);return g;}
+// ---- getting on and off
+function rideNear(c){for(const R of RIDES){if(R.kind==='slide'){if(Math.hypot(c.x-R.x,c.y-R.y)<70&&c.z>R.z-30)return R;continue;}if(Math.hypot(c.x-R.x,c.y-R.y)<110&&c.z<60)return R;}return null;}
+function rideBoard(c,R){const t=G.time;if(!R.ready(t)){c.rideWait=R;if(c===G.player)toast('🎢 The roller coaster is coming round. Wait here!');return;}c.rideWait=null;
+  let k=0;if(R.kind==='wheel')k=R.bottom(t);else if(R.kind==='coaster'){const used=new Set(G.chars.filter(o=>o.ride===R).map(o=>o.seat));while(used.has(k)&&k<R.seats-1)k++;}
+  c.ride=R;c.seat=k;c.rideT0=t;c.vx=c.vy=c.vz=0;c.air=null;sfx('pickup',c);if(c===G.player)toast(TOUCH.on?'🎢 Wheee! Tap the action button or JUMP to get off.':'🎢 Wheee! Press E or Space to get off.');}
+function rideOff(c){const R=c.ride;if(!R)return;c.ride=null;c.onGround=false;c.vz=R.kind==='slide'?0:220;if(R.kind==='slide'){const p=R.seat(0,c.rideT0+R.dur*0.98,c);c.vx=Math.cos(p.ang)*300;c.vy=Math.sin(p.ang)*300;burst(c.x,c.y,c.z+10,30,'confetti','#43c6ff',160);addText(c.x,c.y,c.z+50,'SPLASH!','#43c6ff',20);sfx('blub',c);}}
+// riding (part of the character's own movement): stay in the seat; the slide ends in the pool
+function rideHold(c,dt){const R=c.ride,t=G.time;if(R.oneway&&t-c.rideT0>=R.dur){rideOff(c);return;}const p=R.seat(c.seat,t,c);c.x=p.x;c.y=p.y;c.z=p.z;c.face=p.ang;c.moving=false;c.onGround=true;c.vz=0;}
+// the water slide: step onto the top of it and off you go
+function rideAuto(c){if(c.vehicle||c.ride)return;for(const R of RIDES)if(R.kind==='slide'&&Math.hypot(c.x-R.x,c.y-R.y)<40&&c.z>R.z-20&&!(c.slideCd>G.time)){rideBoard(c,R);c.slideCd=G.time+5;}}
+function rideWaitTick(c){const R=c.rideWait;if(!R)return;if(Math.hypot(c.x-R.x,c.y-R.y)>160){c.rideWait=null;return;}if(R.ready(G.time))rideBoard(c,R);}
 // @module src/js/07-three-setup.js: three.js renderer, scene, camera, lights and shared geometry/material caches; building the 3D world; re-measuring the screen (iOS fixes).
 // Main: renderer, scene, camera, resize, viewportChanged, GEO, mat, mesh, buildWorld
 // See also: maps, visuals
@@ -1614,6 +1706,7 @@ const SKY_LOOK={
   oil:{land:'hills',cols:['#3e3631','#4a403a','#2f2925'],cloud:'#4a3a30',n:18,smoke:true,sun:'#ff9a50'},
   ice:{land:'peaks',cols:['#e8f2fb','#cfe2f2','#b7d0e6'],cloud:'#ffffff',n:16,sun:'#ffffff'},
   pirate:{land:'islands',cols:['#4fae5a','#3e9a4c','#e9d39a'],cloud:'#ffffff',n:20,sun:'#fff3c0'},
+  park:{land:'hills',cols:['#5aa860','#7cc47a','#ff9ad5','#ffd27a'],cloud:'#ffffff',n:22,sun:'#fff3c0'},
   sky:{land:null,cols:['#ffffff'],cloud:'#ffffff',n:40,sun:'#fff6d0'},
   city:{land:'city',cols:['#8fa3c2','#a9b8d0','#7a8fb0','#c2cde0'],cloud:'#ffffff',n:18,sun:'#fff3c0'},
 };
@@ -2106,7 +2199,7 @@ function updatePets(dt,t){for(const c of G.chars)if(c.m&&c.m.pet)movePet(c,dt,t,
    hurt them and they don't block anyone. Homes come from the map's seed and the wandering from the match clock (or the
    page clock in the lobby), so everyone in a multiplayer match sees them in the same places. buildAnimals() runs when
    the world is built; updateAnimals(dt,t) every frame from animateWorld. */
-const ANIMALS_BY_MAP={sky:['gull','gull'],city:['gull','bunny','gull'],meadow:['deer','deer','sheep','sheep','bunny','chick'],desert:['camel','lizard','lizard'],candy:['psheep','bunny','psheep'],
+const ANIMALS_BY_MAP={park:['gull','bunny','chick'],sky:['gull','gull'],city:['gull','bunny','gull'],meadow:['deer','deer','sheep','sheep','bunny','chick'],desert:['camel','lizard','lizard'],candy:['psheep','bunny','psheep'],
   oil:['gull','gull'],ice:['penguin','penguin','bear'],pirate:['crab','crab','parrot']};
 let ANIMALS=[];
 // the animals that aren't pets: simple toy shapes, facing +z like the pets
@@ -2756,7 +2849,7 @@ const LZ=[[2,35],[4,18],[8,9]];let laserZ=1;
 addEventListener('wheel',e=>{if(G&&!G.ended&&!G.paused){const s=G.player.slots[G.player.cur];if(aimDown&&s&&s.id==='laser'){const n=clamp(laserZ+(e.deltaY<0?1:-1),0,2);if(n!==laserZ){laserZ=n;sfx('pickup');}return;}G.buildMode=null;if(NETC())netClientWheel(e.deltaY>0?1:-1);cycleWeapon(e.deltaY>0?1:-1);}},{passive:true});
 document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===cv;if(locked)hadLock=true;else{mouseDown=false;aimDown=false;if(G&&!G.ended&&!G.paused&&hadLock&&G.net)netLog('mouse released (game keeps running)');}}); // no pause: "Click to aim" shows instead
 addEventListener('mousemove',e=>{if(!G||G.ended||G.paused)return;lastMouseMove=performance.now();if(!locked&&e.target!==cv)return;const s=(locked?0.0022:0.004)*(camera.fov/70)*MSENS;G.yaw+=e.movementX*s;G.pitch=clamp(G.pitch-e.movementY*s,-1.25,1.0);});
-function playerSpace(){const p=G.player;if(p.vehicle){if(p.vehicle.kind==='mech')mechJump(p.vehicle);else if(p.vehicle.kind==='board')boardPop(p.vehicle);else sfx('honk');return;}
+function playerSpace(){const p=G.player;if(p.ride){rideOff(p);return;}if(p.vehicle){if(p.vehicle.kind==='mech')mechJump(p.vehicle);else if(p.vehicle.kind==='board')boardPop(p.vehicle);else sfx('honk');return;}
   if(p.state==='bus'){jumpFromBus(p);return;}
   if(p.state==='sky'){if(!p.glide){p.glide=true;sfx('glide');}return;}
   if(p.state==='alive'&&p.onGround&&p.stun<=0){p.vz=(MAP.lowG?380:360)*springMul(p);p.onGround=false;p.dj=false;sfx('jump',p);}
@@ -2828,7 +2921,8 @@ function stickEnd(){TOUCH.stick=null;TOUCH.mx=TOUCH.my=TOUCH.mag=0;TOUCH.sprint=
 function touchActNow(p){if(!G||G.ended||!p)return null;
   if(p.vehicle){if(G.mode==='race'||G.mode==='airrace')return p.raceCar&&G.time>G.goAt?{k:'reset',l:G.mode==='race'?'RESET CAR':'RESET PLANE',i:'🔄'}:null;return p.vehicle.boss?null:{k:'exit',l:'GET OUT',i:'🚪'};}
   if(p.state!=='alive')return null;const rv=reviveTarget(p);if(rv)return{k:'revive',l:'REVIVE',i:'➕',hold:1};
-  const ni=nearInteract(p);if(ni)return ni.type==='llama'?{k:'llama',l:'OPEN',i:'🦙'}:{k:'vend',l:'BUY · '+ni.o.cost.n+' '+ni.o.cost.mat,i:'🛒'};
+  if(p.ride)return{k:'ride',l:'GET OFF',i:'🎢'};
+  const ni=nearInteract(p);if(ni)return ni.type==='ride'?{k:'ride',l:'RIDE',i:'🎢'}:ni.type==='llama'?{k:'llama',l:'OPEN',i:'🦙'}:{k:'vend',l:'BUY · '+ni.o.cost.n+' '+ni.o.cost.mat,i:'🛒'};
   if(G.mode!=='race'&&nearestCar(p))return nearestCar(p).kind==='mech'?{k:'drive',l:'MECH',i:'🤖'}:nearestCar(p).kind==='board'?{k:'drive',l:'RIDE',i:'🛹'}:nearestCar(p).kind==='catapult'?{k:'drive',l:'CATAPULT',i:'🏰'}:nearestCar(p).kind==='heli'?{k:'drive',l:'FLY',i:'🚁'}:nearestCar(p).kind==='firetruck'?{k:'drive',l:'FIRE TRUCK',i:'🚒'}:{k:'drive',l:'DRIVE',i:'🚗'};if(G.swap)return{k:'swap',l:'SWAP',i:'🔁'};return null;}
 function setBuildUI(on){TOUCH.buildUI=on;if(!G)return;if(on){if(!G.buildMode)G.buildMode=TOUCH.lastPiece||'wall';sfx('pickup',G.player);}else{G.buildMode=null;buildHeld=false;}}
 function tAct(a,down){const p=G&&G.player;if(a==='pause'){if(down&&G&&!G.ended)setPaused(true);return;}if(a==='sound'){if(down){audioInit();setMuted(!AU.muted);}return;}
@@ -2840,7 +2934,7 @@ function tAct(a,down){const p=G&&G.player;if(a==='pause'){if(down&&G&&!G.ended)s
   else if(a==='zoom'){if(down){laserZ=(laserZ+1)%3;sfx('pickup',p);}}
   else if(a==='act'){const ac=TOUCH.act;if(!down){keys.delete('e');return;}if(!ac)return;
     if(ac.k==='revive')keys.add('e');else if(ac.k==='exit')exitCar(p);else if(ac.k==='drive'){const car=nearestCar(p);if(car){setBuildUI(false);enterCar(p,car);}}
-    else if(ac.k==='reset')XM[G.mode].reset(p.raceCar);else interact();vib(15);}
+    else if(ac.k==='reset')XM[G.mode].reset(p.raceCar);else if(ac.k==='ride'){if(p.ride)rideOff(p);else{const R=rideNear(p);if(R)rideBoard(p,R);}}else interact();vib(15);}
   else if(a==='build'){if(p.vehicle&&p.vehicle.kind==='plane'&&p.vehicle.fly){if(down)keys.add('e');else keys.delete('e');}else if(down&&!p.vehicle)setBuildUI(!TOUCH.buildUI);} // flying: the balloon drop
   else if(A.piece){if(down){if(!TOUCH.buildUI)setBuildUI(true);G.buildMode=A.piece;TOUCH.lastPiece=A.piece;build(A.piece);buildHeld=true;G.bT=0.28;vib(8);}else buildHeld=false;}
   else if(a==='edit'){if(down)editWall();}
@@ -3108,7 +3202,7 @@ function spawnCars(){G.cars=[];
     if(G.cars.some(c=>Math.hypot(c.x-x,c.y-y)<260)||PADS.some(p=>Math.hypot(p.x-x,p.y-y)<90))continue;
     const col=CAR_COLS[n%CAR_COLS.length];
     G.cars.push(newVehicle(x,y,ang,col,'car'));n++;}
-  spawnMechs();spawnCraft();spawnBoards();}
+  spawnMechs();spawnCraft();spawnBoards();if(MAP.cars)MAP.cars();} // (a map's own vehicles: the Theme Park's bumper cars)
 function carCollide(car){const r=car.r||24,mech=car.kind==='mech',ci=Math.floor(car.x/T),cj=Math.floor(car.y/T);let hit=false;
   for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const i=ci+di,j=cj+dj;if(i<0||j<0||i>=N||j>=N)continue;
     for(const o of GRID[i+j*N].slice()){if(car.z+(car.h||28)<=o.z0)continue;
@@ -3201,8 +3295,8 @@ function mechModel(col,boss,scale){const g=new THREE.Group(),dark=shadeHex(col,0
   if(boss){const cr=piv(torso,0,52,-14);for(let k=0;k<5;k++){const a=(k-2)*0.32;B(cr,'#ffcb1f',Math.sin(a)*16,4,0,4,10,4,0.4,'cone');}B(cr,'#ffcb1f',0,-1,0,30,4,6,0.3);g.scale.setScalar(scale||BOSS.scale);}
   g.userData={legs,shins,arms,torso};scene.add(g);return g;}
 // the parts that make a vehicle a car, a mech or a boss mech (kind: 'car' | 'mech' | 'boss')
-function vehBits(kind,col){const mega=kind==='mega',mech=kind==='mech'||kind==='boss'||mega,boss=kind==='boss'||mega,s=mega?MEGA.scale:boss?BOSS.scale:1,plane=kind==='plane',boat=kind==='boat',board=kind==='board',cat=kind==='catapult',heli=kind==='heli',ft=kind==='firetruck',hp=mega?MEGA.hp:boss?BOSS.hp:mech?MECH.hp:plane?300:board?250:400;
-  return{kind:mech?'mech':plane||boat||board||cat||heli||ft?kind:'car',boss,mega,r:mech?MECH.r*s:plane?36:boat?32:board?16:cat?26:heli?34:ft?30:24,h:mech?MECH.h*s:plane?30:boat?24:board?14:cat?40:heli?40:ft?40:28,seat:mech?MECH.seat*s:cat?16:heli?10:ft?12:5,hp,maxHp:hp,m:mech?mechModel(col,boss,s):plane?planeModel(col):boat?boatModel(col):board?boardModel(col):cat?catapultModel(col):heli?heliModel(col):ft?truckModel(col):carModel(col)};} // (the helicopter and fire truck: Rescue Squad)
+function vehBits(kind,col){const mega=kind==='mega',mech=kind==='mech'||kind==='boss'||mega,boss=kind==='boss'||mega,s=mega?MEGA.scale:boss?BOSS.scale:1,plane=kind==='plane',boat=kind==='boat',board=kind==='board',cat=kind==='catapult',heli=kind==='heli',ft=kind==='firetruck',bump=kind==='bumper',hp=mega?MEGA.hp:boss?BOSS.hp:mech?MECH.hp:plane?300:board?250:400;
+  return{kind:mech?'mech':plane||boat||board||cat||heli||ft||bump?kind:'car',boss,mega,r:mech?MECH.r*s:plane?36:boat?32:board?16:cat?26:heli?34:ft?30:bump?22:24,h:mech?MECH.h*s:plane?30:boat?24:board?14:cat?40:heli?40:ft?40:bump?22:28,seat:mech?MECH.seat*s:cat?16:heli?10:ft?12:bump?6:5,hp,maxHp:hp,m:mech?mechModel(col,boss,s):plane?planeModel(col):boat?boatModel(col):board?boardModel(col):cat?catapultModel(col):heli?heliModel(col):ft?truckModel(col):bump?bumperModel(col):carModel(col)};} // (the helicopter and fire truck: Rescue Squad)
 function newVehicle(x,y,ang,col,kind){return{x,y,z:groundAt(x,y,10),vz:0,ang,speed:0,vx:0,vy:0,steer:0,driver:null,col,home:{x,y,ang},dead:false,respawnAt:0,onGround:true,padCd:0,wheelRot:0,walkT:0,cd:0,...vehBits(kind,col)};}
 const MECH_COLS=['#7d8796','#ff7b1c','#1f6fd6','#3aa845'];
 function spawnMechs(){const want=Math.round(2*K);
@@ -4710,6 +4804,7 @@ function spawnLootSpecials(){G.llamas=[];G.vends=[];if(MODE().noLoot)return;
     const id=pick(VEND_ITEMS),r=rollRar(id,LOOT_W.vend),cost=VEND_COST[r];const V={x,y,z:groundAt(x,y,10),id,r,cost,m:vendModel(id,r,cost)};V.m.position.set(x,V.z,y);G.vends.push(V);
     addOb({t:'box',x:x-22,y:y-15,w:44,d:30,z0:V.z,h:78,vend:true});}}
 function nearInteract(p){if(p.state!=='alive'||p.vehicle)return null;
+  if(MAP.rides&&!p.ride){const R=rideNear(p);if(R)return{type:'ride',o:R};}
   for(const L of G.llamas||[])if(!L.open&&Math.hypot(L.x-p.x,L.y-p.y)<60)return{type:'llama',o:L};
   for(const V of G.vends||[])if(Math.hypot(V.x-p.x,V.y-p.y)<62)return{type:'vend',o:V};return null;}
 function openLlama(L){const p=G.player;L.open=true;scene.remove(L.m);burst(L.x,L.y,L.z+30,140,'confetti',null,320);sfx('chest',p);sfx('boom',p);
@@ -4720,7 +4815,7 @@ function openLlama(L){const p=G.player;L.open=true;scene.remove(L.m);burst(L.x,L
 function buyVend(V){const p=G.player,c=V.cost;if(G.mats[c.mat]<c.n){toast(`You need ${c.n} ${c.mat}. Swing your pickaxe to collect more!`);sfx('hit',p);return;}
   G.mats[c.mat]-=c.n;G.items.push(makeItem(V.id,p.x+Math.cos(G.yaw)*20,p.y+Math.sin(G.yaw)*20,undefined,0,V.r));sfx('pickup',p);sfx('chest',p);burst(V.x,V.y,V.z+90,30,'confetti',null,160);xpEvent('vend');
   toast('You bought '+itemName(V.id,V.r)+'!');}
-function interact(){const p=G.player;if(reviveTarget(p))return;const n=nearInteract(p);if(n&&n.type==='llama')openLlama(n.o);else if(n&&n.type==='vend')buyVend(n.o);else playerSwap();}
+function interact(){const p=G.player;if(p.ride){rideOff(p);return;}if(reviveTarget(p))return;const n=nearInteract(p);if(n&&n.type==='ride')rideBoard(p,n.o);else if(n&&n.type==='llama')openLlama(n.o);else if(n&&n.type==='vend')buyVend(n.o);else playerSwap();}
 function cleanupLoot(){for(const L of G.llamas||[])scene.remove(L.m);for(const V of G.vends||[])scene.remove(V.m);for(const o of OB.filter(o=>o.vend))removeOb(o);}
 function animateLoot(dt,t){for(const L of G.llamas||[])if(!L.open){L.m.position.y=L.z+Math.abs(Math.sin(t*2+L.x))*3;L.m.rotation.y+=dt*0.4;}
   for(const V of G.vends||[])V.m.userData.item.rotation.y+=dt*1.5;}
@@ -4759,6 +4854,7 @@ function updateChar(c,dt){
   if(c.state!=='alive')return;
   const st=G.storm;
   if(st&&!NETC()){if(Math.hypot(c.x-st.x,c.y-st.y)>st.r){c.stormTick+=dt;if(c.stormTick>=0.5){c.stormTick-=0.5;damage(c,SDPS[st.stage]*0.5,null,'storm');}if(c.state!=='alive')return;}else c.stormTick=0;}
+  if(c.ride){rideHold(c,dt);return;}if(c.rideWait)rideWaitTick(c);if(MAP.rides)rideAuto(c); // the Theme Park's rides
   if(c.vehicle){c.moving=false;return;}
   let[mx,my,sprint]=c.isPlayer&&!autoOn(c)?playerInput(c,dt):c.zombie?zombieUpdate(c,dt):botUpdate(c,dt);if(autoOn(c))autoCam(c,dt);
   if(XM[G.mode]&&XM[G.mode].hold&&XM[G.mode].hold(c)){mx=my=0;sprint=false;}
@@ -5091,7 +5187,7 @@ function updateHUD(){updateNetHUD();gadgetHud();{const at=$('autoTag'),on=!!(G&&
     else if(p.vehicle&&p.vehicle.kind==='catapult')h='🏰 CATAPULT · <kbd>W</kbd><kbd>S</kbd> roll · <kbd>A</kbd><kbd>D</kbd> turn · aim at the fort and <kbd>Click</kbd> to launch a foam boulder · <kbd>F</kbd> get out';
     else if(p.vehicle&&p.vehicle.kind==='board')h='🛹 <kbd>W</kbd> go · <kbd>A</kbd><kbd>D</kbd> steer · <kbd>Shift</kbd> boost · <kbd>Space</kbd> jump, and in the air: tricks! · ride along a rail to grind · <kbd>F</kbd> get off';
     else if(p.vehicle&&p.vehicle.kind==='boat')h='⛵ <kbd>W</kbd> go · <kbd>A</kbd><kbd>D</kbd> steer · <kbd>Click</kbd> foam cannon · <kbd>F</kbd> get out';
-    else if(p.vehicle)h='Driving! <kbd>F</kbd> get out · <kbd>Space</kbd> honk · <kbd>Shift</kbd> turbo';else if(reviveTarget(p))h='Hold <kbd>E</kbd> to revive '+esc(reviveTarget(p).name);else if(nearInteract(p)){const ni=nearInteract(p);h=ni.type==='llama'?'Press <kbd>E</kbd> to open the Loot Llama!':'Press <kbd>E</kbd> to buy '+esc(itemName(ni.o.id,ni.o.r))+' for '+ni.o.cost.n+' '+ni.o.cost.mat;}else if(p.state==='alive'&&nearestCar(p))h={mech:'Press <kbd>F</kbd> to climb into the MECH!',plane:'Press <kbd>F</kbd> to fly the PLANE!',board:'Press <kbd>F</kbd> to ride the HOVERBOARD!',catapult:'Press <kbd>F</kbd> to use the CATAPULT!',boat:'Press <kbd>F</kbd> to drive the BOAT!'}[nearestCar(p).kind]||'Press <kbd>F</kbd> to drive';
+    else if(p.vehicle)h='Driving! <kbd>F</kbd> get out · <kbd>Space</kbd> honk · <kbd>Shift</kbd> turbo';else if(p.ride)h='🎢 Riding the '+p.ride.name+' · <kbd>E</kbd> or <kbd>Space</kbd> to get off';else if(reviveTarget(p))h='Hold <kbd>E</kbd> to revive '+esc(reviveTarget(p).name);else if(nearInteract(p)){const ni=nearInteract(p);h=ni.type==='ride'?'Press <kbd>E</kbd> to ride the '+ni.o.name+'!':ni.type==='llama'?'Press <kbd>E</kbd> to open the Loot Llama!':'Press <kbd>E</kbd> to buy '+esc(itemName(ni.o.id,ni.o.r))+' for '+ni.o.cost.n+' '+ni.o.cost.mat;}else if(p.state==='alive'&&nearestCar(p))h={mech:'Press <kbd>F</kbd> to climb into the MECH!',plane:'Press <kbd>F</kbd> to fly the PLANE!',board:'Press <kbd>F</kbd> to ride the HOVERBOARD!',catapult:'Press <kbd>F</kbd> to use the CATAPULT!',boat:'Press <kbd>F</kbd> to drive the BOAT!'}[nearestCar(p).kind]||'Press <kbd>F</kbd> to drive';
     else if(G.swap&&p.state==='alive')h='Press <kbd>E</kbd> to swap for '+esc(itemName(G.swap.id,G.swap.r??WEAPONS[G.swap.id].rar));
     if(TOUCH.on&&h){if(TOUCH.act)h='';else if(p.vehicle){const v=p.vehicle;h=G.mode==='race'?'Use the joystick to drive · push it all the way for turbo':v.kind==='plane'?('✈️ '+Math.round((v.speed||0)/4)+' mph · '+(v.fly?'stick: steer, up to climb, down to dive · let go: fly level · stick all the way up: loop · all the way to the side: barrel roll · BOOST: faster'+(G.mode==='airrace'?'':' · hold FIRE: machine guns · 💧: balloons'):'push the stick up to roll, and you take off by yourself')):v.kind==='catapult'?'🏰 Roll with the stick · aim at the fort and press FIRE to launch a foam boulder':v.kind==='heli'?'🚁 Stick: fly and turn · hold JUMP to go up, CROUCH to go down · hover by a roof, then land on the H':v.kind==='firetruck'?'🚒 Drive with the stick · aim at a fire and hold FIRE to spray':v.kind==='board'?'🛹 Steer with the stick · JUMP to jump, and again in the air for tricks · ride along a rail to grind':v.kind==='boat'?'⛵ Steer with the stick · FIRE for the foam cannon':v.kind==='mech'?(v.boss?'👑 BOSS MECH ':'🤖 MECH ')+Math.max(0,Math.round(v.hp))+'/'+v.maxHp+' · fire to blast · STOMP to jump':'';}else h=h.split('Press <kbd>Space</kbd> to jump out').join('Tap <b>JUMP OUT</b> to jump out').split('Press <kbd>Space</kbd>').join('Tap <b>GLIDE</b>');}
     if(h){pr.hidden=false;if(pr.dataset.t!==h){pr.dataset.t=h;pr.innerHTML=h;}}else{pr.hidden=true;pr.dataset.t='';}}
@@ -5310,7 +5406,7 @@ const HELP_PAGES=[
   {t:'🔫 Weapons & loot',shots:['loot'],body:()=>`<ul><li>Walk over weapons to pick them up. You can carry 4 plus your pickaxe.</li><li>The <b>glow colour</b> is the rarity: <b style="color:${RAR_COL[0]}">Common</b>, <b style="color:${RAR_COL[1]}">Uncommon</b>, <b style="color:${RAR_COL[2]}">Rare</b>, <b style="color:${RAR_COL[3]}">Epic</b>, <b style="color:${RAR_COL[4]}">Legendary</b>. Rarer = stronger!</li><li><b>Loot Llamas</b> 🦙 are full of rare loot and materials.</li><li><b>Vending machines</b> 🛒 sell a weapon for materials.</li><li>Your <b>Mythic Laser Blaster</b> is always in slot 2.</li><li>Bandages, med kits and shield potions: hold ${TOUCH.on?'FIRE':'click'} to use them.</li></ul>`},
   {t:'🔨 Building',shots:['build'],body:()=>TOUCH.on?`<ul><li>Tap <b>🔨 BUILD</b> to show the building buttons.</li><li><b>WALL</b>, <b>RAMP</b>, <b>FLOOR</b>, <b>ROOF</b>: tap to place, hold to keep building.</li><li><b>EDIT</b> turns your wall into a door or window.</li><li>The material button switches between wood, stone and metal. Metal is strongest!</li><li>Swing your pickaxe at trees, rocks and walls to collect materials.</li><li>Tap <b>⚔️ COMBAT</b> to go back to fighting.</li></ul>`
     :`<ul><li><b>Z</b> wall · <b>X</b> ramp · <b>C</b> floor · <b>V</b> roof. Click to place, hold to keep building.</li><li>Look up to build higher.</li><li><b>G</b> edits a wall into a door or window.</li><li><b>T</b> switches wood, stone and metal. Metal is strongest!</li><li>Swing your pickaxe at trees, rocks and walls to collect materials.</li></ul>`},
-  {t:'🚌 Bus & storm',shots:['bus','storm'],body:()=>`<ul><li>Battle Royale starts on the <b>battle bus</b>. ${TOUCH.on?'Tap JUMP OUT':'Press Space'} over the spot you want to land.</li><li>Your glider opens by itself, or open it early.</li><li>The <b>purple storm</b> shrinks the island. It hurts while you are in it, so keep moving to the safe circle!</li><li>The white dashed circle on the minimap shows where the storm goes next.</li><li>🌐 <b>The edges loop!</b> Walk, drive or shoot off one side of the map and you come back in on the other side (the see-through curtain marks the edge). So nobody is safe hiding at the edge. Only the bridge to the Bonk Hospital goes on north.</li><li>☁️ <b>Sky Islands:</b> fall off an island and the rescue drone catches you. Stand on a big fan to fly up, then glide across to another island.</li></ul>`},
+  {t:'🚌 Bus & storm',shots:['bus','storm'],body:()=>`<ul><li>Battle Royale starts on the <b>battle bus</b>. ${TOUCH.on?'Tap JUMP OUT':'Press Space'} over the spot you want to land.</li><li>Your glider opens by itself, or open it early.</li><li>The <b>purple storm</b> shrinks the island. It hurts while you are in it, so keep moving to the safe circle!</li><li>The white dashed circle on the minimap shows where the storm goes next.</li><li>🌐 <b>The edges loop!</b> Walk, drive or shoot off one side of the map and you come back in on the other side (the see-through curtain marks the edge). So nobody is safe hiding at the edge. Only the bridge to the Bonk Hospital goes on north.</li><li>☁️ <b>Sky Islands:</b> fall off an island and the rescue drone catches you. Stand on a big fan to fly up, then glide across to another island.</li><li>🎢 <b>Theme Park:</b> ${TOUCH.on?'tap the 🎢 button':'press <b>E</b>'} by a ride to get on (roller coaster, Ferris wheel), ${TOUCH.on?'tap it or JUMP':'press <b>E</b> or <b>Space</b>'} to get off. Walk onto the top of the water slide to zoom down into the pool.</li></ul>`},
   {t:'🚁 Getting bonked',shots:['drone'],body:()=>`<ul><li>When you run out of health you get knocked out, but a <b>rescue drone</b> flies you back in after a few seconds.</li><li>In Battle Royale, drones stop at the <b>final circle</b>. Then it's last one standing!</li><li>In <b>Squads</b> you get knocked down first. A teammate can revive you by holding ${TOUCH.on?'the green REVIVE button':'E'} next to you.</li><li>Heal up with bandages, med kits and shield potions.</li></ul>`},
   {t:'🏆 How to win',shots:[],body:()=>`<p>Every game mode has its own way to win:</p><div class="hwin">${[['🪂 Battle Royale','Be the last one (or last squad) standing when the storm closes.'],['⚔️ Team Battle','Red team needs 20 knockouts before blue does.'],['🧟 Zombie Survival','Survive as many zombie waves as you can. Build walls!'],['🏎️ Car Race','Drive through the glowing gates in order. Finish 3 laps first.'],['✈️ Plane Race','Fly through the glowing rings in the sky in order. Finish 3 laps first.'],['🌋 Floor is Lava','Build up and stay above the rising lava the longest.'],['👑 Capture the Crown','Grab the crown and hold it to score points.'],['🚩 Capture the Flag','Steal the blue flag and bring it back to your base.'],['🏰 Fort Siege','Build a fort around your treasure, then steal theirs and carry it home. The fastest steal wins.'],['🚒 Rescue Squad','Everyone together: put out every fire and fly everyone off the rooftops to the H before time runs out.'],['⛰️ King of the Hill','Stand in the golden circle to score. It moves around!'],['🏗️ Build Battle','Build the tallest tower before time runs out.'],['🤖 Mega Robot','Everyone teams up against one giant robot. Bonk it before time runs out!'],['🎯 Training Room','No winning here: practice your aim, building and every weapon.']].map(([a,b])=>`<div><b>${a}</b>${b}</div>`).join('')}</div>`},
   {t:'🌐 Play with friends',shots:[],body:()=>`<ul><li>Tap <b>🌐 Multiplayer</b> on the welcome screen and type your <b>name</b>.</li><li><b>One player hosts:</b> tap <b>Host a game</b> and read out the 4-letter <b>room code</b>.</li><li><b>Everyone else joins:</b> tap <b>Join</b> and type the code. The host sees <b>🙋 wants to join</b> and taps <b>✅ Allow</b> (or <b>❌ Kick</b>).</li><li>The host picks the <b>game</b>, the <b>map</b> and the <b>teams</b>: <i>Host picks</i> (tap a player to move them), <i>🎲 Random</i>, <i>Pick your own</i> (tap Join Red/Blue…), or <i>Everyone vs everyone</i>.</li><li>Bots fill the empty spots. The host presses <b>START</b> and everyone drops into the same match!</li><li>Up to 8 real players, in every game mode: Battle Royale, Team Battle, Zombie Survival (team up against the waves), Car Race, Floor is Lava, Capture the Crown, Capture the Flag, King of the Hill, Build Battle and the Training Room.</li><li>Hold <b>Tab</b> (or tap <b>🏆</b>) for the <b>scoreboard</b>: everyone's knockouts and ping.</li><li>Out of the match? You <b>watch a teammate</b>. Press Space, click or tap JUMP to switch who you watch.</li><li>Friends who arrive late can <b>jump into a match that already started</b> by taking over a bot (the host can turn this off in Settings → 🌐 Multiplayer).</li><li>Need a break? Press <b>O</b> (or tap <b>🤖</b>) and autopilot plays for you. If you stop playing for a bit, a <b>💤 bot helper</b> plays for you until you're back. The host can turn either off in Settings → 🌐 Multiplayer.</li><li>After the match, <b>Play again</b> takes everyone back to the room.</li></ul>`},
@@ -6000,7 +6096,8 @@ function netClientProjs(dt){for(let i=G.projs.length-1;i>=0;i--){const p=G.projs
   else{p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;wrapProj(p,ox,oy);if(p.t==='bubble')p.vz+=40*dt;else if(p.t==='water')p.vz-=420*dt;dead=p.life<=0||!!blocked3D(p.x,p.y,p.z);}
   if(dead){removeModel(p);G.projs.splice(i,1);}}}
 // what this player pressed, sent to the host
-function netClientKey(k){const N=G.net,p=G.player;if(k==='o'){netJoinerAuto();return true;}if(['r','=','+','-','o','escape','p','m'].includes(k)&&!(k==='r'&&(G.mode==='race'||G.mode==='airrace')))return k==='o';
+function netClientKey(k){const N=G.net,p=G.player;if(k==='e'&&MAP.rides&&(p.ride||(p.state==='alive'&&!p.vehicle&&rideNear(p)))){if(p.ride)rideOff(p);else rideBoard(p,rideNear(p));return true;} // (rides are part of your own movement)
+  if(k==='o'){netJoinerAuto();return true;}if(['r','=','+','-','o','escape','p','m'].includes(k)&&!(k==='r'&&(G.mode==='race'||G.mode==='airrace')))return k==='o';
   N.acts.push([++N.aseq,k]);if(N.acts.length>12)N.acts.shift();N.inT=0;if(k===' ')netBusJumpSent();
   if(k>='1'&&k<='5'){N.curT=performance.now();return false;}if(['z','x','c','v','t'].includes(k))return false;
   if(k===' '&&(p.state==='sky'||(p.state==='alive'&&!p.vehicle)))return false;return true;}
