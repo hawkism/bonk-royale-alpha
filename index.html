@@ -204,6 +204,8 @@ body:not(.touch) #prompt:not([hidden])~#autoTag{bottom:calc(262px + env(safe-are
 #gadBar{display:flex;gap:6px;padding:4px 6px}#gadBar .gad{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}#gadBar .gad.on{color:#43c6ff}#gadBar .gad.empty{opacity:.45}#gadBar kbd{font-size:11px}
 /* F46: modes with no fighting and no building (races, Flight School): no weapon bar, materials, shield or build hints */
 body.nofight #slotRow,body.nofight #wname,body.nofight #sh,body.nofight #buildHint{display:none}
+/* game modes that unlock with your level (0.6) */
+.seg.modes label.mlocked{opacity:.5;cursor:not-allowed;position:relative}.seg.modes label.mlocked::after{content:attr(data-lock);display:block;font-size:.7rem;font-weight:900;color:#1b2235}
 /* @module src/css/03-layers-touch.css: Layer order while playing, and the touch controls (buttons stay inside the safe area). */
 /* @module src/css/03-layers-touch.css: Layer order while playing, and the touch controls (buttons stay inside the safe area). */
 /* layer order while playing (bottom → top): world · screen effects 2 · touch move/look area 3 · messages 4 · HUD 5 · touch buttons 6 · editor 7 · menus 10+ */
@@ -2111,7 +2113,8 @@ function unlockedAt(list,lvl,wins){return list.filter(x=>x.lvl===lvl&&!x.wins&&!
 function finishXP(p){const before=PROG.xp,lvl0=levelOf(before);let xp=100+p.kos*40+(G.xpStats&&G.xpStats.chests||0)*15+(G.xpBonus||0);
   if(G.win)xp+=400;else if(p.place&&p.place<=3)xp+=150;if(G.win)PROG.wins=(PROG.wins||0)+1;
   PROG.xp+=xp;const lvl1=levelOf(PROG.xp);const tk=30+p.kos*10+(G.win?150:p.place&&p.place<=3?50:0)+(G.tkBonus||0)+(lvl1-lvl0)*100;PROG.tickets+=tk;ensureChal();saveProg();
-  const unl=[];for(let L=lvl0+1;L<=lvl1;L++)for(const list of[OUTFITS,GLIDERS,PICKS,BACKS,PETS])for(const it of unlockedAt(list,L))unl.push(it.name);
+  const unl=[];for(let L=lvl0+1;L<=lvl1;L++){for(const list of[OUTFITS,GLIDERS,PICKS,BACKS,PETS])for(const it of unlockedAt(list,L))unl.push(it.name);
+    for(const[m,lv]of Object.entries(MODE_LVL))if(lv===L){const lb=document.querySelector('label[for="mode'+cap(m)+'"]');unl.push('🎮 the '+(lb?lb.textContent.trim():m)+' mode');}}
   return{xp,tk,lvl0,lvl1,unl};}
 // @module src/js/10b-savecodes.js: Save codes: copy your progress as a code (or a file) and load it in another version or on another device; the removed-items list that gives tickets back once.
 // Main: SAVE_FORMAT, removedItems, applyRemoved, makeSaveCode, readSaveCode, loadSaveCode, undoSaveLoad
@@ -2471,6 +2474,10 @@ const RED_T=['#ff7b1c','#c0392b','#ff5f5f','#d35400','#ff8f6b','#b03a2e','#e74c3
 const BASES={red:{x:420*K,y:1980*K},blue:{x:1980*K,y:420*K}}; // team bases in opposite corners (design units × K)
 const LEGS=['#2b2f3a','#1f4fa3','#6b4a2b','#3d3d3d','#7a1f1f','#2e7d32'];
 const SR=[1750,1000,620,340,160,30].map(r=>r*K),SHR=[[.15,.30],[.40,.52],[.60,.70],[.76,.88],[.90,1.0]],SDPS=[3,5,7,10,14,18];
+// game modes unlock as you level up (the son's idea): the level each one needs. MODES_ALL opens them all (the tests use it)
+const MODE_LVL={royale:1,team:1,race:1,training:1,zombie:2,crown:2,floorlava:2,airrace:3,school:3,ctf:3,show:3,koth:4,buildbattle:4,rescue:4,stunt:5,siege:5,balloons:6,robot:6};
+let MODES_ALL=false;
+const modeLocked=m=>!MODES_ALL&&levelOf(PROG.xp)<(MODE_LVL[m]||1);
 const opts={len:3,bots:8,diff:'easy',map:'meadow',mode:'royale',storm:'on',rule:'kills',squad:'solo',world:{}};
 // the world sliders (Match options): how much of each thing the island gets, in percent (100 = normal, 0 = none, 300 = three times as many).
 // The host's choice goes to everyone in multiplayer with the match start, so every player builds the same island.
@@ -5822,7 +5829,10 @@ $('worldSliders').addEventListener('input',()=>{worldShow();opts.world=worldRead
 $('worldReset').addEventListener('click',()=>{for(const[k]of WORLD_KEYS)$('w_'+k).value=100;worldShow();opts.world=worldRead();store.set('bbr3d-opts',opts);});
 function applyOpts(){[['len',opts.len],['diff',cap(opts.diff)],['map',cap(opts.map)],['mode',cap(opts.mode)],['storm',cap(opts.storm)],['rule',cap(opts.rule)],['squad',cap(opts.squad)],['drop',cap(opts.drop||'normal')]].forEach(([n,v])=>{const el=$(n+v);if(el)el.checked=true;});
   $('bots').value=opts.bots;$('botsOut').textContent=opts.bots;for(const[k]of WORLD_KEYS){const el=$('w_'+k);if(el)el.value=clamp(Math.round((+((opts.world||{})[k]??100)||0)/25)*25,0,300);}worldShow();syncMenu();}
-function syncMenu(){const mode=radioVal('mode'),map=radioVal('map'),stormOff=mode==='royale'&&radioVal('storm')==='off';
+// the mode buttons: locked ones show the level they unlock at and cannot be picked (a locked pick goes back to Battle Royale)
+function modeLocks(){for(const r of document.querySelectorAll('input[name="mode"]')){const lk=modeLocked(r.value),lb=document.querySelector('label[for="'+r.id+'"]');r.disabled=lk;
+    if(lb){lb.classList.toggle('mlocked',lk);lb.dataset.lock=lk?'🔒 Level '+MODE_LVL[r.value]:'';}if(lk&&r.checked){r.checked=false;$('modeRoyale').checked=true;opts.mode='royale';}}}
+function syncMenu(){modeLocks();const mode=radioVal('mode'),map=radioVal('map'),stormOff=mode==='royale'&&radioVal('storm')==='off';
   $('modeDesc').textContent=stormOff?'Ride the battle bus in, then bash away with no storm. Everyone respawns until the timer runs out!':MODES[mode].desc;$('mapDesc').textContent=MAPS[map].desc;
   $('optStorm').hidden=mode!=='royale';$('optSquad').hidden=mode!=='royale';$('optRule').hidden=!stormOff;$('ruleDesc').textContent=RULES[radioVal('rule')].sub;
   $('optLen').hidden=mode==='zombie'||mode==='race'||mode==='airrace'||mode==='stunt'||mode==='balloons'||mode==='school'||mode==='siege'||mode==='rescue';$('optBots').hidden=mode==='zombie'||mode==='school';$('botsLabel').textContent=(mode==='team'||mode==='ctf'||mode==='siege')?'Bots (split into two teams)':'Bots';$('diffLabel').textContent=mode==='zombie'?'Zombie toughness':'Bot skill';
@@ -6451,7 +6461,7 @@ function renderMpLobby(){const inRoom=!!NET.R,L=NET.lob,host=NET.role==='host';$
   document.querySelectorAll('#mpChatSeg input').forEach(r=>r.checked=r.value===(L.chat?'on':'off'));netAskRender();chatRender();}
 // ---- lobby screen wiring ----
 (()=>{const modeSel=$('mpMode'),mapSel=$('mpMap');
-  modeSel.innerHTML=Object.keys(MODES).map(m=>{const l=document.querySelector('label[for=mode'+cap(m)+']'),ok=NET_MODES.includes(m);return`<option value="${m}"${ok?'':' disabled'}>${l?l.textContent.trim():m}${ok?'':m==='school'?' (on your own)':' (coming soon)'}</option>`;}).join('');
+  modeSel.innerHTML=Object.keys(MODES).map(m=>{const l=document.querySelector('label[for=mode'+cap(m)+']'),ok=NET_MODES.includes(m)&&!modeLocked(m);return`<option value="${m}"${ok?'':' disabled'}>${l?l.textContent.trim():m}${modeLocked(m)?' (🔒 level '+MODE_LVL[m]+')':ok?'':m==='school'?' (on your own)':' (coming soon)'}</option>`;}).join('');
   mapSel.innerHTML=Object.keys(MAPS).map(k=>`<option value="${k}">${esc(MAPS[k].name)}</option>`).join('');
   modeSel.addEventListener('change',()=>{NET.lob.mode=modeSel.value;netHostSyncTeams();netPushLob();});
   mapSel.addEventListener('change',()=>{NET.lob.map=mapSel.value;netPushLob();});
