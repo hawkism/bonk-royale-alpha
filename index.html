@@ -5094,7 +5094,11 @@ function rescueAddFire(x,y){const R=G.rs,busy=new Set(R.fires.map(f=>f.b));let b
   const f={x:fx,y:fy,z:rescueTop(b,fx,fy),hp:100,b:best,t:0,hitT:-9,ax:fx+nx*200,ay:fy+ny*200};R.fires.push(f);R.spawned++;return f;}
 // an alarm: fires and people stuck on the roofs, all in one part of the island (people first, so no fire is on their roof)
 function rescueAlarm(){const R=G.rs,W=RESCUE.waves[R.w];if(!W)return;R.w++;R.nextA=R.w*RESCUE.every;
-  const far=BUILDINGS.filter(b=>dist({x:b.x+b.w/2,y:b.y+b.h/2},R.pad)>500),b=pick(far.length?far:BUILDINGS),cx=b.x+b.w/2,cy=b.y+b.h/2;let np=0,nf=0;
+  // where it rings: a building away from the station with lots of free buildings round it (not burning, nobody waiting),
+  // so the alarm's fires and people end up together there and not all over the island
+  const ctr=b=>({x:b.x+b.w/2,y:b.y+b.h/2}),busy=new Set(R.fires.map(f=>f.b).concat(R.people.filter(p=>p.st===0).map(p=>p.b)));
+  const cands=BUILDINGS.filter(b=>dist(ctr(b),R.pad)>500).map(b=>({b,n:BUILDINGS.filter((o,i)=>!busy.has(i)&&dist(ctr(o),ctr(b))<1000).length})).sort((a,c)=>c.n-a.n);
+  const b=cands.length?pick(cands.slice(0,Math.ceil(cands.length/3))).b:pick(BUILDINGS),cx=b.x+b.w/2,cy=b.y+b.h/2;let np=0,nf=0;R.alarm={x:cx,y:cy};
   for(let k=0;k<W[1];k++)if(rescueAddPerson(cx,cy))np++;for(let k=0;k<W[0];k++)if(rescueAddFire(cx,cy))nf++;
   if(R.w>1){announce('🚨 Alarm!',`${nf} fire${nf===1?'':'s'}${np?' and '+np+(np===1?' person':' people')+' on the roofs':''}, ${rescueWhere(cx,cy)}!`,3);sfx('alert');}}
 function rescueWhere(x,y){const R=G.rs,a=Math.atan2(y-R.pad.y,x-R.pad.x),k=((Math.round(a/(Math.PI/4))%8)+8)%8;
