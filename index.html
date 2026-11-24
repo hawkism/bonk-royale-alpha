@@ -201,7 +201,7 @@ body:not(.touch) #prompt:not([hidden])~#autoTag{bottom:calc(262px + env(safe-are
 #loadErr{position:fixed;inset:auto 16px 16px;z-index:20;background:var(--red);color:#fff;font-weight:900;padding:12px 16px;border-radius:10px}
 @media (max-width:640px){#bottom{bottom:60px}#prompt{bottom:210px}#tl{max-width:100%;top:184px}}
 /* gadgets you brought, with their fuel (30b-gadgets) */
-#gadBar{display:flex;gap:6px;padding:4px 6px}#gadBar .gad{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}#gadBar .gad.on{color:#43c6ff}#gadBar .gad.empty{opacity:.45}#gadBar kbd{font-size:11px}
+#gadBar{display:flex;gap:6px;padding:4px 6px}#gadBar .gad{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}#gadBar .gad.on{color:#43c6ff}#gadBar .gad.empty{opacity:.45}#gadBar kbd{font-size:11px}#gadBar .alt i{display:inline-block;width:46px;height:8px;border-radius:4px;background:rgba(0,0,0,.35);overflow:hidden}#gadBar .alt b{display:block;height:100%;background:#5cff7a}#gadBar .alt.hi{color:#ff9a3c}#gadBar .alt.hi b{background:#ff9a3c}
 /* F46: modes with no fighting and no building (races, Flight School): no weapon bar, materials, shield or build hints */
 body.nofight #slotRow,body.nofight #wname,body.nofight #sh,body.nofight #buildHint{display:none}
 /* game modes that unlock with your level (0.6) */
@@ -946,7 +946,7 @@ const MAPS={
     wet:(x,y)=>Math.abs(x-(1100+Math.sin(y/300)*260))<80,b:[[3,3,4,3,'#ff6fae'],[20,4,3,4,'#9b6bff'],[4,20,4,3,'#5fd3ff'],[21,21,3,3,'#ffd21f'],[17,9,3,3,'#7be495']]},
   space:{name:'Space Station',desc:'Moon rocks, dusty craters and LOW GRAVITY. Jumps and bounce pads go way higher!',seed:9001,tiles:['#aab2be','#7d8796','#4c5462','#d4dbe5'],side:'#6b7380',sky:['#02030c','#141a3a'],outside:null,tree:'antenna',rock:'moonrock',stars:true,lowG:true,
     wet:(x,y)=>Math.hypot(x-1700,y-700)<260||Math.hypot(x-700,y-1700)<200,b:[[3,3,4,3,'#d4dbe5'],[19,17,4,4,'#9aa3ad'],[11,10,3,3,'#e8edf3'],[24,24,3,3,'#b4bcc6'],[5,10,3,3,'#43c6ff']]},
-  cave:{name:'Crystal Cave',desc:'Deep underground and DARK. You carry a light, glowing crystals light the way, and an underground stream slows you down.',seed:1313,tiles:['#5a4e44','#7a6a58','#2f6f9a','#6b6460'],side:'#3a322c',sky:['#000000','#05040a'],outside:'#2a241f',tree:'stalagmite',rock:'crystal',dark:true,amb:'dust',
+  cave:{name:'Crystal Cave',desc:'Deep underground and DARK. You carry a light, glowing crystals light the way, and an underground stream slows you down.',seed:1313,tiles:['#5a4e44','#7a6a58','#2f6f9a','#6b6460'],side:'#3a322c',sky:['#000000','#05040a'],outside:'#2a241f',tree:'stalagmite',rock:'crystal',dark:true,roof:560,amb:'dust',
     wet:(x,y)=>Math.abs(y-(700+Math.sin(x/220)*160))<70||Math.hypot(x-1500,y-1900)<170,b:[[3,18,4,3,'#7a6a58'],[19,4,3,3,'#6b5f55'],[10,10,4,4,'#8a7a66'],[22,20,3,4,'#7a6a58'],[4,4,3,3,'#6b5f55']]},
   lava:{name:'Lava Lake',desc:'A huge bubbling lava lake with stone bridges across it. Lava hurts! Bounce pads can fling you over it.',seed:666,tiles:['#3b3536','#7a6c66','#3b3536','#57504e','#ff6a1a'],side:'#2a2425',sky:['#2a0806','#ff7a3a'],outside:'#ff5a10',outsideGlow:true,tree:'spire',rock:'magma',hurt:'lava',amb:'embers',
     zone:(x,y)=>{const ex=(x-1200)/520,ey=(y-1200)/420;return(ex*ex+ey*ey<1||Math.hypot(x-450,y-600)<140||Math.hypot(x-1950,y-1800)<150)?4:0;},b:[[2,2,3,3,'#4a3f3d'],[22,3,4,3,'#5a4a46'],[3,22,3,4,'#4a3f3d'],[17,24,3,3,'#5a4a46'],[12,3,3,3,'#6b2f1f']]},
@@ -1711,6 +1711,7 @@ function buildWorld(){
   // the Big City's traffic lights, at street crossings (just decoration)
   if(MAP.lights&&MAP.grid)for(let j=MAP.grid;j<N;j+=MAP.grid)for(let i=MAP.grid;i<N;i+=MAP.grid){const x=i*T+T-6,y=j*T+T-6;if(inBuilding(x,y,10))continue;
     S('cyl','#2b2f3a',x,y,0,6,96,6);S('box','#1b2235',x,y,96,14,40,12);for(const[c,h]of[['#ff3b3b',126],['#ffcb1f',114],['#2aff5a',102]])S('sph',c,x+7,y,h-6,9,9,9,{em:0.9});}
+  if(MAP.roof)caveRoof(); // the Crystal Cave's rock roof, with stalactites
   if(MAP.build)MAP.build(); // a map's own things (the Sky Islands' bridges and fans, the Theme Park's rides, the cranes)
   buildRunways(); // the painted landing strips (planes-plus module)
   for(const p of PADS){S('cyl','#3a3f4b',p.x,p.y,0,56,5,56);S('cyl',MAP.lowG?'#43c6ff':'#ff7b1c',p.x,p.y,5,50,4,50);S('cyl','#ffcb1f',p.x,p.y,9,28,2,28,{em:0.4});}
@@ -1756,6 +1757,12 @@ function buildWorld(){
     hemi.color.set(MAP.hurt?'#ffd0b0':MAP.stars?'#c8d4ff':'#ffffff');hemi.groundColor.set(shadeHex(MAP.tiles[0],0.6));sun.color.set(MAP.hurt?'#ffc8a0':'#ffffff');}
   sun.castShadow=!MAP.dark;
 }
+
+// the rock roof of an underground map (MAP.roof high): seen from below only, with stalactites hanging from it away from the buildings
+function caveRoof(){const z=MAP.roof,m=new THREE.Mesh(new THREE.PlaneGeometry(WORLD,WORLD).rotateX(Math.PI/2),new THREE.MeshLambertMaterial({color:shadeHex(MAP.tiles[1],0.8)}));
+  m.position.set(WORLD/2,z,WORLD/2);world.add(m);const R=mulberry32(MAP.seed+91);
+  for(let k=0;k<Math.round(90*K*K);k++){const x=R()*WORLD,y=R()*WORLD;if(inBuilding(x,y,40))continue;const s=0.6+R()*0.8,g=['#7a6a5a','#6b5d50','#857565'][k%3];
+    S('cone',g,x,y,z,30*s,(70+R()*60)*s,30*s,{rx:Math.PI});if(R()<0.5)S('cone',shadeHex(g,0.9),x+16*s,y-10*s,z,14*s,40*s,14*s,{rx:Math.PI});}}
 
 /* ---------- small 3D builders ---------- */
 function weaponModel(id){
@@ -2466,7 +2473,7 @@ function updateAnimals(dt,t){if(!ANIMALS.length)return;const T=G&&G.time!=null?G
 /* ================= game state ================= */
 const DIFFS={easy:{aimErr:0.12,react:0.75,dmgMul:0.55,speed:148,cdMul:1.7,vision:420,zSpeed:76,zDmg:6},medium:{aimErr:0.06,react:0.42,dmgMul:0.8,speed:166,cdMul:1.25,vision:480,zSpeed:90,zDmg:9},hard:{aimErr:0.025,react:0.22,dmgMul:1,speed:180,cdMul:1.0,vision:540,zSpeed:104,zDmg:12}};
 const MODES={royale:{desc:'Ride the battle bus, glide down, and be the last one standing. The storm shrinks, and rescue drones fly you back in until the final circle.'},
-  team:{desc:'Your red team vs. the blue team. The first team to 20 knockouts wins. Drones always bring you back.'},
+  team:{desc:'Your red team vs. the blue team. The first team to 20 points wins: a point for every knockout, and extra points for holding the glowing bonus zone that appears every minute. Drones bring you back next to a teammate.'},
   zombie:{desc:'Survive wave after wave of slow, silly zombies. Build walls to hold them back! You get 3 drone rescues.'},
   race:{desc:'Race the bots in cars! Drive through every glowing gate in order. First to finish 3 laps wins. Bounce pads make great shortcuts.'},
   floorlava:{desc:'The floor is lava, and it keeps rising! Build ramps and towers to stay above it. Building is free. Last one standing wins.'},
@@ -2549,7 +2556,7 @@ function newGame(){
     if(G.squad>1)G.chars.forEach((c,i)=>{c.team='sq'+Math.floor(i/G.squad);c.offX=rand(-70,70);c.offY=rand(-70,70);});}
   else if(mode==='team'||mode==='ctf'||mode==='siege'){p.team='red';const total=opts.bots+1,redN=Math.ceil(total/2);
     for(let k=0;k<opts.bots;k++){const red=k<redN-1;const c=makeChar(names[k],red?RED_T[k%8]:BLUE_T[k%8],false);c.team=red?'red':'blue';G.chars.push(c);}
-    const placed=[];for(const c of G.chars){const b=BASES[c.team];const s=freeSpot(b.x,b.y,380,70,placed);c.x=s.x;c.y=s.y;placed.push(c);c.face=Math.atan2(WORLD/2-c.y,WORLD/2-c.x);}}
+    const placed=[];for(const c of G.chars){const b=teamBase(c.team,mode);const s=freeSpot(b.x,b.y,380,70,placed);c.x=s.x;c.y=s.y;placed.push(c);c.face=Math.atan2(WORLD/2-c.y,WORLD/2-c.x);}}
   else if(mode==='zombie'){p.team='hero';const s=freeSpot(WORLD/2,WORLD/2,300,0,null);p.x=s.x;p.y=s.y;}
   else{for(let k=0;k<opts.bots;k++)G.chars.push(makeChar(names[k],TORSO[k%TORSO.length],false));const placed=[];for(const c of G.chars){const s=freeSpot(WORLD/2,WORLD/2,WORLD*0.42,280,placed);c.x=s.x;c.y=s.y;c.z=groundAt(s.x,s.y,10);placed.push(c);}}
   for(const c of G.chars)buildCharModel(c);
@@ -2567,11 +2574,11 @@ function newGame(){
     for(const c of G.chars){c.state='bus';c.jumpAt=c.isPlayer||isMate(c)?99:rand(1.2,11.5);const s=freeSpot(WORLD/2,WORLD/2,WORLD*0.45,0,null);c.landX=s.x;c.landY=s.y;}
     G.yaw=a;G.pitch=-0.25;announce('All aboard the battle bus!','Press Space to jump out over the spot you like.',3.4);sfx('bus');}
   else{G.yaw=p.face;G.pitch=-0.12;
-    if(mode==='team')announce('Team Battle!',`You're on the red team. First to ${TEAM_GOAL} knockouts wins!`,3.4);
+    if(mode==='team')announce('Team Battle!',`You're on the red team. First to ${TEAM_GOAL} points wins: bonk the blues and hold the bonus zone!`,3.4);
     else if(mode==='zombie')announce('Zombie Survival','Grab a weapon and build some walls. The zombies are coming...',3.2);}
   if(XM[mode])XM[mode].init();
 }
-function cleanupGame(){engineStop();cleanupLoot();if(XM[G.mode]&&XM[G.mode].cleanup)XM[G.mode].cleanup();for(const car of (G.cars||[]))scene.remove(car.m);for(const c of G.chars)removeModel(c);for(const a of[G.items,G.chests,G.projs,G.traps,G.texts,G.beams])for(const o of a)removeModel(o);
+function cleanupGame(){engineStop();cleanupLoot();if(XM[G.mode]&&XM[G.mode].cleanup)XM[G.mode].cleanup();teamZoneCleanup();for(const car of (G.cars||[]))scene.remove(car.m);for(const c of G.chars)removeModel(c);for(const a of[G.items,G.chests,G.projs,G.traps,G.texts,G.beams])for(const o of a)removeModel(o);
   for(const d of G.drones)scene.remove(d.m);for(const p of G.pieces)scene.remove(p.mesh);if(G.bus)scene.remove(G.bus.m);if(G.crate&&G.crate.mesh)scene.remove(G.crate.mesh);
   if(stormMesh){stormMesh.visible=false;nextRing.visible=false;}}
 // @module src/js/15-hud-helpers.js: On-screen messages: big announcements, floating text, the kill feed, toasts, eliminations, emotes, victory dance.
@@ -2745,7 +2752,7 @@ function knockOut(o,src,wid){
   o.droneAt=G.time+0.45;o.droneSent=false;
   if(XM[G.mode]){if(XM[G.mode].ko)XM[G.mode].ko(o,src);else o.respawnAt=G.time+8;}
   else if(G.mode==='royale'){if(!G.storm)o.respawnAt=G.time+10;else if(G.noRespawn){const rem=G.chars.filter(c=>!c.eliminated);o.place=rem.length;o.eliminated=true;}else o.respawnAt=G.time+10;}
-  else if(G.mode==='team'){o.respawnAt=G.time+10;if(src&&src.team&&src.team!==o.team&&G.score[src.team]!==undefined)G.score[src.team]++;}
+  else if(G.mode==='team'){o.respawnAt=G.time+7;if(src&&src.team&&src.team!==o.team&&G.score[src.team]!==undefined)G.score[src.team]+=1+teamZoneKo(o);}
   else{if(o.zombie){o.eliminated=true;G.z.kills++;const r=Math.random();if(r<0.18)G.items.push(makeItem(pick(FLOOR_LOOT),o.x,o.y,undefined,0.6));else if(r<0.3)G.items.push(makeItem('heart',o.x,o.y,undefined,0.6));else if(r<0.42)G.items.push(makeItem('bricks',o.x,o.y,undefined,0.6));}
     else if(o.remote){o.lives=o.lives??3;if(o.lives>0){o.lives--;o.respawnAt=G.time+6;}else o.eliminated=true;}
     else if(o.isPlayer){if(G.lives>0){G.lives--;o.respawnAt=G.time+6;}else o.eliminated=true;}}
@@ -2808,7 +2815,7 @@ function build(kind,quiet){
 function placePiece(ob,p,matName){
   delete ob.ok;ob.built=true;addOb(ob);
   const col=pick(MAT_MESH[matName]);const m=pieceMesh(ob,col,false);
-  m.scale.y=0.05;scene.add(m);const piece={ob,parts:[ob],col,mesh:m,hp:MAT_HP[matName],grow:0,cx:ob.x+ob.w/2,cy:ob.y+ob.d/2,owner:p,edit:0};ob.piece=piece;G.pieces.push(piece);sfx('build',p);
+  m.scale.y=0.05;scene.add(m);const piece={ob,parts:[ob],col,mesh:m,hp:MAT_HP[matName],grow:0,cx:ob.x+ob.w/2,cy:ob.y+ob.d/2,owner:p,edit:0,mat:matName};ob.piece=piece;G.pieces.push(piece);sfx('build',p);
   for(const c of G.chars){if(c.state==='alive'&&ob.t==='box'&&ob.h<10&&inFoot(ob,c.x,c.y,12)&&c.z<ob.z0+ob.h&&c.z+CH>ob.z0){c.z=ob.z0+ob.h;c.onGround=false;}
     else if(c.state==='alive'&&!c.vehicle&&!(ob.t==='box'&&ob.h<10))pieceFree(ob,c);}
 }
@@ -2832,6 +2839,10 @@ function applyWallEdit(best){for(const o of best.parts)removeOb(o);const B=best.
   for(const o of parts){const b=new THREE.Mesh(GEO.box,mat(best.col));b.scale.set(o.w,o.h,o.d);b.position.set(o.x+o.w/2,o.z0,o.y+o.d/2);b.castShadow=b.receiveShadow=true;m.add(b);
     const tr=new THREE.Mesh(GEO.box,mat(shadeHex(best.col,0.7)));tr.scale.set(o.w+0.6,2,o.d+0.6);tr.position.set(o.x+o.w/2,o.z0+o.h-2,o.y+o.d/2);m.add(tr);}
   scene.add(m);best.mesh=m;}
+// a piece made of a stronger material (wood -> stone -> metal): Build Battle bots do up their towers; the host tells joiners (recol)
+function pieceUpgrade(q,to){q.mat=to;q.hp=MAT_HP[to];q.recol=1;pieceRecolor(q,pick(MAT_MESH[to]),MATCOL[to]);}
+function pieceRecolor(q,col,spark){q.col=col;if(q.ob.kind==='wall'&&q.edit)applyWallEdit(q);else{scene.remove(q.mesh);q.mesh=pieceMesh(q.ob,col,false);scene.add(q.mesh);}
+  burst(q.cx,q.cy,q.ob.z0+40,6,'star',spark||col,80);}
 function damagePiece(p,amt){if(!p||p.dead||NETC())return;p.hp-=amt;p.mesh.position.y+=(Math.random()-.5)*1.5;if(p.hp<=0){p.dead=true;for(const o of p.parts)removeOb(o);scene.remove(p.mesh);G.pieces.splice(G.pieces.indexOf(p),1);
   burst(p.cx,p.cy,p.ob.z0+30,26,'confetti','#a0632e',200);sfx('crack',{x:p.cx,y:p.cy});}}
 // @module src/js/18-drones.js: Friendly rescue drones that carry bonked players away and drop them back in.
@@ -3389,13 +3400,14 @@ function decide(c){const ai=c.ai,D=G.diff;stuckCheck(c,0.25);
   if(best!==ai.target){ai.target=best;ai.reactT=D.react*rand(0.7,1.3);ai.aimErr=(Math.random()*2-1)*D.aimErr;ai.aimErr2=(Math.random()*2-1)*D.aimErr;}
   const sc=safeCircle(),dc=Math.hypot(c.x-sc.x,c.y-sc.y);
   if(G.storm&&dc>sc.r-40){ai.mode='storm';const k=Math.min(1,sc.r*0.4/(dc||1));ai.gx=sc.x+(c.x-sc.x)*k;ai.gy=sc.y+(c.y-sc.y)*k;}
+  else if(G.mode==='team'&&teamZonePull(c)){/* the bonus zone (team-battle module): it still shoots at enemies in range on the way */}
   else if(ai.target)ai.mode='fight';
   else if(G.crate&&!G.crate.taken&&G.crate.z<G.crate.gz+350&&Math.hypot(c.x-G.crate.x,c.y-G.crate.y)<1300){ai.mode='crate';ai.gx=G.crate.x;ai.gy=G.crate.y;}
-  else{let tg=null,td=800;
+  else{let tg=null,td=G.mode==='team'?450:800; // (Team Battle bots don't run across the map for loot)
     for(const it of G.items){if(it.delay>0)continue;const d=dist(it,c);if(d<td&&it.id!=='laser'&&wants(c,it.id,it.r)&&!gaveUp(ai,it)&&!below(c,it)){tg=it;td=d;}}
     for(const ch of G.chests){if(ch.open||gaveUp(ai,ch)||below(c,ch))continue;const d=dist(ch,c);if(d<td){tg=ch;td=d;}}
     if(tg){ai.mode='loot';ai.gx=tg.x;ai.gy=tg.y;}
-    else if(ai.mode!=='wander'||ai.gx==null){ai.mode='wander';let s;if(G.mode==='team'){const eb=BASES[c.team==='red'?'blue':'red'];s=freeSpot(lerp(WORLD/2,eb.x,Math.random()*0.7),lerp(WORLD/2,eb.y,Math.random()*0.7),400,0,null);}
+    else if(ai.mode!=='wander'||ai.gx==null){ai.mode='wander';let s;if(G.mode==='team')s=teamWander(c); // (team-battle module: off to find an enemy)
       else s=freeSpot(sc.x,sc.y,sc.r*0.7,0,null);ai.gx=s.x;ai.gy=s.y;}}
   let bi=0,bs=-1;const d=ai.target?dist(c,ai.target):300;for(let i=0;i<5;i++){const s=c.slots[i];if(!s)continue;const sc2=wScore(s.id,d);if(sc2>bs){bs=sc2;bi=i;}}if(!(c.slots[c.cur]&&c.slots[c.cur].id==='foambat'))c.cur=bi;if(XM[G.mode]&&XM[G.mode].bot)XM[G.mode].bot(c);
   if(botVehiclePlan(c))return; // an enemy in a mech: go and get a mech or a plane to fight back (fightback module)
@@ -4159,11 +4171,64 @@ XM.floorlava={name:'Floor is Lava',
   end(p,b){b.xm=b.xm||{};b.xm.floorlava=b.xm.floorlava||{wins:0};if(G.win)b.xm.floorlava.wins++;const total=G.chars.length;
     return{title:G.win?'Lava Champion!':`You placed #${p.place} of ${total}`,sub:G.win?'You stayed above the lava longest!':'The lava got you. Build faster next time!',cls:G.win?'':'purple',
       stats:[['#'+(G.win?1:p.place),'Finish'],[p.kos,'Knockouts'],[G.pieces.filter(q=>q.owner===p).length,'Pieces built'],[fmt(G.mt),'Time']]};}};
+// Build Battle bots (the 2026-11-22 play-test: they stopped when the match reached 520 pieces and stood on their towers):
+// each bot builds up to its share of the pieces (bbBudget), then puts a little lookout hut on top (a floor, a door and two
+// windows), upgrades its tower to stone and then metal, and then goes round the other towers cheering
+const BB={cap:520,deco:40,human:60,upEvery:0.25,cheers:['WOW!','Cool tower!','So tall!','👏 Nice one!','Awesome!']};
+function bbBudget(){const bots=G.chars.filter(c=>!c.isPlayer&&!c.remote&&!c.human).length||1;return clamp(Math.floor((BB.cap-BB.human*(G.chars.length-bots))/bots),25,90);}
+function bbBot(c,dt){const ai=c.ai;ai.bbP=ai.bbP||'climb';
+  if(ai.bbP==='climb'){if((ai.bbT=(ai.bbT||0)-dt)<=0){ai.bbT=0.5;ai.bbN=G.pieces.filter(q=>q.owner===c).length;}
+    // stuck where no ramp fits (inside a building, boxed in) for 12 s: off to open ground nearby to start a new staircase there
+    if(ai.bbN!==ai.bbN0){ai.bbN0=ai.bbN;ai.bbNT=G.time;}
+    else if(!ai.bbMove&&G.time-(ai.bbNT??G.time)>12){ai.bbNT=G.time;for(let k=0;k<20;k++){const s=freeSpot(c.x,c.y,700,0,null);if(!inBuilding(s.x,s.y,60)&&!pointBlocked(s.x,s.y,60)){ai.bbMove={x:s.x,y:s.y,t:G.time};break;}}}
+    if(ai.bbMove){if(G.time-ai.bbMove.t<10&&Math.hypot(c.x-ai.bbMove.x,c.y-ai.bbMove.y)>30)return null;ai.bbMove=null;ai.bdir=Math.floor(Math.random()*4);ai.bbNT=G.time;}
+    if(ai.bbN<bbBudget()&&G.pieces.length<BB.cap)return climbBot(c,dt,true,{easy:4.0,medium:2.8,hard:2.0}[opts.diff]||2.8);
+    ai.bbP=c.z>160?'hut':'up';ai.hut=null;}
+  if(ai.bbP==='hut')return bbHut(c,dt);
+  if(ai.bbP==='up')return bbUpgrade(c,dt);
+  return bbVisit(c,dt);}
+const bbDir=k=>{const a=k*Math.PI/2;return[Math.cos(a),Math.sin(a)];};
+// the hut: up the last ramp, a floor in front at the top, onto it, then a door ahead and windows to each side (the way back stays open)
+function bbHut(c,dt){const ai=c.ai,H=ai.hut||(ai.hut={st:0,t:0,f:null,k:0,wt:0});H.t+=dt;
+  if(H.t>16||G.pieces.length>=BB.cap+BB.deco){ai.bbP='up';return[0,0,false];}
+  const lvl=Math.round(c.z/80),aligned=Math.abs(c.z-lvl*80)<12&&c.onGround;
+  if(H.st===0){let top=0;for(const q of G.pieces)if(q.owner===c&&q.ob.t==='ramp')top=Math.max(top,q.ob.z0+80);
+    if(!(aligned&&c.z>=top-12)&&H.t<5){const[dx,dy]=bbDir(ai.bdir);return[dx,dy,false];}H.st=1;}
+  if(H.st===1){if(!aligned)return[0,0,false];for(const k of[ai.bdir,(ai.bdir+1)%4,(ai.bdir+3)%4]){const ob=planBuild('floor',c,k*Math.PI/2,0);if(!ob||ob.taken)continue;
+      placePiece(ob,c,'wood');H.f={x:ob.x+T/2,y:ob.y+T/2,k};H.st=2;H.t2=H.t;return[0,0,false];}
+    ai.bbP='up';return[0,0,false];}
+  if(H.st===2){const dx=H.f.x-c.x,dy=H.f.y-c.y,d=Math.hypot(dx,dy);if(H.t-H.t2>4||c.z<lvl*80-30){ai.bbP='up';return[0,0,false];}
+    if(d>8)return[dx/d,dy/d,false];H.st=3;}
+  if(H.st===3){if((H.wt-=dt)>0)return[0,0,false];const k=[H.f.k,(H.f.k+1)%4,(H.f.k+3)%4][H.k++];if(k===undefined){ai.bbP='up';return[0,0,false];}H.wt=0.45;
+    const ob=planBuild('wall',c,k*Math.PI/2,0);if(ob&&!ob.taken){placePiece(ob,c,'wood');const q=ob.piece;q.edit=k===H.f.k?1:2;applyWallEdit(q);}}
+  return[0,0,false];}
+// doing up the tower: one piece at a time, top first, wood to stone, then stone to metal
+function bbUpgrade(c,dt){const ai=c.ai;if((ai.upT=(ai.upT||0)-dt)>0)return[0,0,false];ai.upT=BB.upEvery;let q=null;
+  for(const m of['wood','stone']){for(const p of G.pieces)if(p.owner===c&&(p.mat||'wood')===m&&(!q||p.ob.z0>q.ob.z0))q=p;if(q)break;}
+  if(!q){ai.bbP='visit';ai.visit=null;return[0,0,false];}
+  pieceUpgrade(q,q.mat==='stone'?'metal':'stone');c.cur=0;c.swingT=0.25;if(Math.random()<0.3&&dist(G.player,{x:q.cx,y:q.cy})<700)sfx('build',{x:q.cx,y:q.cy});return[0,0,false];}
+// then off the tower (back out of the hut, then sideways off the ramp) and round the other towers, cheering at each one
+function bbVisit(c,dt){const ai=c.ai,V=ai.visit||(ai.visit={st:c.z>40?0:2,t:0,who:null,seen:new Set(),wait:0}),H=ai.hut;V.t+=dt;
+  if(V.st===0){if(H&&H.f&&V.t<0.6){const[dx,dy]=bbDir((H.f.k+2)%4);return[dx,dy,false];}V.st=1;V.z=c.z;V.t=0;}
+  if(V.st===1){if(c.z>V.z-30&&V.t<2.5){const[dx,dy]=bbDir(((H&&H.f?H.f.k:ai.bdir||0)+1)%4);return[dx,dy,false];}V.st=2;}
+  if(!c.onGround)return[0,0,false];
+  if(c.emote||(V.wait-=dt)>0)return[0,0,false];
+  return null;} // walking: the usual bot movement, to the spot bbGoal picks
+// (from decide) where a visiting bot walks: next to the foot of a tower it hasn't cheered yet; there, it cheers
+function bbGoal(c){const ai=c.ai,V=ai.visit;if(ai.bbMove){ai.mode='obj';ai.gx=ai.bbMove.x;ai.gy=ai.bbMove.y;return;}if(ai.bbP!=='visit'||!V||V.st<2)return;
+  if(V.who&&V.to&&Math.hypot(c.x-V.to.x,c.y-V.to.y)<90&&c.z<60){const o=V.who;V.seen.add(o);V.who=null;V.wait=0.6;c.emote={type:Math.floor(Math.random()*3),t:0};
+    addText(c.x,c.y,c.z+70,pick(BB.cheers),'#ffcb1f',15);if(o===G.player)toast('👏 '+c.name+' cheers for your tower!');return;}
+  if(!V.who){const own=new Map();for(const q of G.pieces){const o=q.owner;if(!o||o===c||V.seen.has(o))continue;const b=own.get(o);if(!b||q.ob.z0<b.ob.z0)own.set(o,q);}
+    if(!own.size){if(V.seen.size){V.seen.clear();return bbGoal(c);}return;}const list=[...own];const[o,base]=list[Math.floor(Math.random()*list.length)];
+    V.who=o;V.to=freeSpot(base.cx,base.cy,140,0,null);V.bd=1e9;}
+  const d=Math.hypot(c.x-V.to.x,c.y-V.to.y);if(d<V.bd-20){V.bd=d;V.bt=G.time;}else if(G.time-V.bt>6){V.seen.add(V.who);V.who=null;return;} // (no closer for 6 s: another tower)
+  ai.mode='obj';ai.gx=V.to.x;ai.gy=V.to.y;}
 XM.buildbattle={name:'Build Battle',
   init(){announce('Build Battle!','Build the TALLEST tower before time runs out! Building is free. Look up to build higher.',4.2);G.buildMode='ramp';},
   height(c){let h=0;for(const q of G.pieces)if(q.owner===c)h=Math.max(h,q.ob.z0+q.ob.h);return h;},
   update(){if(!G.endAt&&G.mt>=G.len)finishFFA(ffaPlaces(c=>this.height(c)),'Build Battle');},
-  botTick(c,dt){return climbBot(c,dt,G.pieces.length<520,{easy:4.0,medium:2.8,hard:2.0}[opts.diff]||2.8);},
+  botTick(c,dt){return bbBot(c,dt);}, // climb, a hut on top, do it up, then go cheering (see bbBot)
+  bot(c){bbGoal(c);},
   spawn:spreadSpawn,
   hud(c1,c2,c3,p){const list=ffaPlaces(c=>this.height(c)),me=list.find(e=>e.c===p);setC(c1,'chip storm');setH(c1,'Time '+fmt(G.len-G.mt));
     setC(c2,'chip');setH(c2,'Your tower: '+Math.round(me.s/8)+' ft');setC(c3,me.place===1?'chip final':'chip');
@@ -4958,15 +5023,23 @@ const SIEGE_NET={s:()=>{const S=G.sg,T0=S.tr;return{h:S.half,p:S.phase,e:r2(S.en
    A fire nobody sprays grows back and, after a while, jumps to the next building. Save everyone and put out every fire
    before time runs out to win. The host runs everything; joiners get the fires and the people through RESCUE_NET. */
 MODEFLAGS.rescue={noLoot:1,noCars:1};
-MODES.rescue={desc:'Everyone is on one team! Fires break out all over the island and people are stuck on the rooftops. Put the fires out with fire trucks and Water Squirters, and fly the helicopter to lift everyone to safety before time runs out.'};
-const RESCUE={fires:8,more:4,people:6,len:300,seats:4,spread:45,ceil:900};
+MODES.rescue={desc:'Everyone is on one team! Alarms ring all match long: fires break out and people get stuck on the rooftops. Put the fires out with fire trucks and Water Squirters, and fly the helicopter to lift everyone to safety. Save as many as you can for up to 3 stars!'};
+// alarms: [fires, people] at the start and then every 40 s, in one part of the island each time. Bots only help: their water
+// does a quarter as much, and a bot pilot takes 1 person at a time and rests a minute on the H after each trip, so the squad needs you (the 2026-11-22 play-test: the bots won
+// it alone in about 50 s of its 5 minutes). Stars: mostly for the share of people saved, a bit for the share of fires put out
+const RESCUE={len:300,seats:4,botSeats:1,botRest:60,botPow:0.25,spread:30,maxFires:14,ceil:900,every:40,waves:[[5,2],[2,1],[2,2],[3,1],[3,2],[3,2],[4,2]],stars:[0.4,0.7,0.88]};
+const rescueBot=c=>!!c&&!c.isPlayer&&!c.remote&&!c.human;
+const rescueSeats=v=>v.driver&&rescueBot(v.driver)?RESCUE.botSeats:RESCUE.seats;
+function rescueStars(R){const k=R.total?0.7*R.saved/R.total+0.3*(R.spawned?R.out/R.spawned:1):0;return{k,n:RESCUE.stars.filter(s=>k>=s-1e-9).length};}
+const starStr=n=>'⭐'.repeat(n)+'☆'.repeat(3-n);
 RATING.squirt=2;
 // ---- the helicopter: fly it like a drone (W/S forward and back, A/D turn, Space up, Q down)
 function heliModel(col){const g=new THREE.Group(),B=(c,x,y,z,w,h,d,geo,em)=>{const m=new THREE.Mesh(GEO[geo||'boxC'],mat(c,em));m.position.set(x,y,z);m.scale.set(w,h,d);m.castShadow=true;g.add(m);return m;};
   B(col,0,22,2,34,30,48,'sphC');B(col,0,24,-30,8,8,40);B(col,0,32,-50,3,18,10);B('#ffffff',0,22,-6,35,4,30,'boxC');
   const glass=new THREE.Mesh(GEO.sphC,new THREE.MeshLambertMaterial({color:0xbfe8ff,transparent:true,opacity:0.6}));glass.position.set(0,26,16);glass.scale.set(26,20,22);g.add(glass);
   for(const s of[-1,1]){B('#2b2f3a',s*14,2,2,3,3,52);B('#2b2f3a',s*12,8,12,2,12,2);B('#2b2f3a',s*12,8,-8,2,12,2);}
-  B('#2b2f3a',0,47,2,4,22,4,'cylC');const rotor=new THREE.Group();rotor.position.set(0,58,2); // (F62: on a taller mast, well over the pilot's head)for(const a of[0,Math.PI/2]){const b=new THREE.Mesh(GEO.boxC,mat('#3a3f4b'));b.scale.set(6,1.5,110);b.rotation.y=a;rotor.add(b);}g.add(rotor);
+  // (F62: the rotor is on a taller mast, well over the pilot's head; F72: its blades are built and fixed to the helicopter again)
+  B('#2b2f3a',0,47,2,4,22,4,'cylC');const rotor=new THREE.Group();rotor.position.set(0,58,2);for(const a of[0,Math.PI/2]){const b=new THREE.Mesh(GEO.boxC,mat('#3a3f4b'));b.scale.set(6,1.5,110);b.rotation.y=a;rotor.add(b);}g.add(rotor);
   const tail=new THREE.Group();tail.position.set(3,32,-50);const tb=new THREE.Mesh(GEO.boxC,mat('#3a3f4b'));tb.scale.set(1,22,3);tail.add(tb);g.add(tail);
   B('#ff3b3b',0,40,-30,4,3,4,'sphC',0.9);g.userData={rotor,tail,wheels:[]};scene.add(g);return g;}
 // ---- the fire truck: a red truck with a ladder and a water cannon on top
@@ -4986,7 +5059,7 @@ function heliDrive(car,d,me,K,dt){const g=groundAt(car.x,car.y,car.z+10);let f=0
   car.ang+=s*1.8*dt;car.speed=lerp(car.speed||0,f*(boost?520:380),Math.min(1,dt*1.6));if(car.onGround&&!f)car.speed*=Math.exp(-6*dt);
   car.vx=Math.cos(car.ang)*car.speed;car.vy=Math.sin(car.ang)*car.speed;
   let vz=u*260;if(car.z-g<30&&(f||s)&&!u&&d)vz=160;
-  car.vz=lerp(car.vz||0,vz,Math.min(1,dt*3));car.z=Math.min(car.z+car.vz*dt,RESCUE.ceil);
+  car.vz=lerp(car.vz||0,vz,Math.min(1,dt*3));car.z=Math.min(car.z+car.vz*dt,MAP.roof?MAP.roof-90:RESCUE.ceil); // (under the Crystal Cave's rock roof)
   if(car.z<=g){car.z=g;if(car.vz<0)car.vz=0;car.onGround=true;}else car.onGround=false;
   car.rot=clamp((car.rot||0)+(d||!car.onGround?dt:-dt*0.4),0,1);}
 function animHeli(car,dt){const m=car.m,u=m.userData,sp=car.speed||0;m.position.set(car.x,car.z,car.y);
@@ -5003,7 +5076,7 @@ function rescueJet(h,T,d,sp,dmg,spread){const dx=wdx(T.x-h.x),dy=wdy(h.y,T.y),D=
 function rescueNearFire(o,max){let b=null,bd=max;for(const f of(G.rs?G.rs.fires:[])){const d=dist(f,o);if(d<bd){bd=d;b=f;}}return b;}
 // water landing near a fire puts some of it out (called when a drop hits something, and for drops passing close by)
 function rescueSplash(p){const R=G.rs;if(!R||NETC())return;for(const f of R.fires.slice()){const d=Math.hypot(wdx(f.x-p.x),wdy(p.y,f.y),f.z+15-p.z);if(d<90)rescueHit(f,p.dmg||8,p.owner);}}
-function rescueHit(f,dmg,by){const R=G.rs;f.hp-=dmg;f.hitT=G.time;if(Math.random()<0.3)burst(f.x,f.y,f.z+20,3,'puff','#ffffff',60);if(f.hp>0)return;
+function rescueHit(f,dmg,by){const R=G.rs;f.hp-=dmg*(rescueBot(by)?RESCUE.botPow:1);f.hitT=G.time;f.t=0;if(Math.random()<0.3)burst(f.x,f.y,f.z+20,3,'puff','#ffffff',60);if(f.hp>0)return;
   R.fires.splice(R.fires.indexOf(f),1);if(f.m)scene.remove(f.m);R.out++;burst(f.x,f.y,f.z+20,30,'puff','#e8f4ff',140);addText(f.x,f.y,f.z+70,'FIRE OUT!','#43c6ff',20);sfx('blub',f);
   if(by)by.pts=(by.pts||0)+1;if(by&&by.isPlayer)xpEvent('harvest',10);feed((by?nameTag(by)+' put out':'Out goes')+' a fire!');rescueCheck();}
 // the top of a building at (x,y): its roof, or the top of its wall there (a big building's walls stand above its roof)
@@ -5019,6 +5092,18 @@ function rescueAddFire(x,y){const R=G.rs,busy=new Set(R.fires.map(f=>f.b));let b
     if(q)for(let s=0.05;s<0.75;s+=0.05){const px=lerp(ax,x,s),py=lerp(ay,y,s);if(blocked3D(wpx(px),wpy(px,py),lerp(45,z+10,s))){q=0;break;}}if(q)q=2;
     if(q>ok||fx==null){ok=q;fx=x;fy=y;nx=ux;ny=uy;}}
   const f={x:fx,y:fy,z:rescueTop(b,fx,fy),hp:100,b:best,t:0,hitT:-9,ax:fx+nx*200,ay:fy+ny*200};R.fires.push(f);R.spawned++;return f;}
+// an alarm: fires and people stuck on the roofs, all in one part of the island (people first, so no fire is on their roof)
+function rescueAlarm(){const R=G.rs,W=RESCUE.waves[R.w];if(!W)return;R.w++;R.nextA=R.w*RESCUE.every;
+  const far=BUILDINGS.filter(b=>dist({x:b.x+b.w/2,y:b.y+b.h/2},R.pad)>500),b=pick(far.length?far:BUILDINGS),cx=b.x+b.w/2,cy=b.y+b.h/2;let np=0,nf=0;
+  for(let k=0;k<W[1];k++)if(rescueAddPerson(cx,cy))np++;for(let k=0;k<W[0];k++)if(rescueAddFire(cx,cy))nf++;
+  if(R.w>1){announce('🚨 Alarm!',`${nf} fire${nf===1?'':'s'}${np?' and '+np+(np===1?' person':' people')+' on the roofs':''}, ${rescueWhere(cx,cy)}!`,3);sfx('alert');}}
+function rescueWhere(x,y){const R=G.rs,a=Math.atan2(y-R.pad.y,x-R.pad.x),k=((Math.round(a/(Math.PI/4))%8)+8)%8;
+  return['east','south-east','south','south-west','west','north-west','north','north-east'][k]+' of the fire station';}
+// someone stuck on a roof near (x,y): a building with a roof, not burning, away from the station and from anyone else waiting
+function rescueAddPerson(x,y){const R=G.rs,burning=new Set(R.fires.map(f=>f.b));let best=null,bd=1e18;
+  for(let i=0;i<BUILDINGS.length;i++){const b=BUILDINGS[i];if(!b.roofs||!b.roofs.length||burning.has(i))continue;const c={x:b.x+b.w/2,y:b.y+b.h/2};
+    if(dist(c,R.pad)<400||R.people.some(p=>p.st===0&&(p.b===i||dist(p,c)<300)))continue;const d=dist(c,{x,y})+Math.random()*300;if(d<bd){bd=d;best=i;}}
+  if(best==null)return null;const b=BUILDINGS[best],p={x:b.x+b.w/2,y:b.y+b.h/2,z:rescueTop(b),b:best,st:0,car:-1};R.people.push(p);R.total=R.people.length;p.m=rescuePerson(R.people.length-1);return p;}
 function fireModel(){const g=new THREE.Group();for(const[c,s,o]of[['#ff3b1f',1,0],['#ff9a3c',0.75,0.2],['#ffe14d',0.45,0.4]]){const m=new THREE.Mesh(GEO.cone,basic(c,{transparent:true,opacity:0.92}));m.scale.set(46*s,70*s,46*s);m.userData.o=o;g.add(m);}
   scene.add(g);return g;}
 // someone stuck on a roof, waving for help
@@ -5029,7 +5114,7 @@ function rescuePerson(i){const g=new THREE.Group(),body=new THREE.Group();body.p
 // ---- the mode
 XM.rescue={name:'Rescue Squad',
   init(){G.len=RESCUE.len;for(const c of G.chars){c.team='hero';this.loadout(c);c.cur=1;}
-    const R=G.rs={fires:[],people:[],pad:{x:WORLD/2,y:WORLD/2},saved:0,out:0,spawned:0,total:RESCUE.people,padM:null};
+    const R=G.rs={fires:[],people:[],pad:{x:WORLD/2,y:WORLD/2},saved:0,out:0,spawned:0,total:0,padM:null,w:0,nextA:0};
     if(NETC())return;
     // the fire station: a big H on open ground near the middle, with the fire trucks and helicopters around it
     for(const r of[300,500,800,1200]){let ok=null;for(let a=0;a<60&&!ok;a++){const s=freeSpot(WORLD/2,WORLD/2,r,0,null);if(!pointBlocked(s.x,s.y,150)&&!isBad(s.x,s.y)&&!inBuilding(s.x,s.y,160)&&!PADS.some(p=>dist(p,s)<200))ok=s;}if(ok){R.pad={x:ok.x,y:ok.y};break;}}
@@ -5037,17 +5122,12 @@ XM.rescue={name:'Rescue Squad',
     const at=(a,r)=>({x:R.pad.x+Math.cos(a)*r,y:R.pad.y+Math.sin(a)*r});
     [[0.3,'heli'],[3.4,'heli'],[1.6,'firetruck'],[2.2,'firetruck'],[4.6,'firetruck']].forEach(([a,k],i)=>{const r=k==='heli'?280:240,s=freeSpot(at(a,r).x,at(a,r).y,60,30,G.cars); // (round the edge of the H, never on it)
       const v=newVehicle(s.x,s.y,Math.atan2(s.y-R.pad.y,s.x-R.pad.x),k==='heli'?(i?'#1f6fd6':'#ff7b1c'):'#e2312b',k);v.hp=v.maxHp=1e6;G.cars.push(v);});
-    // people on rooftops, on buildings far apart; then the fires
-    const roofy=BUILDINGS.map((b,i)=>i).filter(i=>BUILDINGS[i].roofs&&BUILDINGS[i].roofs.length).sort(()=>Math.random()-0.5);
-    for(const i of roofy){if(R.people.length>=RESCUE.people)break;const b=BUILDINGS[i],x=b.x+b.w/2,y=b.y+b.h/2;if(R.people.some(p=>dist(p,{x,y})<500)||dist(R.pad,{x,y})<400)continue;
-      R.people.push({x,y,z:rescueTop(b),b:i,st:0,car:-1});}
-    R.total=R.people.length;for(const p of R.people)p.m=rescuePerson(R.people.indexOf(p));
-    for(let k=0;k<RESCUE.fires;k++)rescueAddFire();
+    rescueAlarm(); // the first alarm (then one every RESCUE.every s: update)
     G.nav=navBuild(); // the driving grid the race bots use: the bot fire trucks find their way round buildings with it
     const placed=G.cars.slice();for(const c of G.chars){const s=freeSpot(R.pad.x,R.pad.y,260,40,placed);c.x=s.x;c.y=s.y;c.z=groundAt(s.x,s.y,10);c.face=openFace(c,Math.atan2(WORLD/2-s.y,WORLD/2-s.x));if(c.isPlayer)G.yaw=c.face;placed.push(c);}
     // bots take the second helicopter and two of the trucks; the rest grab Water Squirters
     const bots=G.chars.filter(c=>!c.isPlayer&&!c.human),take=[G.cars[1],G.cars[3],G.cars[4]];take.forEach((v,i)=>{const b=bots[i];if(b){b.x=v.x;b.y=v.y;enterCar(b,v);}});
-    announce('🚒 Rescue Squad!','Put out the fires and fly the helicopter to save the people on the roofs!',4);sfx('horn');},
+    announce('🚒 Rescue Squad!','Alarms will ring all match: put out the fires and fly the helicopter to save the people on the roofs!',4);sfx('horn');},
   padModel(){const R=G.rs,g=new THREE.Group(),z=groundAt(R.pad.x,R.pad.y,10);
     const base=new THREE.Mesh(GEO.cylC,mat('#3a3f4b'));base.scale.set(220,3,220);g.add(base);const ring=new THREE.Mesh(GEO.cylC,basic('#ffcb1f'));ring.scale.set(200,3.4,200);g.add(ring);const inner=new THREE.Mesh(GEO.cylC,mat('#3a3f4b'));inner.scale.set(184,3.8,184);g.add(inner);
     for(const[x,w,d]of[[-34,16,90],[34,16,90],[0,70,16]]){const m=new THREE.Mesh(GEO.boxC,basic('#ffffff'));m.scale.set(w,4.4,d);m.position.x=x;g.add(m);}
@@ -5061,18 +5141,20 @@ XM.rescue={name:'Rescue Squad',
     for(let i=G.projs.length-1;i>=0;i--){const p=G.projs[i];if(p.t!=='water')continue;for(const f of R.fires)if(Math.hypot(wdx(f.x-p.x),wdy(p.y,f.y),f.z+15-p.z)<60){rescueHit(f,p.dmg,p.owner);removeModel(p);G.projs.splice(i,1);break;}}
     // a fire nobody sprays grows back, and after a while jumps to the next building
     for(const f of R.fires.slice()){if(G.time-f.hitT>3)f.hp=Math.min(100,f.hp+3*dt);f.t+=dt;
-      if(f.t>RESCUE.spread&&f.hp>=100&&R.fires.length<10&&R.spawned<RESCUE.fires+RESCUE.more){f.t=0;const n=rescueAddFire(f.x,f.y);if(n)feed('🔥 The fire spread!');}}
+      if(f.t>RESCUE.spread&&f.hp>=100&&R.fires.length<RESCUE.maxFires){f.t=0;const n=rescueAddFire(f.x,f.y);if(n)feed('🔥 A fire nobody put out spread to the next roof!');}}
     // the helicopters: hover by a roof to pick people up, land on the H to drop them off
     for(const v of G.cars){if(v.kind!=='heli')continue;const on=R.people.filter(p=>p.st===1&&p.car===v);
       if(v.dead){for(const p of on){p.st=0;p.car=-1;}continue;}
-      if(on.length<RESCUE.seats)for(const p of R.people){if(p.st!==0||on.length>=RESCUE.seats)continue;if(dist(p,v)<90&&v.z-p.z>-10&&v.z-p.z<80){p.st=1;p.car=v;on.push(p);sfx('pickup',v);addText(p.x,p.y,p.z+60,'THANK YOU!','#ffcb1f',16);
+      const seats=rescueSeats(v);if(on.length<seats)for(const p of R.people){if(p.st!==0||on.length>=seats)continue;if(dist(p,v)<90&&v.z-p.z>-10&&v.z-p.z<80){p.st=1;p.car=v;on.push(p);sfx('pickup',v);addText(p.x,p.y,p.z+60,'THANK YOU!','#ffcb1f',16);
           if(v.driver)tellOrAnnounce(v.driver,'🚁 Got one!',on.length+' aboard. Land on the H at the fire station to drop them off.',2.2);}}
       if(on.length&&v.onGround&&dist(v,R.pad)<170){for(const p of on){p.st=2;p.car=-1;R.saved++;}burst(v.x,v.y,v.z+30,50,'confetti',null,220);sfx('victory');addText(v.x,v.y,v.z+80,on.length>1?on.length+' SAVED!':'SAVED!','#5cff7a',22);
-        if(v.driver)v.driver.pts=(v.driver.pts||0)+on.length*2;feed((v.driver?nameTag(v.driver):'The helicopter')+' rescued '+on.length+(on.length>1?' people!':' person!'));rescueCheck();}}
+        if(v.driver)v.driver.pts=(v.driver.pts||0)+on.length*2;if(rescueBot(v.driver))v.rest=RESCUE.botRest;feed((v.driver?nameTag(v.driver):'The helicopter')+' rescued '+on.length+(on.length>1?' people!':' person!'));rescueCheck();}}
+    if(!G.endAt&&R.w<RESCUE.waves.length&&G.mt>=R.nextA)rescueAlarm();
     if(!G.endAt&&G.mt>=G.len)this.finish(false);},
-  finish(won){if(G.endAt)return;const R=G.rs;G.win=won;G.endAt=G.time+(won?5:3);
-    if(won){startVictory();announce('#1 RESCUE SQUAD!','Every fire is out and everyone is safe. Heroes!',4.6,'victory');sfx('victory');}
-    else{announce("Time's up!",`You saved ${R.saved} of ${R.total} people and put out ${R.out} fires.`,3.4);sfx('lose');}},
+  // the end: everything dealt with after the last alarm, or time's up; either way, stars for how much the squad saved
+  finish(won){if(G.endAt)return;const R=G.rs,S=rescueStars(R);R.stars=S.n;G.win=won||S.n>=2;G.endAt=G.time+(G.win?5:3);
+    if(won){startVictory();announce('#1 RESCUE SQUAD! '+starStr(S.n),'Every fire is out and everyone is safe. Heroes!',4.6,'victory');sfx('victory');}
+    else{if(G.win)startVictory();announce(starStr(S.n)+' '+["Time's up!",'Good try, squad!','Great rescue!','Super Squad!'][S.n],`You saved ${R.saved} of ${R.total} people and put out ${R.out} fires.`,3.4,G.win?'victory':'');sfx(G.win?'victory':'lose');}},
   // the bots: in a truck or helicopter the vehicle does the work; on foot, head for the nearest fire and spray it
   bot(c){const ai=c.ai,R=G.rs;if(!R||c.vehicle)return;const f=rescueNearFire(c,1e9);if(!f){ai.mode='obj';ai.gx=R.pad.x;ai.gy=R.pad.y;return;}
     const a=rand(-60,60);ai.target=null;ai.mode='obj';ai.gx=wpx((f.ax??f.x)+(f.ay!=null&&f.ay!==f.y?a:0));ai.gy=wpy(ai.gx,(f.ay??f.y)+(f.ax!=null&&f.ax!==f.x?a:0));}, // (from the side it burns on)
@@ -5092,8 +5174,9 @@ XM.rescue={name:'Rescue Squad',
     const ax=car.x+Math.cos(car.ang)*60,ay=car.y+Math.sin(car.ang)*60,ahead=walkBlocked(ax,ay,24)||hurtAt(wpx(ax),wpy(ax,ay));
     return{thr:ahead?0.3:Math.abs(da)>1.4?0.5:d<400?0.5:1,str:ahead?(da>=0?1:-1):clamp(da*1.8,-1,1)};},
   // a bot (or autopilot) helicopter: fly over to the nearest person, hover by the roof, then land on the H when full or done
-  heli(car,dt){const R=G.rs;if(!R)return{f:0,s:0,u:0};const on=R.people.filter(p=>p.st===1&&p.car===car).length,wait=R.people.filter(p=>p.st===0);
-    let T,land=false;if(on>=RESCUE.seats||(on&&!wait.length)||!wait.length){T={x:R.pad.x,y:R.pad.y,z:groundAt(R.pad.x,R.pad.y,10)};land=true;}
+  heli(car,dt){const R=G.rs;if(!R)return{f:0,s:0,u:0};if(car.rest>0&&rescueBot(car.driver)){car.rest-=dt;return{f:0,s:0,u:car.onGround?0:-1};} // (a bot pilot's break on the H)
+  const on=R.people.filter(p=>p.st===1&&p.car===car).length,wait=R.people.filter(p=>p.st===0);
+    let T,land=false;if(on>=rescueSeats(car)||(on&&!wait.length)||!wait.length){T={x:R.pad.x,y:R.pad.y,z:groundAt(R.pad.x,R.pad.y,10)};land=true;}
     else{let bd=1e9;for(const p of wait){const d=dist(p,car);if(d<bd){bd=d;T=p;}}}
     const dx=wdx(T.x-car.x),dy=wdy(car.y,T.y),hd=Math.hypot(dx,dy),h=angDiff(car.ang,Math.atan2(dy,dx));
     let tall=T.z;for(const s of[0,120,240,400])tall=Math.max(tall,groundAt(wpx(car.x+Math.cos(car.ang)*s),wpy(car.x,car.y+Math.sin(car.ang)*s),5000));const cruise=Math.max(tall+150,260);
@@ -5104,8 +5187,8 @@ XM.rescue={name:'Rescue Squad',
     car.lastF=hd<30?0:f;return{f:car.lastF,s:clamp(h*2,-1,1),u:car.onGround&&!on&&!wait.length?0:u};},
   hud(c1,c2,c3,p){const R=G.rs;if(!R)return;const left=Math.max(0,G.len-G.mt),v=p.vehicle,on=v&&v.kind==='heli'?R.people.filter(q=>q.st===1&&q.car===v).length:0;
     setC(c1,'chip');setH(c1,`🔥 ${R.fires.length} fire${R.fires.length===1?'':'s'} · 💧 ${R.out} out`);
-    setC(c2,left<30?'chip storm':'chip');setH(c2,'⏱ '+fmt(left));
-    setC(c3,R.saved===R.total?'chip final':'chip');setH(c3,`🚁 Saved ${R.saved} of ${R.total}`+(on?` · ${on} aboard: land on the H!`:''));},
+    const na=R.w<RESCUE.waves.length?Math.max(0,R.nextA-G.mt):-1,S=rescueStars(R);setC(c2,left<30?'chip storm':'chip');setH(c2,'⏱ '+fmt(left)+(na>=0?' · 🚨 next alarm '+fmt(na):''));
+    setC(c3,S.n===3?'chip final':'chip');setH(c3,`🚁 Saved ${R.saved} of ${R.total} · ${starStr(S.n)}`+(on?` · ${on} aboard: land on the H!`:''));},
   visual(dt,t){const R=G.rs;if(!R)return;
     for(const f of R.fires){if(!f.m)f.m=fireModel();f.m.position.set(f.x,f.z,f.y);const k=0.45+0.55*f.hp/100;f.m.children.forEach((m,i)=>{const s=1+Math.sin(t*(9+i*3)+f.x+m.userData.o*9)*0.12;m.scale.y=70*[1,0.75,0.45][i]*k*s;});
       if(Math.random()<dt*2)burst(f.x,f.y,f.z+70*k,1,'puff','#6b6f78',40);}
@@ -5115,13 +5198,13 @@ XM.rescue={name:'Rescue Squad',
     m.fillStyle='#ffcb1f';m.strokeStyle='#1b2235';m.lineWidth=2;for(const p of R.people)if(p.st===0){m.beginPath();m.arc(p.x*k,p.y*k,5,0,TAU);m.fill();m.stroke();}
     m.fillStyle='#ffffff';m.font='bold 12px sans-serif';m.textAlign='center';m.textBaseline='middle';m.fillText('H',R.pad.x*k,R.pad.y*k);},
   cleanup(){const R=G.rs;if(!R)return;for(const f of R.fires)if(f.m)scene.remove(f.m);for(const p of R.people)if(p.m)scene.remove(p.m.g);if(R.padM)scene.remove(R.padM);},
-  end(p,b){b.xm=b.xm||{};b.xm.rescue=b.xm.rescue||{wins:0};if(G.win)b.xm.rescue.wins++;const R=G.rs||{saved:0,total:0,out:0,fires:[]};
-    return{title:G.win?'Everyone is safe!':"Time's up!",sub:'Rescue Squad',cls:G.win?'':'blue',stats:[[R.saved+' / '+R.total,'People saved'],[R.out,'Fires out'],[R.fires.length,'Still burning'],[Math.floor(p.pts||0),'Your rescues']]};}};
-// every fire out and everyone safe: the squad wins
-function rescueCheck(){const R=G.rs;if(R&&!R.fires.length&&R.saved>=R.total)XM.rescue.finish(true);}
+  end(p,b){b.xm=b.xm||{};b.xm.rescue=b.xm.rescue||{wins:0};if(G.win)b.xm.rescue.wins++;const R=G.rs||{saved:0,total:0,out:0,spawned:0,fires:[]},n=R.stars??rescueStars(R).n;b.xm.rescue.stars=Math.max(b.xm.rescue.stars||0,n);
+    return{title:R.saved>=R.total&&!R.fires.length?'Everyone is safe!':["Time's up!",'Good try, squad!','Great rescue!','Super Squad!'][n],sub:'Rescue Squad '+starStr(n),cls:G.win?'':'blue',stats:[[starStr(n),'Rescue stars'],[R.saved+' / '+R.total,'People saved'],[R.out,'Fires out'],[Math.floor(p.pts||0),'Your rescues']]};}};
+// after the last alarm, every fire out and everyone safe: the squad wins
+function rescueCheck(){const R=G.rs;if(R&&R.w>=RESCUE.waves.length&&!R.fires.length&&R.saved>=R.total)XM.rescue.finish(true);}
 // joiners: the fires, the people, the station, the counts
-const RESCUE_NET={s:()=>{const R=G.rs;return{f:R.fires.map(f=>[ri(f.x),ri(f.y),ri(f.z),ri(f.hp)]),p:R.people.map(p=>[ri(p.x),ri(p.y),ri(p.z),p.st,p.b,p.st===1?G.cars.indexOf(p.car):-1]),h:[ri(R.pad.x),ri(R.pad.y)],sv:R.saved,o:R.out,tt:R.total};},
-  a:s=>{const R=G.rs;if(!R)return;R.saved=s.sv;R.out=s.o;R.total=s.tt;if(R.pad.x!==s.h[0]||R.pad.y!==s.h[1]||!R.padM){R.pad={x:s.h[0],y:s.h[1]};if(R.padM)scene.remove(R.padM);XM.rescue.padModel();}
+const RESCUE_NET={s:()=>{const R=G.rs;return{w:R.w,na:r2(R.nextA-G.mt),sp:R.spawned,f:R.fires.map(f=>[ri(f.x),ri(f.y),ri(f.z),ri(f.hp)]),p:R.people.map(p=>[ri(p.x),ri(p.y),ri(p.z),p.st,p.b,p.st===1?G.cars.indexOf(p.car):-1]),h:[ri(R.pad.x),ri(R.pad.y)],sv:R.saved,o:R.out,tt:R.total};},
+  a:s=>{const R=G.rs;if(!R)return;R.saved=s.sv;R.out=s.o;R.total=s.tt;R.w=s.w;R.nextA=G.mt+s.na;R.spawned=s.sp;if(R.pad.x!==s.h[0]||R.pad.y!==s.h[1]||!R.padM){R.pad={x:s.h[0],y:s.h[1]};if(R.padM)scene.remove(R.padM);XM.rescue.padModel();}
     while(R.fires.length>s.f.length){const f=R.fires.pop();if(f.m)scene.remove(f.m);}
     s.f.forEach((a,i)=>{let f=R.fires[i];if(!f)f=R.fires[i]={hitT:-9};if(f.x!==a[0]||f.y!==a[1]){if(f.x!=null&&f.m)burst(f.x,f.y,f.z+20,20,'puff','#e8f4ff',120);}Object.assign(f,{x:a[0],y:a[1],z:a[2],hp:a[3]});});
     s.p.forEach((a,i)=>{const p=R.people[i]||(R.people[i]={});Object.assign(p,{x:a[0],y:a[1],z:a[2],st:a[3],b:a[4],car:a[5]>=0?G.cars[a[5]]:-1});});}};
@@ -5305,6 +5388,70 @@ XM.balloons={name:'Balloon Battle',
 const BALLOON_NET={s:()=>({g:r2(G.goAt-G.time),b:G.cars.map(c=>c.bl||0),o:G.cars.map(c=>c.chute?1:0),pp:G.chars.map(c=>[c.cid,c.pops||0])}),
   a:s=>{G.goAt=G.time+s.g;s.b.forEach((n,i)=>{const car=G.cars[i];if(!car)return;car.bl=n;car.chute=!!s.o[i];if(!car.bcol)car.bcol=BALLOON.cols[i%BALLOON.cols.length];if(!car.blM)car.blM=XM.balloons.model(car);});
     for(const[cid,n]of s.pp||[]){const c=byCid(cid);if(c)c.pops=n;}}};
+// @module src/js/29g-team-battle.js: Team Battle made busier: closer bases, coming back next to a teammate, and a bonus zone every minute that scores for the team holding it (knockouts inside it count twice).
+// Main: TEAM_BASES, TZ, teamBase, teamSpawn, teamZoneTick, teamZoneKo, teamZonePull, teamZoneVisual, TEAMZONE_NET
+// See also: game-state (BASES, starts the match), combat (knockouts), update (respawnSpot), bots (decide), hud, net-mode-state (XMNET.team)
+/* ================= Team Battle: closer bases, back in next to a teammate, and the bonus zone =================
+   Team Battle (G.mode 'team') lives in the core: game-state starts it, combat counts the knockouts, update ends it.
+   The 2026-11-22 play-test found it empty (about 12 knockouts in 3 minutes, no enemy near you most of the time),
+   so this module makes it busier:
+   - the two bases are closer together than the corner bases Capture the Flag and Fort Siege use (TEAM_BASES, teamBase)
+   - a bonked player comes back next to a teammate who is out of the fight, else at the base (teamSpawn)
+   - every minute a glowing bonus zone appears between the bases for 30 s. A team alone in it scores a point every
+     5 s, and a knockout inside it counts twice. Most bots head for it. The host runs it; joiners get it through
+     TEAMZONE_NET (net-mode-state). */
+const TEAM_BASES={red:{x:780*K,y:1620*K},blue:{x:1620*K,y:780*K}};
+const TZ={first:40,every:60,len:30,r:170,tick:5,go:0.65};
+const teamBase=(t,mode)=>((mode||G&&G.mode)==='team'?TEAM_BASES:BASES)[t];
+// where a bonked Team Battle player comes back: next to a teammate with no enemy near them (on the ground, outdoors), else at the base
+function teamSpawn(c){const foes=G.chars.filter(o=>o.state==='alive'&&isEnemy(c,o)),safe=p=>!foes.some(f=>dist(f,p)<450);
+  const mates=G.chars.filter(o=>o!==c&&o.team===c.team&&o.state==='alive'&&!o.zombie&&!o.vehicle&&o.onGround&&!hurtAt(o.x,o.y)&&!inBuilding(o.x,o.y,10)&&safe(o)).sort(()=>Math.random()-0.5);
+  for(const m of mates){const s=freeSpot(m.x,m.y,200,60,[m]);if(dist(s,m)<300&&!isBad(s.x,s.y)&&!inBuilding(s.x,s.y,10)&&safe(s))return{x:s.x,y:s.y,mate:m};}
+  const b=teamBase(c.team);return freeSpot(b.x,b.y,380,150,foes);}
+// the bonus zone (the host, every frame of a Team Battle)
+function teamZoneTick(dt){const Z=G.tz||(G.tz={on:false,next:TZ.first,n:0,x:0,y:0,z:0,until:0,hold:null,cont:false,acc:0});if(G.endAt){Z.on=false;return;}
+  if(!Z.on){if(G.mt<Z.next||G.mt>G.len-15)return;const s=teamZoneSpot();Object.assign(Z,s,{on:true,until:G.mt+TZ.len,n:Z.n+1,hold:null,cont:false,acc:0});Z.next+=TZ.every;
+    for(const c of G.chars)if(c.ai&&!c.remote&&(c.isPlayer?autoOn(c):!c.human)){c.ai.zoneGo=c.isPlayer||Math.random()<TZ.go;c.ai.zoneN=Z.n;} // (and you, on autopilot)
+    announce('⭐ Bonus zone!','A glowing zone is up between the bases. Hold it for extra points!',2.6);sfx('alert');return;}
+  if(G.mt>=Z.until){Z.on=false;feed('The bonus zone fades away.');return;}
+  const tm=new Set();for(const c of G.chars)if(c.state==='alive'&&!c.zombie&&c.team&&!c.vehicle&&Math.hypot(c.x-Z.x,c.y-Z.y)<TZ.r&&Math.abs(c.z-Z.z)<120)tm.add(c.team);
+  const was=Z.hold;Z.cont=tm.size>1;Z.hold=tm.size===1?[...tm][0]:null;if(Z.hold!==was)Z.acc=0;
+  if(Z.hold&&was!==Z.hold)feed(`<b style="color:${Z.hold==='red'?'#e2312b':'#1f6fd6'}">${Z.hold==='red'?'Red':'Blue'} team</b> holds the bonus zone!`);
+  if(Z.hold&&(Z.acc+=dt)>=TZ.tick){Z.acc-=TZ.tick;G.score[Z.hold]++;addText(Z.x,Z.y,Z.z+110,'⭐ +1 '+Z.hold.toUpperCase(),Z.hold==='red'?'#ff5a4a':'#43a6ff',20);sfx('ding');}}
+// open ground between the bases (near the middle), with room round it, never on lava, water or open sky
+function teamZoneSpot(){const a=TEAM_BASES.red,b=TEAM_BASES.blue,mx=(a.x+b.x)/2,my=(a.y+b.y)/2,ux=(b.x-a.x),uy=(b.y-a.y),L=Math.hypot(ux,uy)||1;
+  for(let k=0;k<80;k++){const along=rand(-0.12,0.12)*L,side=rand(-1,1)*(k<40?520:900),x=mx+ux/L*along-uy/L*side,y=my+uy/L*along+ux/L*side;
+    const s=freeSpot(x,y,60,0,null);if(inBuilding(s.x,s.y,TZ.r*0.7)||pointBlocked(s.x,s.y,40)||siegeBadNear(s.x,s.y,TZ.r*0.8))continue;return{x:s.x,y:s.y,z:groundAt(s.x,s.y,10)};}
+  const s=freeSpot(mx,my,600,0,null);return{x:s.x,y:s.y,z:groundAt(s.x,s.y,10)};}
+// a knockout inside the zone counts twice (combat calls this for each Team Battle knockout): the extra point
+function teamZoneKo(o){const Z=G.tz;if(!Z||!Z.on||Math.hypot(o.x-Z.x,o.y-Z.y)>TZ.r+30)return 0;addText(o.x,o.y,o.z+95,'⭐ ZONE KO! x2','#ffcb1f',18);return 1;}
+// a bot picked to go for the zone (most are) heads there and mills about inside it, fighting whoever comes (bots' decide)
+function teamZonePull(c){const Z=G.tz,ai=c.ai;if(!Z||!Z.on||!ai.zoneGo||ai.zoneN!==Z.n)return false;
+  if(ai.target&&(Math.hypot(c.x-Z.x,c.y-Z.y)<TZ.r||dist(c,ai.target)<260))return false; // (in the zone, or an enemy close by: it fights)
+  if(ai.mode!=='zone'||ai.gx==null){const a=Math.random()*TAU,r=Math.sqrt(Math.random())*TZ.r*0.6;ai.mode='zone';ai.gx=Z.x+Math.cos(a)*r;ai.gy=Z.y+Math.sin(a)*r;}return true;}
+// a Team Battle bot with nothing to do goes looking for a fight: to near the closest enemy (everyone shows on the
+// Team Battle minimap), else towards the enemy's side as before
+function teamWander(c){let e=null,ed=1e9;for(const o of G.chars)if(o.state==='alive'&&isEnemy(c,o)&&!o.zombie){const d=dist(c,o);if(d<ed){ed=d;e=o;}}
+  if(e)return freeSpot(e.x,e.y,220,0,null);const eb=teamBase(c.team==='red'?'blue':'red');return freeSpot(lerp(WORLD/2,eb.x,Math.random()*0.7),lerp(WORLD/2,eb.y,Math.random()*0.7),400,0,null);}
+// the look: a glowing ring on the ground and a tall beam, gold, or the colour of the team holding it
+let TZM=null;
+function teamZoneVisual(dt,t){const Z=G.tz;if(!Z||!Z.on||G.mode!=='team'){if(TZM)TZM.g.visible=false;return;}
+  if(!TZM){const g=new THREE.Group(),M=o=>new THREE.MeshBasicMaterial(Object.assign({color:'#ffcb1f',transparent:true,depthWrite:false},o));
+    const disc=new THREE.Mesh(GEO.cylC,M({opacity:0.22}));disc.scale.set(TZ.r*2,3,TZ.r*2);g.add(disc);
+    const edge=new THREE.Mesh(new THREE.TorusGeometry(TZ.r,5,6,56).rotateX(Math.PI/2),M({opacity:0.9}));edge.position.y=4;g.add(edge);
+    const beam=new THREE.Mesh(GEO.cylC,M({opacity:0.16}));beam.scale.set(70,1000,70);beam.position.y=500;g.add(beam);
+    scene.add(g);TZM={g,disc,edge,beam};}
+  const col=Z.hold==='red'?'#ff5a4a':Z.hold==='blue'?'#43a6ff':'#ffcb1f',p=0.5+0.5*Math.sin(t*5);TZM.g.visible=true;TZM.g.position.set(Z.x,Z.z,Z.y);
+  for(const m of[TZM.disc,TZM.edge,TZM.beam])m.material.color.set(col);TZM.beam.material.opacity=0.12+0.08*p;TZM.edge.rotation.y=t*0.6;TZM.disc.material.opacity=Z.cont?0.12+0.2*p:0.22;}
+function teamZoneCleanup(){if(TZM)TZM.g.visible=false;}
+// the HUD's time chip and the minimap
+function teamZoneHud(){const Z=G.tz;if(!Z||!Z.on)return '';const who=Z.cont?' (contested)':Z.hold?` (<span style="color:${Z.hold==='red'?'#ff8a7a':'#8ac4ff'}">${Z.hold}</span>)`:'';
+  return ` · ⭐ Zone ${Math.max(0,Math.ceil(Z.until-G.mt))}s${who}`;}
+function teamZoneMini(m,k){const Z=G.tz;if(!Z||!Z.on)return;m.strokeStyle=Z.hold==='red'?'#e2312b':Z.hold==='blue'?'#1f6fd6':'#ffcb1f';m.lineWidth=3;m.beginPath();m.arc(Z.x*k,Z.y*k,Math.max(6,TZ.r*k),0,TAU);m.stroke();
+  m.fillStyle='#ffcb1f';m.font='bold 12px sans-serif';m.textAlign='center';m.textBaseline='middle';m.fillText('⭐',Z.x*k,Z.y*k);}
+// joiners: where the zone is, how long it has left and who holds it
+const TEAMZONE_NET={s:()=>{const Z=G.tz;return{z:Z&&Z.on?[ri(Z.x),ri(Z.y),ri(Z.z),r2(Z.until-G.mt),Z.hold==='red'?1:Z.hold==='blue'?2:0,Z.cont?1:0,Z.n]:0};},
+  a:s=>{if(!s.z){if(G.tz)G.tz.on=false;return;}const Z=G.tz||(G.tz={});Object.assign(Z,{on:true,x:s.z[0],y:s.z[1],z:s.z[2],until:G.mt+s.z[3],hold:[null,'red','blue'][s.z[4]],cont:!!s.z[5],n:s.z[6]});}};
 // @module src/js/30-fun.js: Fun extras: bonk streaks (DOUBLE BONK! …) and the end-of-match party with fireworks and dancing.
 // Main: bonkStreak, startParty, partyTick, STREAK_NAMES
 // See also: combat (calls bonkStreak), update (starts the party)
@@ -5350,6 +5497,9 @@ const GADGETS=[
 const FUEL_PACKS=[{id:'speed',name:'Speed Suit fuel (+30 s)',amt:30,shop:80},{id:'boots',name:'Rocket Boots fuel (+20 s)',amt:20,shop:80},
   {id:'jetpack',name:'Jetpack fuel (+20 s)',amt:20,shop:100},{id:'shield',name:'Shield Bubble (+5 charges)',amt:5,shop:80}];
 const SUIT_TIME=10,SPRING=1.45,HOOK_RANGE=2000,HOOK_SPEED=1150;
+// the flying gadgets' ceiling: their thrust fades out over the last stretch below it, so you hover just under it
+// (about 3 skyscrapers up; in the Crystal Cave, just under its rock roof). Was: no limit (15 skyscrapers up, even underground)
+const gadCeil=()=>MAP.roof?MAP.roof-110:1300,gadFade=()=>MAP.roof?150:300,gadLift=z=>clamp((gadCeil()-z)/gadFade(),0,1),gadHigh=z=>gadLift(z)<0.7;
 PROG.gadgets=PROG.gadgets||[];PROG.fuel=Object.assign({speed:0,boots:0,jetpack:0,shield:0},PROG.fuel||{});
 const gadDef=id=>GADGETS.find(g=>g.id===id);
 const gadOwned=id=>{const g=gadDef(id);return!!g&&(g.shop?owns('gadget',id):levelOf(PROG.xp)>=g.lvl);};
@@ -5380,7 +5530,8 @@ function gadgetTick(c,dt){if(c!==G.player||!c.gad)return;c.hookCd=Math.max(0,(c.
   // flying: hold jump in the air (the jump itself starts it)
   const fly=gadOn(c,'jetpack')?'jetpack':gadOn(c,'boots')?'boots':null,held=(keys.has(' ')||TOUCH.jumpHeld)&&!G.paused;c.thrust=null;
   if(fly&&held&&!c.onGround&&c.state==='alive'&&!c.vehicle&&!c.hook){
-    if(PROG.fuel[fly]>0){c.thrust=fly;gadFuelAdd(fly,-dt);const jet=fly==='jetpack';c.vz=Math.min(c.vz+(jet?1500:1800)*dt,jet?260:340);c.air=null;
+    const jet=fly==='jetpack',lift=gadLift(c.z);if(PROG.fuel[fly]>0&&gadHigh(c.z))gadTooHigh(c,jet);
+    if(PROG.fuel[fly]>0&&lift>0){c.thrust=fly;gadFuelAdd(fly,-dt);const acc=jet?1500:1800;if(lift<1)c.vz*=Math.exp(-2*Math.sqrt(acc/gadFade())*dt);c.vz=Math.min(c.vz+acc*dt*lift,(jet?260:340)*lift);c.air=null; // (damped, so you hover instead of bobbing up and down)
       if(!jet){c.wob=(c.wob||0)+(Math.random()-0.5)*dt*14;c.kx+=Math.cos(c.wob)*1100*dt;c.ky+=Math.sin(c.wob)*1100*dt;G.yaw+=Math.sin(G.time*6.3)*dt*0.9;} // rocket boots wobble you around
       if(PROG.fuel[fly]<=0)toast('⛽ Out of '+(jet?'jetpack':'rocket boots')+' fuel! Buy more in the Ticket Shop, or find fuel cans');}}
   // the grappling hook pulls you to where it caught
@@ -5388,6 +5539,9 @@ function gadgetTick(c,dt){if(c!==G.player||!c.gad)return;c.hookCd=Math.max(0,(c.
     if(L<45||h.t>2.2||h.st>0.3||c.state!=='alive'||c.vehicle){c.hook=null;c.vz=Math.max(c.vz,260);c.onGround=false;}
     else{c.vx=dx/L*HOOK_SPEED;c.vy=dy/L*HOOK_SPEED;c.vz=dz/L*HOOK_SPEED+30;c.onGround=false;c.air=null;}}
   if(gadSaveT&&(gadSaveT-=dt)<=0){gadSaveT=0;saveProg();}}
+// near the ceiling the jetpack or boots sputter: grey puffs, and now and then a "TOO HIGH!" over your head
+function gadTooHigh(c,jet){if(G.time<(c.highT||0))return;c.highT=G.time+0.3;burst(c.x,c.y,c.z+(jet?24:2),3,'puff','#9aa0aa',70);
+  if(G.time>(c.highMsg||0)){c.highMsg=G.time+4;addText(c.x,c.y,c.z+75,MAP.roof?'⛰️ THE ROOF!':'☁️ TOO HIGH!','#ff9a3c',15);sfx('pop',c);}}
 // U: speed suit, H: grappling hook (keyboard and touch); true when the key was a gadget key
 function gadgetKey(k){if(!G||G.ended||G.paused)return false;const p=G.player;if(k!=='u'&&k!=='h')return false;if(!p.gad)return false;
   if(gadgetsOff()&&gadOn(p,k==='u'?'speed':'hook')){toast('🚫 No gadgets in this round: everyone races fair!');return true;} // F55
@@ -5418,12 +5572,15 @@ function gadgetVisual(c,g,t){const u=g.userData;
   if(u.gSuit)u.gSuit.visible=suit;
   if(c===G.player){if(c.hook&&!u.gLine){u.gLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]),new THREE.LineBasicMaterial({color:'#2b2f3a'}));scene.add(u.gLine);}
     if(u.gLine){u.gLine.visible=!!c.hook;if(c.hook){const a=u.gLine.geometry.attributes.position;a.setXYZ(0,c.x,c.z+40,c.y);a.setXYZ(1,c.hook.x,c.hook.z,c.hook.y);a.needsUpdate=true;}}}}
+// how high you are, as a bar that fills up to the ceiling (shown while you fly with the jetpack or rocket boots)
+function gadAltHud(p){if(!(gadOn(p,'jetpack')||gadOn(p,'boots'))||p.onGround||p.vehicle||p.state!=='alive'||!(p.thrust||p.z-groundAt(p.x,p.y,p.z)>80))return '';
+  const k=clamp(p.z/gadCeil(),0,1),hi=gadHigh(p.z);return`<span class="gad alt${hi?' hi':''}">⬆<i><b style="width:${Math.round(k*100)}%"></b></i>${hi?' TOO HIGH':''}</span>`;}
 // the gadget strip above the weapon slots: what you brought and how much fuel is left; also starts this device's gadgets
 function gadgetHud(){const p=G.player,el=document.getElementById('gadBar');if(!el)return;if(p.gad===undefined)gadgetsStart(p);
   const L=p.gad?[...p.gad]:[];if(!L.length||p.state==='gone'||gadgetsOff()){if(!el.hidden)el.hidden=true;return;}el.hidden=false; // (F55: hidden while gadgets are off)
   const key={speed:TOUCH.on?'':'U',hook:TOUCH.on?'':'H',boots:TOUCH.on?'':'hold Space',jetpack:TOUCH.on?'':'hold Space'};
   const h=L.map(id=>{const g=gadDef(id),f=g.fuel==='s'?Math.ceil(PROG.fuel[id])+'s':g.fuel==='hits'?(p.bubbleHits||0)+'🫧':'';
-    const on=id==='speed'&&p.suitT>0?' on':(id===p.thrust?' on':'');return`<span class="gad${on}${g.fuel&&!(g.fuel==='hits'?p.bubbleHits:PROG.fuel[id]>0)?' empty':''}">${g.ic}${f?' '+f:''}${key[id]?' <kbd>'+key[id]+'</kbd>':''}</span>`;}).join('');
+    const on=id==='speed'&&p.suitT>0?' on':(id===p.thrust?' on':'');return`<span class="gad${on}${g.fuel&&!(g.fuel==='hits'?p.bubbleHits:PROG.fuel[id]>0)?' empty':''}">${g.ic}${f?' '+f:''}${key[id]?' <kbd>'+key[id]+'</kbd>':''}</span>`;}).join('')+gadAltHud(p);
   setHtmlIfChanged(el,h);}
 // @module src/js/31-squads.js: Squads: being knocked down (DBNO), reviving teammates, and team wipes.
 // Main: isMate, goDBNO, updateDBNO, doRevive, botRevive
@@ -5596,7 +5753,7 @@ function charTail(c,dt){
 }
 function respawnSpot(c){
   if(XM[G.mode]&&XM[G.mode].spawn)return XM[G.mode].spawn(c);
-  if(G.mode==='team'){const b=BASES[c.team];return freeSpot(b.x,b.y,380,150,G.chars.filter(o=>o.state==='alive'&&isEnemy(c,o)));}
+  if(G.mode==='team')return teamSpawn(c); // next to a teammate, else at the base (team-battle module)
   if(G.mode==='zombie')return freeSpot(WORLD/2,WORLD/2,500,320,G.chars.filter(o=>o.zombie&&o.state==='alive'));
   const st=G.storm||{x:WORLD/2,y:WORLD/2,r:WORLD*0.75};return freeSpot(st.x,st.y,Math.max(60,st.r*0.6),250,G.chars.filter(o=>o.state==='alive'));}
 function update(dt){
@@ -5610,6 +5767,7 @@ function update(dt){
     if(G.win){startVictory();announce(r.filter(e=>e.place===1).length>1?'#1 TIED FOR THE WIN!':'#1 VICTORY BONK!',RULES[G.rule].name+': you came out on top!',4.6,'victory');sfx('victory');burst(G.player.x,G.player.y,G.player.z+30,120,'confetti',null,320);}
     else{announce("Time's up!",r[0].c.name+' wins this round.',3);sfx('lose');}}
   if(((G.mode==='royale'&&!G.storm)||G.mode==='team')&&!G.ev.supply&&G.mt>=0.35*G.len){G.ev.supply=true;const s=freeSpot(WORLD/2,WORLD/2,500,0,null);dropSupply(s.x,s.y);}
+  if(G.mode==='team'&&!NETC())teamZoneTick(dt); // the bonus zone (team-battle module)
   if(G.mode==='zombie')updateZombies(dt);
   if(XM[G.mode]&&XM[G.mode].update)XM[G.mode].update(dt);
   for(const it of G.items)if(it.delay>0)it.delay-=dt;
@@ -5648,7 +5806,7 @@ function update(dt){
   for(const c of G.chars)if(c.state==='down'&&!c.droneSent&&G.time>=c.droneAt){c.droneSent=true;pickupDrone(c);}
   updateDrones(dt);
   for(const c of G.chars)if(c.state==='gone'&&!c.eliminated&&G.time>=c.respawnAt){const s=respawnSpot(c);c.hp=c.maxHp;c.shield=0;c.useT=0;c.emote=null;c.slots=[{id:'fists'},{id:'pistol',ammo:12},null,null,null];if((c.isPlayer||c.human)&&!MODE().noLoot&&!MODE().noCombat)c.slots[2]={id:'laser',r:5};c.cur=c.slots[2]?2:1;c.rescues++;
-    c.kx=c.ky=c.vx=c.vy=0;deliverDrone(c,s.x,s.y);if(c.isPlayer)announce('Back in action!',c.slots[2]?'The rescue drone brought back your Mythic Laser Blaster!':'The rescue drone dropped you off with a Foam Pistol.',2.2);}
+    c.kx=c.ky=c.vx=c.vy=0;deliverDrone(c,s.x,s.y);if(c.isPlayer)announce('Back in action!',(s.mate?'Dropped off next to '+s.mate.name+'. ':'')+(c.slots[2]?'The rescue drone brought back your Mythic Laser Blaster!':'The rescue drone dropped you off with a Foam Pistol.'),2.2);}
   if(G.mode==='team'&&!G.endAt&&(G.score.red>=TEAM_GOAL||G.score.blue>=TEAM_GOAL||G.mt>=G.len)){G.endAt=G.time+2.6;const myT=G.player.team==='blue'?'blue':'red',oth=myT==='red'?'blue':'red';G.win=G.score[myT]>G.score[oth];G.draw=G.score.red===G.score.blue;
     if(G.win){G.endAt=G.time+5;startVictory();announce('#1 VICTORY BONK!','Your team wins! Great bashing!',4.6,'victory');sfx('victory');}else if(G.draw)announce("It's a tie!",'Nobody wins this time.',3);else{announce((oth==='blue'?'Blue':'Red')+' team wins!','So close. Try again?',3);sfx('lose');}}
   for(const p of G.pieces)if(p.grow<1){p.grow=Math.min(1,p.grow+dt*6);p.mesh.scale.y=0.05+0.95*p.grow;}
@@ -5760,7 +5918,7 @@ function syncVisuals(dt){
   // storm
   const st=G.storm;stormMesh.visible=!!(st&&st.r<SR[0]-100);nextRing.visible=!!(st&&st.nextIdx!=null); // (the wall was a fixed 1650: on the big island it never showed) F18: the next-circle line had ended up inside this comment
   if(st){stormMesh.position.set(st.x,-50,st.y);stormMesh.scale.set(st.r*2,1500,st.r*2);if(st.nextIdx!=null){const n=st.C[st.nextIdx],r=SR[st.nextIdx];nextRing.position.set(n.x,3,n.y);nextRing.scale.set(r*2,1,r*2);}}
-  updateCamera(dt);updateGhost();animateLoot(dt,t);if(XM[G.mode]&&XM[G.mode].visual)XM[G.mode].visual(dt,t);
+  updateCamera(dt);updateGhost();animateLoot(dt,t);if(XM[G.mode]&&XM[G.mode].visual)XM[G.mode].visual(dt,t);teamZoneVisual(dt,t);
   {let inB=null;for(const b of BUILDINGS){const inside=p.x>b.x&&p.x<b.x+b.w&&p.y>b.y&&p.y<b.y+b.h;
       if(b.roofMat){const want=inside&&p.z<70&&p.state!=='gone'?0.15:1;b.roofMat.opacity+=(want-b.roofMat.opacity)*Math.min(1,dt*8);b.roofMat.depthWrite=b.roofMat.opacity>0.9;}
       if(b.name&&p.state==='alive'&&p.x>b.x-70&&p.x<b.x+b.w+70&&p.y>b.y-70&&p.y<b.y+b.h+70)inB=b;}
@@ -5860,7 +6018,7 @@ function updateHUD(){updateNetHUD();gadgetHud();{const at=$('autoTag'),on=!!(G&&
     setC(c3,me.place===1?'chip final':'chip');setH(c3,(me.place===1?"You're in the lead!":"You're #"+me.place)+' · '+RULES[G.rule].name);}
   else if(G.mode==='royale'){setC(c1,'chip');setH(c1,G.chars.filter(c=>!c.eliminated).length+' left');setC(c2,'chip');setH(c2,p.kos+' KOs');setC(c3,'chip storm');
     setH(c3,st.nextIdx==null?'Storm: final squeeze':st.shrinking?'Storm closing '+fmt(st.nextT-G.mt):'Storm moves in '+fmt(st.nextT-G.mt));}
-  else if(G.mode==='team'){setC(c1,'chip');setH(c1,`<span style="color:#e2312b">Red ${G.score.red}</span> – <span style="color:#1f6fd6">${G.score.blue} Blue</span>`);setC(c2,'chip');setH(c2,p.kos+' KOs · first to '+TEAM_GOAL);setC(c3,'chip storm');setH(c3,'Time '+fmt(G.len-G.mt));}
+  else if(G.mode==='team'){setC(c1,'chip');setH(c1,`<span style="color:#e2312b">Red ${G.score.red}</span> – <span style="color:#1f6fd6">${G.score.blue} Blue</span>`);setC(c2,'chip');setH(c2,p.kos+' KOs · first to '+TEAM_GOAL);setC(c3,'chip storm');setH(c3,'Time '+fmt(G.len-G.mt)+teamZoneHud());}
   else{const Z=G.z,left=Z.toSpawn+G.chars.filter(c=>c.zombie&&!c.eliminated).length;setC(c1,'chip zombie');setH(c1,Z.wave?'Wave '+Z.wave:'Get ready');setC(c2,'chip');setH(c2,Z.state==='break'?'Next wave in '+fmt(Z.t):left+' zombies left');
     setC(c3,G.lives>0?'chip':'chip final');setH(c3,'Drone rescues: '+G.lives);}
   $('finalChip').hidden=!G.noRespawn||G.mode==='school'||G.mode==='balloons'; // (F46: no rescue drones to run out of in those)
@@ -5924,6 +6082,7 @@ function drawMini(){
     m.fillStyle='#1f6fd6';m.beginPath();m.arc(b.x*k,b.y*k,7,0,TAU);m.fill();}
   for(const c of G.chars){if(c.isPlayer||c.state!=='alive')continue;if(!['team','ctf','zombie','siege'].includes(G.mode)&&!isMate(c))continue;if((G.mode==='team'||G.mode==='ctf'||G.mode==='siege')&&c.team!==G.player.team)continue;m.fillStyle=c.zombie?'#5f8f2f':isMate(c)?'#43c6ff':'#e2312b';m.beginPath();m.arc(c.x*k,c.y*k,isMate(c)?5:3.5,0,TAU);m.fill();}
   if(XM[G.mode]&&XM[G.mode].mini)XM[G.mode].mini(m,k);
+  if(G.mode==='team')teamZoneMini(m,k);
   for(const car of G.cars){if(car.dead)continue;if(car.kind==='mech'){m.fillStyle=car.boss?'#ffcb1f':car.col;m.strokeStyle='#1b2235';m.lineWidth=2;m.beginPath();m.arc(car.x*k,car.y*k,car.boss?9:6,0,TAU);m.fill();m.stroke();continue;}m.save();m.translate(car.x*k,car.y*k);m.rotate(car.ang);m.fillStyle=car.col;m.strokeStyle='#1b2235';m.lineWidth=1.5;m.fillRect(-6,-3.5,12,7);m.strokeRect(-6,-3.5,12,7);m.restore();}
   for(const it of G.items){if(it.id!=='laser')continue;const x=it.x*k,y=it.y*k,tt=performance.now()/300;m.fillStyle=LASER_COLS[Math.floor(tt)%LASER_COLS.length];m.strokeStyle='#ffffff';m.lineWidth=2;m.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5+tt*0.3,r=i%2?4:10;m.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);}m.closePath();m.stroke();m.fill();}
   if(G.crate&&!G.crate.taken){m.fillStyle='#ffc21a';m.strokeStyle='#1b2235';m.lineWidth=2;m.beginPath();const x=G.crate.x*k,y=G.crate.y*k;for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?4:10;m.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);}m.closePath();m.stroke();m.fill();}
@@ -6142,7 +6301,7 @@ const HELP_PAGES=[
     :`<ul><li><b>Z</b> wall · <b>X</b> ramp · <b>C</b> floor · <b>V</b> roof. Click to place, hold to keep building.</li><li>Look up to build higher.</li><li><b>G</b> edits a wall into a door or window.</li><li><b>T</b> switches wood, stone and metal. Metal is strongest!</li><li>Swing your pickaxe at trees, rocks and walls to collect materials.</li></ul>`},
   {t:'🚌 Bus & storm',shots:['bus','storm'],body:()=>`<ul><li>Battle Royale starts on the <b>battle bus</b>. ${TOUCH.on?'Tap JUMP OUT':'Press Space'} over the spot you want to land.</li><li>Your glider opens by itself, or open it early.</li><li>The <b>purple storm</b> shrinks the island. It hurts while you are in it, so keep moving to the safe circle!</li><li>The white dashed circle on the minimap shows where the storm goes next.</li><li>🌐 <b>The edges loop!</b> Walk, drive or shoot off one side of the map and you come back in on the other side (the see-through curtain marks the edge). So nobody is safe hiding at the edge. Only the bridge to the Bonk Hospital goes on north.</li><li>☁️ <b>Sky Islands:</b> fall off an island and the rescue drone catches you. Stand on a big fan to fly up, then glide across to another island.</li><li>🎢 <b>Theme Park:</b> ${TOUCH.on?'tap the 🎢 button':'press <b>E</b>'} by a ride to get on (roller coaster, Ferris wheel), ${TOUCH.on?'tap it or JUMP':'press <b>E</b> or <b>Space</b>'} to get off. Walk onto the top of the water slide to zoom down into the pool.</li></ul>`},
   {t:'🚁 Getting bonked',shots:['drone'],body:()=>`<ul><li>When you run out of health you get knocked out, but a <b>rescue drone</b> flies you back in after a few seconds.</li><li>In Battle Royale, drones stop at the <b>final circle</b>. Then it's last one standing!</li><li>In <b>Squads</b> you get knocked down first. A teammate can revive you by holding ${TOUCH.on?'the green REVIVE button':'E'} next to you.</li><li>Heal up with bandages, med kits and shield potions.</li></ul>`},
-  {t:'🏆 How to win',shots:[],body:()=>`<p>Every game mode has its own way to win:</p><div class="hwin">${[['🪂 Battle Royale','Be the last one (or last squad) standing when the storm closes.'],['⚔️ Team Battle','Red team needs 20 knockouts before blue does.'],['🧟 Zombie Survival','Survive as many zombie waves as you can. Build walls!'],['🏎️ Car Race','Drive through the glowing gates in order. Finish 3 laps first.'],['✈️ Plane Race','Fly through the glowing rings in the sky in order. Finish 3 laps first.'],['🎢 Stunt Course','Score the most points flying through rings before your time runs out.'],['🎈 Balloon Battle','Be the last plane with balloons (pop the others with your foam guns).'],['🎓 Flight School','Win a medal in all four lessons.'],['🌋 Floor is Lava','Build up and stay above the rising lava the longest.'],['👑 Capture the Crown','Grab the crown and hold it to score points.'],['🚩 Capture the Flag','Steal the blue flag and bring it back to your base.'],['🏰 Fort Siege','Build a fort around your treasure, then steal theirs and carry it home. The fastest steal wins.'],['🚒 Rescue Squad','Everyone together: put out every fire and fly everyone off the rooftops to the H before time runs out.'],['⛰️ King of the Hill','Stand in the golden circle to score. It moves around!'],['🏗️ Build Battle','Build the tallest tower before time runs out.'],['🤖 Mega Robot','Everyone teams up against one giant robot. Bonk it before time runs out!'],['🎯 Training Room','No winning here: practice your aim, building and every weapon.']].map(([a,b])=>`<div><b>${a}</b>${b}</div>`).join('')}</div>`},
+  {t:'🏆 How to win',shots:[],body:()=>`<p>Every game mode has its own way to win:</p><div class="hwin">${[['🪂 Battle Royale','Be the last one (or last squad) standing when the storm closes.'],['⚔️ Team Battle','Red team needs 20 points before blue does: a point for each knockout, and extra points for holding the glowing bonus zone.'],['🧟 Zombie Survival','Survive as many zombie waves as you can. Build walls!'],['🏎️ Car Race','Drive through the glowing gates in order. Finish 3 laps first.'],['✈️ Plane Race','Fly through the glowing rings in the sky in order. Finish 3 laps first.'],['🎢 Stunt Course','Score the most points flying through rings before your time runs out.'],['🎈 Balloon Battle','Be the last plane with balloons (pop the others with your foam guns).'],['🎓 Flight School','Win a medal in all four lessons.'],['🌋 Floor is Lava','Build up and stay above the rising lava the longest.'],['👑 Capture the Crown','Grab the crown and hold it to score points.'],['🚩 Capture the Flag','Steal the blue flag and bring it back to your base.'],['🏰 Fort Siege','Build a fort around your treasure, then steal theirs and carry it home. The fastest steal wins.'],['🚒 Rescue Squad','Everyone together: put out every fire and fly everyone off the rooftops to the H before time runs out.'],['⛰️ King of the Hill','Stand in the golden circle to score. It moves around!'],['🏗️ Build Battle','Build the tallest tower before time runs out.'],['🤖 Mega Robot','Everyone teams up against one giant robot. Bonk it before time runs out!'],['🎯 Training Room','No winning here: practice your aim, building and every weapon.']].map(([a,b])=>`<div><b>${a}</b>${b}</div>`).join('')}</div>`},
   {t:'🌐 Play with friends',shots:[],body:()=>`<ul><li>Tap <b>🌐 Multiplayer</b> on the welcome screen and type your <b>name</b>.</li><li><b>One player hosts:</b> tap <b>Host a game</b> and read out the 4-letter <b>room code</b>.</li><li><b>Everyone else joins:</b> tap <b>Join</b> and type the code. The host sees <b>🙋 wants to join</b> and taps <b>✅ Allow</b> (or <b>❌ Kick</b>).</li><li>The host picks the <b>game</b>, the <b>map</b> and the <b>teams</b>: <i>Host picks</i> (tap a player to move them), <i>🎲 Random</i>, <i>Pick your own</i> (tap Join Red/Blue…), or <i>Everyone vs everyone</i>.</li><li>Bots fill the empty spots. The host presses <b>START</b> and everyone drops into the same match!</li><li>Up to 8 real players, in every game mode: Battle Royale, Team Battle, Zombie Survival (team up against the waves), Car Race, Floor is Lava, Capture the Crown, Capture the Flag, King of the Hill, Build Battle and the Training Room.</li><li>Hold <b>Tab</b> (or tap <b>🏆</b>) for the <b>scoreboard</b>: everyone's knockouts and ping.</li><li>Out of the match? You <b>watch a teammate</b>. Press Space, click or tap JUMP to switch who you watch.</li><li>Friends who arrive late can <b>jump into a match that already started</b> by taking over a bot (the host can turn this off in Settings → 🌐 Multiplayer).</li><li>Need a break? Press <b>O</b> (or tap <b>🤖</b>) and autopilot plays for you. If you stop playing for a bit, a <b>💤 bot helper</b> plays for you until you're back. The host can turn either off in Settings → 🌐 Multiplayer.</li><li>After the match, <b>Play again</b> takes everyone back to the room.</li></ul>`},
   {t:'🔧 Connection trouble',shots:[],body:()=>`<ul><li>Everyone opens <b>the same Bonk Royale website</b> (or its app on the home screen). No account needed.</li><li>Everyone needs the <b>same version</b>: Stable, Beta and Alpha are separate websites, and players on different ones can't join each other.</li><li>At home, a <b>home server</b> is even faster (see 🏠 Home server).</li><li>Every device needs to be <b>online</b> during the match.</li><li>Run <b>Settings → 🌐 Multiplayer → Connection test</b>. Green checks mean you're ready.</li><li>Use <b>Test with a friend</b> to see how fast two devices talk. Under 150 ms feels smooth.</li><li>“No game found”: check the 4 letters, and make sure the host is still on the room screen.</li><li>If the host leaves, the match ends for everyone. If a player leaves, a bot takes over their character.</li></ul>`},
   {t:"🎤 Mr. Bonk's Show",shots:[],body:()=>`<p>A game show in five rounds. Win rounds to get points. The most points after round 5 wins <b>${SHOW_PRIZE} tickets</b>!</p><ol><li><b>Bonk Bat Brawl:</b> everyone gets a giant foam bat. ${TOUCH.on?'Tap FIRE':'Click'} to swing and bonk others out of the glowing circle. Knocked out? You're out, and your bat stops working. Everyone still in when time runs out wins <b>${SHOW_BRAWL_TK} tickets</b>!</li><li><b>Red Light, Green Light:</b> run to the finish on <b>🟢 GREEN</b>. On <b>🔴 RED</b>, freeze! Move and you go back to the start.</li><li><b>The Obstacle Course:</b> jump the pink hurdles and dodge the swinging foam hammers. The first three to the finish get points.</li><li><b>Hide and Seek:</b> hide inside the big ring. Seekers count to 15, then hunt. If a seeker touches you, you are out. Stay hidden until time runs out to win!</li><li><b>The Button Challenge:</b> one button wins the round. The others are traps (BOING!). Find the winner first!</li></ol><p>No real fighting in this mode (the foam bat only pushes), and it works in multiplayer too.</p>`},
@@ -6617,7 +6776,7 @@ function netAssignTeams(S){const kind=netTeamKind(S.mode),humans=G.chars.filter(
   if(kind==='rb'){for(const c of humans){const r=byPeer(c);c.team=r&&r.team==='b'?'blue':'red';}
     // bots fill the teams evenly, then everyone starts at their base
     const bots=G.chars.filter(c=>!c.human);let red=humans.filter(c=>c.team==='red').length,blue=humans.length-red;for(const b of bots){if(red<=blue){b.team='red';red++;}else{b.team='blue';blue++;}}
-    const placed=[];for(const c of G.chars){const B=BASES[c.team];const s=freeSpot(B.x,B.y,380,70,placed);c.x=s.x;c.y=s.y;c.z=groundAt(s.x,s.y,10);placed.push(c);c.face=openFace(c,Math.atan2(WORLD/2-c.y,WORLD/2-c.x));if(c.rin)c.rin.yaw=c.face;}
+    const placed=[];for(const c of G.chars){const B=teamBase(c.team);const s=freeSpot(B.x,B.y,380,70,placed);c.x=s.x;c.y=s.y;c.z=groundAt(s.x,s.y,10);placed.push(c);c.face=openFace(c,Math.atan2(WORLD/2-c.y,WORLD/2-c.x));if(c.rin)c.rin.yaw=c.face;}
     for(const c of G.chars)if(c.m)buildCharModel(c);return;}
   const groups={};for(const c of humans){const r=byPeer(c);if(r&&r.team){(groups[r.team]=groups[r.team]||[]).push(c);}}
   const sizes=Object.values(groups).map(a=>a.length);if(!sizes.length){humans.forEach(c=>c.team=null);return;}
@@ -6641,6 +6800,7 @@ const XMNET={
   robot:ROBOT_NET, // the Mega Robot (also in its own module)
   siege:SIEGE_NET, // Fort Siege (also in its own module)
   rescue:RESCUE_NET, // Rescue Squad (also in its own module)
+  team:TEAMZONE_NET, // Team Battle's bonus zone (team-battle module)
   stunt:STUNT_NET,balloons:BALLOON_NET, // the Stunt Course and Balloon Battle (plane-modes module)
   ctf:{s:()=>({f:['red','blue'].map(t=>{const F=G.flags[t];return[ri(F.x),ri(F.y),ri(F.z),F.carrier?F.carrier.cid+1:0,F.home?1:0];})}),
     a:s=>{['red','blue'].forEach((t,i)=>{const F=G.flags&&G.flags[t],a=s.f[i];if(!F||!a)return;F.x=a[0];F.y=a[1];F.z=a[2];F.carrier=a[3]?byCid(a[3]-1):null;F.home=!!a[4];});}},
@@ -6656,7 +6816,7 @@ const XMNET={
     a:s=>{const Z=G.z;Z.wave=s.z[0];Z.cleared=s.z[1];Z.state=s.z[2]?'wave':'break';Z.t=s.z[3];Z.toSpawn=s.z[4];}}};
 XMNET.airrace=XMNET.race; // the Plane Race shares the same things as the Car Race (countdown, laps, rings, finishers)
 // big announcements that are the same for everyone get shared; personal ones stay on the host's screen
-const NET_ANN_OK=/^(🎤|🟢|🔴|\d|GO!|Wave \d|The hill moved|Red team scores|Blue team scores|Here comes the lava|Lava in|Supply drop|The crown)/;
+const NET_ANN_OK=/^(⭐|🎤|🟢|🔴|\d|GO!|Wave \d|The hill moved|Red team scores|Blue team scores|Here comes the lava|Lava in|Supply drop|The crown)/;
 let NET_NOFWD=false;
 // @module src/js/49-net-sync.js: Multiplayer live sync: host updates (snapshots) and events, the world cast for joiners, joiner input, interpolation, and the client frame.
 // Main: NETC, NETH, netSnap, netHostTick, netEv, netApplyEv, netClientSnap, netInterp, clientFrame, netClientSendInput
@@ -6702,7 +6862,7 @@ function netSnap(){const N=G.net;for(const c of G.chars)if(c.cid==null)c.cid=N.c
 function netWorldDiff(){const N=G.net,seen=new Set();
   for(const it of G.items){if(!it.nid){it.nid=++N.nid;N.items.set(it.nid,it);netEv(['i+',it.nid,wcode(it.id),ri(it.x),ri(it.y),ri(it.z),it.r??-1,it.ammo??-1]);}seen.add(it.nid);}
   for(const[k]of N.items)if(!seen.has(k)){N.items.delete(k);netEv(['i-',k]);}
-  seen.clear();for(const q of G.pieces){if(!q.nid){q.nid=++N.nid;q.nedit=q.edit;N.pieces.set(q.nid,q);netEv(['p+',q.nid,netObPack(q.ob),q.col,q.edit||0,q.owner&&q.owner.cid!=null?q.owner.cid:-1]);}else if(q.edit!==q.nedit){q.nedit=q.edit;netEv(['pe',q.nid,q.edit]);}seen.add(q.nid);}
+  seen.clear();for(const q of G.pieces){if(!q.nid){q.nid=++N.nid;q.nedit=q.edit;N.pieces.set(q.nid,q);netEv(['p+',q.nid,netObPack(q.ob),q.col,q.edit||0,q.owner&&q.owner.cid!=null?q.owner.cid:-1]);}else if(q.edit!==q.nedit){q.nedit=q.edit;netEv(['pe',q.nid,q.edit]);}else if(q.recol){q.recol=0;netEv(['pm',q.nid,q.col]);}seen.add(q.nid);}
   for(const[k]of N.pieces)if(!seen.has(k)){N.pieces.delete(k);netEv(['p-',k]);}
   for(const p of G.projs)if(!p.nid){p.nid=++N.nid;netEv(['j',p.t,ri(p.x),ri(p.y),ri(p.z),ri(p.vx),ri(p.vy),ri(p.vz),r2(p.t==='grenade'||p.t==='balloon'||p.t==='boulder'?p.fuse:p.life),p.owner&&p.owner.cid!=null?p.owner.cid:-1]);}
   seen.clear();for(const t of G.traps){if(!t.nid){t.nid=++N.nid;N.traps.set(t.nid,t);netEv(['t+',t.nid,ri(t.x),ri(t.y),ri(t.z)]);}seen.add(t.nid);}
@@ -6770,6 +6930,7 @@ function netApplyEv(e){const k=e[0];
   else if(k==='an')announce(e[1],e[2],e[3],e[4]);
   else if(k==='p-'){const i=G.pieces.findIndex(q=>q.nid===e[1]);if(i>=0){const q=G.pieces[i];for(const o of q.parts)removeOb(o);scene.remove(q.mesh);G.pieces.splice(i,1);burst(q.cx,q.cy,q.ob.z0+30,12,'puff','#c8a27a',90);}}
   else if(k==='pe'){const q=G.pieces.find(q=>q.nid===e[1]);if(q){q.edit=e[2];applyWallEdit(q);}}
+  else if(k==='pm'){const q=G.pieces.find(q=>q.nid===e[1]);if(q)pieceRecolor(q,e[2]);} // a Build Battle bot upgraded a piece
   else if(k==='@'){if(e[1]!==G.player.cid)netApplyEv(e[2]);}
   else if(k==='j'){if(e[9]!=null&&e[9]===G.player.cid)return;const t=e[1];G.projs.push({t,x:e[2],y:e[3],z:e[4],vx:e[5],vy:e[6],vz:e[7],life:e[8],fuse:e[8],t0:0,owner:null,net:1});}
   else if(k==='t+'){if(!G.traps.some(t=>t.nid===e[1]))G.traps.push({nid:e[1],x:e[2],y:e[3],z:e[4]});}
